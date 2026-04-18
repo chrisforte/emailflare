@@ -1,0 +1,39 @@
+services:
+  backend:
+    container_name: emailflare-backend
+    build:
+      context: ./services/backend
+      dockerfile: Dockerfile
+      target: dev
+    environment:
+      - NODE_ENV=development
+      - SQLITE_HUB_API_URL=http://host.docker.internal:4004
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ./services/backend/src:/app/src
+      - ./services/backend/package.json:/app/package.json:ro
+      - backend-node-modules:/app/node_modules
+
+  admin:
+    container_name: emailflare-admin
+    build:
+      context: ./services/admin
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      - ./services/admin/src:/app/src
+      - ./services/admin/.tanstack:/app/.tanstack
+      - ./services/admin/index.html:/app/index.html:ro
+      - admin-node-modules:/app/node_modules
+    expose:
+      - "5173"
+
+  edge:
+    container_name: emailflare-edge
+    volumes:
+      - ./infra/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+
+volumes:
+  backend-node-modules:
+  admin-node-modules:

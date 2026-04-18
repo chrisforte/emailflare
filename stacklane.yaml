@@ -1,0 +1,24 @@
+project:
+  name: emailflair
+  edgePort: 8090
+
+services:
+  backend:
+    enabled: true
+    buildContext: ./services/backend
+    dockerfile: Dockerfile
+    devTarget: dev
+    prodTarget: prod
+    internalPort: 3000
+    healthPath: /health
+
+  admin:
+    enabled: true
+    buildContext: ./services/admin
+    dockerfile: Dockerfile
+    routePrefix: /
+    internalPort: 80
+
+routing:
+  apiPrefix: /api
+  healthPath: /health
