@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Plus, Pencil, Trash2, FileText, Cpu, X, Eye, Mail } from 'lucide-react';
 import api from '../api';
 
 interface Template {
@@ -14,21 +14,50 @@ interface Template {
   updated_at: string;
 }
 
+interface BuiltinLayout {
+  id: string;
+  label: string;
+  variables: string[];
+}
+
 type Mode = 'list' | 'create' | 'edit';
 
 const EMPTY_FORM = { name: '', subject: '', htmlBody: '', textBody: '', layout: '', domainId: '' };
 
+function extractVars(text: string): string[] {
+  const vars = new Set<string>();
+  for (const m of text.matchAll(/\{\{(\w+)\}\}/g)) if (m[1]) vars.add(m[1]);
+  return Array.from(vars);
+}
+
+const inputCls =
+  'w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-orange-500 transition-colors';
+const labelCls = 'block text-xs font-medium text-zinc-400 mb-1.5';
+
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [layouts, setLayouts] = useState<BuiltinLayout[]>([]);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<Mode>('list');
   const [editing, setEditing] = useState<Template | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  // Template preview slide-over
+  const [previewingTemplate, setPreviewingTemplate] = useState<Template | null>(null);
+  const [previewVars, setPreviewVars] = useState<Record<string, string>>({});
+  // Layout preview slide-over
+  const [previewingLayout, setPreviewingLayout] = useState<BuiltinLayout | null>(null);
+  const [layoutPreviewVars, setLayoutPreviewVars] = useState<Record<string, string>>({});
+  const [layoutPreviewHtml, setLayoutPreviewHtml] = useState('');
+  const [layoutPreviewLoading, setLayoutPreviewLoading] = useState(false);
 
   async function load() {
     setLoading(true);
-    const { data } = await api.get<Template[]>('/api/templates');
-    setTemplates(data);
+    const [{ data: tpl }, { data: lay }] = await Promise.all([
+      api.get<Template[]>('/api/templates'),
+      api.get<BuiltinLayout[]>('/api/layouts'),
+    ]);
+    setTemplates(tpl);
+    setLayouts(lay);
     setLoading(false);
   }
 
@@ -44,6 +73,33 @@ export default function TemplatesPage() {
     setEditing(t);
     setForm({ name: t.name, subject: t.subject, htmlBody: t.html_body, textBody: t.text_body ?? '', layout: t.layout ?? '', domainId: t.domain_id ?? '' });
     setMode('edit');
+  }
+
+  function openPreview(t: Template) {
+    setPreviewingTemplate(t);
+    setPreviewVars({});
+  }
+
+  async function openLayoutPreview(l: BuiltinLayout) {
+    setPreviewingLayout(l);
+    setLayoutPreviewVars({});
+    setLayoutPreviewHtml('');
+    setLayoutPreviewLoading(true);
+    try {
+      const { data } = await api.post<{ html: string }>(`/api/layouts/${l.id}/preview`, { variables: {} });
+      setLayoutPreviewHtml(data.html);
+    } catch {
+      setLayoutPreviewHtml('<p style="padding:1rem;color:red">Failed to render layout preview</p>');
+    } finally {
+      setLayoutPreviewLoading(false);
+    }
+  }
+
+  async function refreshLayoutPreview(l: BuiltinLayout, vars: Record<string, string>) {
+    try {
+      const { data } = await api.post<{ html: string }>(`/api/layouts/${l.id}/preview`, { variables: vars });
+      setLayoutPreviewHtml(data.html);
+    } catch { /* keep previous */ }
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -71,80 +127,319 @@ export default function TemplatesPage() {
     load();
   }
 
+  // Live preview for edit/create
+  const editPreviewVars = useMemo(() => extractVars(`${form.subject} ${form.htmlBody}`), [form.subject, form.htmlBody]);
+  const [editVarValues, setEditVarValues] = useState<Record<string, string>>({});
+  const editPreviewHtml = useMemo(() => {
+    if (!form.htmlBody) return '';
+    return form.htmlBody.replace(
+      /\{\{(\w+)\}\}/g,
+      (_, k) =>
+        editVarValues[k]
+          ? `<span style="background:#fef9c3;color:#713f12;padding:0 2px;border-radius:2px">${editVarValues[k]}</span>`
+          : `<span style="background:#fee2e2;color:#991b1b;padding:0 2px;border-radius:2px;font-size:12px">{{${k}}}</span>`,
+    );
+  }, [form.htmlBody, editVarValues]);
+
+  // Preview slide-over vars
+  const previewDetectedVars = useMemo(
+    () => (previewingTemplate ? extractVars(`${previewingTemplate.subject} ${previewingTemplate.html_body}`) : []),
+    [previewingTemplate],
+  );
+  const slideOverPreviewHtml = useMemo(() => {
+    if (!previewingTemplate) return '';
+    return previewingTemplate.html_body.replace(
+      /\{\{(\w+)\}\}/g,
+      (_, k) =>
+        previewVars[k]
+          ? `<span style="background:#fef9c3;color:#713f12;padding:0 2px;border-radius:2px">${previewVars[k]}</span>`
+          : `<span style="background:#fee2e2;color:#991b1b;padding:0 2px;border-radius:2px;font-size:12px">{{${k}}}</span>`,
+    );
+  }, [previewingTemplate, previewVars]);
+
   if (mode !== 'list') {
     return (
-      <div className="p-8 max-w-2xl">
-        <h1 className="text-2xl font-bold text-slate-900 mb-6">{mode === 'create' ? 'New template' : `Edit — ${editing?.name}`}</h1>
-        <form onSubmit={handleSave} className="space-y-4">
-          {(['name', 'subject'] as const).map(field => (
-            <div key={field}>
-              <label className="block text-xs font-medium text-slate-600 mb-1 capitalize">{field}</label>
-              <input
-                value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} required
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+      <div className="flex h-full">
+        {/* Form panel */}
+        <div className="w-[480px] flex-shrink-0 border-r border-zinc-800 overflow-y-auto p-8">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-xl font-bold text-white">
+              {mode === 'create' ? 'New template' : `Edit — ${editing?.name}`}
+            </h1>
+            <button onClick={() => { setMode('list'); setEditVarValues({}); }} className="text-zinc-500 hover:text-zinc-300">
+              <X size={16} />
+            </button>
+          </div>
+          <form onSubmit={handleSave} className="space-y-4">
+            {(['name', 'subject'] as const).map(field => (
+              <div key={field}>
+                <label className={labelCls + ' capitalize'}>{field}</label>
+                <input
+                  value={form[field]}
+                  onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
+                  required
+                  className={inputCls}
+                />
+              </div>
+            ))}
+            <div>
+              <label className={labelCls}>HTML body</label>
+              <textarea
+                value={form.htmlBody}
+                onChange={e => setForm(f => ({ ...f, htmlBody: e.target.value }))}
+                required
+                rows={12}
+                className={`${inputCls} font-mono`}
+                placeholder="<p>Hello {{name}},</p>"
               />
             </div>
-          ))}
-          <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">HTML body</label>
-            <textarea
-              value={form.htmlBody} onChange={e => setForm(f => ({ ...f, htmlBody: e.target.value }))} required rows={12}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
-              placeholder="<p>Hello {{name}},</p>"
-            />
+            <div>
+              <label className={labelCls}>Plain-text body <span className="text-zinc-600">(optional)</span></label>
+              <textarea
+                value={form.textBody}
+                onChange={e => setForm(f => ({ ...f, textBody: e.target.value }))}
+                rows={4}
+                className={`${inputCls} font-mono`}
+                placeholder="Hello {{name}}, ..."
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg px-5 py-2 transition-colors">
+                {mode === 'create' ? 'Create' : 'Save changes'}
+              </button>
+              <button type="button" onClick={() => { setMode('list'); setEditVarValues({}); }} className="text-sm text-zinc-500 hover:text-zinc-300 px-4 py-2">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Preview panel */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="px-5 py-3 border-b border-zinc-800 flex items-center justify-between flex-shrink-0">
+            <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Live Preview</span>
+            {form.subject && <span className="text-xs text-zinc-600 truncate max-w-xs">{form.subject}</span>}
           </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Plain-text body (optional)</label>
-            <textarea
-              value={form.textBody} onChange={e => setForm(f => ({ ...f, textBody: e.target.value }))} rows={4}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
+
+          {/* Variable inputs if any */}
+          {editPreviewVars.length > 0 && (
+            <div className="px-5 py-3 border-b border-zinc-800 flex flex-wrap gap-3">
+              {editPreviewVars.map(v => (
+                <div key={v} className="flex items-center gap-2">
+                  <span className="text-xs font-mono text-orange-400">{`{{${v}}}`}</span>
+                  <input
+                    value={editVarValues[v] ?? ''}
+                    onChange={e => setEditVarValues(p => ({ ...p, [v]: e.target.value }))}
+                    placeholder={v}
+                    className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-orange-500 w-28"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex-1 relative">
+            {editPreviewHtml ? (
+              <iframe
+                srcDoc={editPreviewHtml}
+                className="w-full h-full border-0 bg-white"
+                sandbox="allow-same-origin"
+                title="Template preview"
+              />
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-zinc-700">
+                <Mail size={40} strokeWidth={1} />
+                <p className="text-sm">Your preview will appear here</p>
+              </div>
+            )}
           </div>
-          <div className="flex gap-2 pt-2">
-            <button type="submit" className="bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg px-5 py-2 transition-colors">
-              {mode === 'create' ? 'Create' : 'Save'}
-            </button>
-            <button type="button" onClick={() => setMode('list')} className="text-sm text-slate-500 hover:text-slate-700 px-4 py-2">Cancel</button>
-          </div>
-        </form>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="p-8">
+      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Templates</h1>
-          <p className="text-sm text-slate-500 mt-1">Reusable email templates with variable substitution</p>
+          <div className="flex items-center gap-2 mb-1">
+            <FileText size={14} className="text-orange-500" />
+            <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Email</span>
+          </div>
+          <h1 className="text-2xl font-bold text-white">Templates</h1>
         </div>
-        <button onClick={openCreate} className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg px-4 py-2 transition-colors">
-          <Plus size={15} /> New template
+        <button onClick={openCreate} className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg px-4 py-2 transition-colors">
+          <Plus size={14} /> New template
         </button>
       </div>
 
       {loading ? (
-        <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-slate-200 h-16 animate-pulse" />)}</div>
-      ) : templates.length === 0 ? (
-        <div className="text-center py-20 text-slate-400 text-sm">No templates yet.</div>
+        <div className="space-y-2">{[...Array(3)].map((_, i) => <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-xl h-16 animate-pulse" />)}</div>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
-          {templates.map(t => (
-            <div key={t.id} className="flex items-center px-5 py-3.5 gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-slate-900 text-sm">{t.name}</div>
-                <div className="text-xs text-slate-400 mt-0.5 truncate">{t.subject}</div>
-              </div>
-              <div className="flex items-center gap-1">
-                <button onClick={() => openEdit(t)} className="text-xs text-slate-500 hover:text-brand-600 px-2 py-1 rounded hover:bg-brand-50 flex items-center gap-1">
-                  <Pencil size={12} /> Edit
-                </button>
-                <button onClick={() => handleDelete(t)} className="text-xs text-slate-500 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50">
-                  <Trash2 size={12} />
-                </button>
-              </div>
+        <div className="space-y-6">
+          {/* Built-in layouts */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Cpu size={13} className="text-purple-400" />
+              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Built-in layouts</span>
+              <span className="text-xs text-zinc-700 ml-1">· defined in code</span>
             </div>
-          ))}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl divide-y divide-zinc-800">
+              {layouts.map(l => (
+                <div key={l.id} className="flex items-center px-5 py-3.5 gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-white text-sm">{l.label}</span>
+                      <span className="text-xs text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded font-mono">{l.id}</span>
+                    </div>
+                    <div className="text-xs text-zinc-600 mt-0.5">
+                      Variables: {l.variables.map(v => <code key={v} className="text-zinc-400 mr-1.5">{`{{${v}}}`}</code>)}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => openLayoutPreview(l)}
+                    className="text-xs text-zinc-500 hover:text-white flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-zinc-800 transition-colors"
+                  >
+                    <Eye size={11} /> Preview
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom templates */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <FileText size={13} className="text-purple-400" />
+              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Custom templates</span>
+            </div>
+            {templates.length === 0 ? (
+              <div className="text-center py-12 text-zinc-600 text-sm bg-zinc-900 border border-zinc-800 rounded-xl">
+                No custom templates yet.
+              </div>
+            ) : (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl divide-y divide-zinc-800">
+                {templates.map(t => (
+                  <div key={t.id} className="flex items-center px-5 py-3.5 gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-white text-sm">{t.name}</div>
+                      <div className="text-xs text-zinc-500 mt-0.5 truncate">{t.subject}</div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => openPreview(t)} className="text-xs text-zinc-500 hover:text-white flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-zinc-800 transition-colors">
+                        <Eye size={11} /> Preview
+                      </button>
+                      <button onClick={() => openEdit(t)} className="text-xs text-zinc-500 hover:text-white flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-zinc-800 transition-colors">
+                        <Pencil size={11} /> Edit
+                      </button>
+                      <button onClick={() => handleDelete(t)} className="text-xs text-zinc-600 hover:text-red-400 px-2.5 py-1.5 rounded-md hover:bg-zinc-800 transition-colors">
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Layout preview slide-over */}
+      {previewingLayout && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setPreviewingLayout(null)} />
+          <div className="relative ml-auto w-[70%] max-w-4xl bg-zinc-950 border-l border-zinc-800 flex flex-col shadow-2xl">
+            <div className="flex items-start justify-between px-6 py-4 border-b border-zinc-800 flex-shrink-0">
+              <div>
+                <h2 className="font-semibold text-white">{previewingLayout.label}</h2>
+                <p className="text-xs text-zinc-500 mt-0.5 font-mono">{previewingLayout.id}</p>
+              </div>
+              <button onClick={() => setPreviewingLayout(null)} className="text-zinc-500 hover:text-zinc-300 ml-4">
+                <X size={16} />
+              </button>
+            </div>
+            {previewingLayout.variables.length > 0 && (
+              <div className="px-6 py-3 border-b border-zinc-800 flex flex-wrap gap-3 flex-shrink-0">
+                {previewingLayout.variables.map(v => (
+                  <div key={v} className="flex items-center gap-2">
+                    <span className="text-xs font-mono text-orange-400">{`{{${v}}}`}</span>
+                    <input
+                      value={layoutPreviewVars[v] ?? ''}
+                      onChange={e => {
+                        const next = { ...layoutPreviewVars, [v]: e.target.value };
+                        setLayoutPreviewVars(next);
+                        refreshLayoutPreview(previewingLayout, next);
+                      }}
+                      placeholder={v}
+                      className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-orange-500 w-28"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex-1 bg-white relative">
+              {layoutPreviewLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
+                  <span className="text-xs text-zinc-400">Rendering…</span>
+                </div>
+              )}
+              {layoutPreviewHtml && (
+                <iframe
+                  srcDoc={layoutPreviewHtml}
+                  className="w-full h-full border-0"
+                  sandbox="allow-same-origin"
+                  title="Layout preview"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Template preview slide-over */}
+      {previewingTemplate && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setPreviewingTemplate(null)} />
+          <div className="relative ml-auto w-[70%] max-w-4xl bg-zinc-950 border-l border-zinc-800 flex flex-col shadow-2xl">
+            {/* Header */}
+            <div className="flex items-start justify-between px-6 py-4 border-b border-zinc-800 flex-shrink-0">
+              <div>
+                <h2 className="font-semibold text-white">{previewingTemplate.name}</h2>
+                <p className="text-xs text-zinc-500 mt-0.5">Subject: {previewingTemplate.subject}</p>
+              </div>
+              <button onClick={() => setPreviewingTemplate(null)} className="text-zinc-500 hover:text-zinc-300 ml-4">
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Variable inputs */}
+            {previewDetectedVars.length > 0 && (
+              <div className="px-6 py-3 border-b border-zinc-800 flex flex-wrap gap-3 flex-shrink-0">
+                {previewDetectedVars.map(v => (
+                  <div key={v} className="flex items-center gap-2">
+                    <span className="text-xs font-mono text-orange-400">{`{{${v}}}`}</span>
+                    <input
+                      value={previewVars[v] ?? ''}
+                      onChange={e => setPreviewVars(p => ({ ...p, [v]: e.target.value }))}
+                      placeholder={v}
+                      className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-orange-500 w-28"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Preview iframe */}
+            <div className="flex-1 bg-white">
+              <iframe
+                srcDoc={slideOverPreviewHtml || previewingTemplate.html_body}
+                className="w-full h-full border-0"
+                sandbox="allow-same-origin"
+                title="Template preview"
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -134,7 +134,5 @@ export async function bootstrapSchema(): Promise<void> {
     )
   `);
 
-
-
   console.log('[db] schema bootstrapped');
 }

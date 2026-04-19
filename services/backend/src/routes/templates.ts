@@ -84,4 +84,16 @@ app.delete('/:id', async (c) => {
   return c.json({ deleted: true });
 });
 
+// POST /api/templates/:id/preview — substitute variables and return rendered HTML
+app.post('/:id/preview', async (c) => {
+  const row = await templates.findOne({ where: { id: c.req.param('id') } });
+  if (!row) return c.json({ error: 'Template not found' }, 404);
+
+  const body = await c.req.json().catch(() => ({}));
+  const variables: Record<string, string> = body.variables ?? {};
+
+  const sub = (s: string) => s.replace(/\{\{(\w+)\}\}/g, (_, k) => variables[k] ?? `{{${k}}}`);
+  return c.json({ html: sub(row.html_body), subject: sub(row.subject) });
+});
+
 export default app;

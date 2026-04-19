@@ -21,8 +21,8 @@ importers:
         specifier: ^1.0.5
         version: 1.4.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       '@sqlite-hub/client':
-        specifier: ^0.4.1
-        version: 0.4.1
+        specifier: ^0.4.2
+        version: 0.4.2
       hono:
         specifier: ^4.7.5
         version: 4.12.14
@@ -391,8 +391,8 @@ packages:
   '@selderee/plugin-htmlparser2@0.11.0':
     resolution: {integrity: sha512-P33hHGdldxGabLFjPPpaTxVolMrzrcegejx+0GxjrIb9Zv48D8yAIA/QTDR2dFl7Uz7urX8aX6+5bCZslr+gWQ==}
 
-  '@sqlite-hub/client@0.4.1':
-    resolution: {integrity: sha512-Qxs+oFR9PLMD6kF6xEdej5VoWGkVj8aciGAiRT1RrtXNK3Zs6SXd7ZxasCJ+5W32mHnQqBI9tTvCuL3TqcSzHg==}
+  '@sqlite-hub/client@0.4.2':
+    resolution: {integrity: sha512-1jTKGr9WNvz/mn/6oSV5OMst51nPcJmx4bhngeHlZoXcgLbrmONkULtUlrXa1mbl6ptZtvLKme/G/sPAYCTqNw==}
     engines: {node: '>=16.0.0'}
 
   '@types/node@22.19.17':
@@ -760,7 +760,7 @@ snapshots:
       domhandler: 5.0.3
       selderee: 0.11.0
 
-  '@sqlite-hub/client@0.4.1':
+  '@sqlite-hub/client@0.4.2':
     dependencies:
       '@pingpong-js/fetch': 1.0.2
 

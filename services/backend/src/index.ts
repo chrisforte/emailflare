@@ -16,6 +16,8 @@ import keysRoutes     from './routes/keys.js';
 import logsRoutes     from './routes/logs.js';
 import statsRoutes    from './routes/stats.js';
 import sendRoutes     from './routes/send.js';
+import { LAYOUTS, renderLayout } from './emails/render.js';
+import type { LayoutName } from './emails/render.js';
 
 const app = new Hono();
 
@@ -39,6 +41,19 @@ app.route('/v1/send', sendRoutes);
 const admin = new Hono();
 admin.use('*', requireAdminToken);
 admin.get('/me', (c) => c.json({ ok: true }));
+admin.get('/layouts', (c) => c.json(
+  Object.entries(LAYOUTS).map(([id, { label, variables }]) => ({ id, label, variables }))
+));
+
+// POST /api/layouts/:id/preview — render a built-in layout with variables
+admin.post('/layouts/:id/preview', async (c) => {
+  const id = c.req.param('id') as LayoutName;
+  if (!LAYOUTS[id]) return c.json({ error: 'Layout not found' }, 404);
+  const body = await c.req.json().catch(() => ({}));
+  const variables: Record<string, string> = body.variables ?? {};
+  const html = await renderLayout(id, variables);
+  return c.json({ html });
+});
 admin.route('/domains',   domainsRoutes);
 admin.route('/templates', templatesRoutes);
 admin.route('/keys',      keysRoutes);

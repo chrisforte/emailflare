@@ -28,6 +28,32 @@ async function cfFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return json.result;
 }
 
+// ── Zones ────────────────────────────────────────────────────────────────────
+
+export interface CFZone {
+  id: string;
+  name: string;
+  status: string;
+}
+
+/**
+ * Find a Cloudflare zone for the given hostname.
+ * Tries progressively shorter suffixes (e.g. mail.example.com → example.com).
+ */
+export async function getZoneByHostname(hostname: string): Promise<CFZone | null> {
+  const parts = hostname.split('.');
+  for (let i = 0; i < parts.length - 1; i++) {
+    const candidate = parts.slice(i).join('.');
+    try {
+      const zones = await cfFetch<CFZone[]>(`/zones?name=${encodeURIComponent(candidate)}&status=active`);
+      if (zones.length > 0) return zones[0];
+    } catch {
+      // continue
+    }
+  }
+  return null;
+}
+
 // ── Sending Subdomains ────────────────────────────────────────────────────────
 
 export interface CFSubdomain {

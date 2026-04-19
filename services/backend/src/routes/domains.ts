@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
 import { domains } from '../db.js';
-import { createSendingSubdomain, getSubdomainDnsRecords, getSendingSubdomain } from '../services/cloudflare.js';
+import { createSendingSubdomain, listSendingSubdomains, getSubdomainDnsRecords, getSendingSubdomain, getZoneByHostname } from '../services/cloudflare.js';
 
 const app = new Hono();
 
@@ -22,20 +22,35 @@ app.get('/:id', async (c) => {
 
 const createSchema = z.object({
   name: z.string().min(3),
-  cfZoneId: z.string().min(1),
+  cfZoneId: z.string().optional(),
 });
 
 // POST /api/domains
 app.post('/', zValidator('json', createSchema), async (c) => {
   const { name, cfZoneId } = c.req.valid('json');
 
-  // Create sending subdomain in Cloudflare
-  const cfResult = await createSendingSubdomain(cfZoneId, name);
+  // Check if this subdomain is already in our DB
+  const existing = await domains.findOne({ where: { name } });
+  if (existing) return c.json({ error: `Domain "${name}" is already registered` }, 409);
+
+  // Resolve zone: use provided ID or look it up from Cloudflare
+  let zoneId = cfZoneId;
+  if (!zoneId) {
+    const zone = await getZoneByHostname(name);
+    if (!zone) {
+      return c.json({ error: `No active Cloudflare zone found for "${name}". Make sure the root domain is added to your Cloudflare account.` }, 422);
+    }
+    zoneId = zone.id;
+  }
+
+  // Check CF first — reuse existing subdomain if found, otherwise create it.
+  const allSubdomains = await listSendingSubdomains(zoneId);
+  const cfResult = allSubdomains.find(s => s.name === name) ?? await createSendingSubdomain(zoneId, name);
 
   const row = await domains.insert({
     id: nanoid(),
     name,
-    cf_zone_id: cfZoneId,
+    cf_zone_id: zoneId,
     cf_subdomain_id: cfResult.tag,
     dkim_selector: cfResult.dkim_selector ?? null,
     return_path_domain: cfResult.return_path_domain ?? null,
