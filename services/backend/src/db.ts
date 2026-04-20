@@ -14,6 +14,7 @@ export const db = client.db(env.SQLITE_HUB_DB);
 // ── Table handles ─────────────────────────────────────────────────────────────
 
 export interface DomainRow {
+  [key: string]: unknown;
   id: string;
   name: string;
   cf_zone_id: string;
@@ -25,6 +26,7 @@ export interface DomainRow {
 }
 
 export interface TemplateRow {
+  [key: string]: unknown;
   id: string;
   name: string;
   slug: string | null;
@@ -39,6 +41,7 @@ export interface TemplateRow {
 }
 
 export interface ApiKeyRow {
+  [key: string]: unknown;
   id: string;
   name: string;
   key_hash: string;
@@ -51,11 +54,13 @@ export interface ApiKeyRow {
 }
 
 export interface ApiKeyDomainRow {
+  [key: string]: unknown;
   api_key_id: string;
   domain_id: string;
 }
 
 export interface EmailLogRow {
+  [key: string]: unknown;
   id: string;
   to_address: string;
   from_address: string;

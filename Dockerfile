@@ -2,21 +2,25 @@
 FROM node:22-alpine AS build-backend
 WORKDIR /app/backend
 
-COPY services/backend/package*.json ./
-RUN npm install
+RUN npm install -g pnpm
+
+COPY services/backend/package.json services/backend/pnpm-lock.yaml services/backend/pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 
 COPY services/backend/ ./
-RUN npm run build
+RUN pnpm run build
 
 # ── Stage: build-admin ────────────────────────────────────────────────────────
 FROM node:22-alpine AS build-admin
 WORKDIR /app/admin
 
-COPY services/admin/package*.json ./
-RUN npm install
+RUN npm install -g pnpm
+
+COPY services/admin/package.json services/admin/pnpm-lock.yaml services/admin/pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 
 COPY services/admin/ ./
-RUN npm run build
+RUN pnpm run build
 
 # ── Stage: prod (Caddy + Node) ────────────────────────────────────────────────
 FROM caddy:2-alpine AS caddy-bin
