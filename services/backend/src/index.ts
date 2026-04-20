@@ -104,7 +104,17 @@ app.onError((err, c) => {
 
 // ── Startup + graceful shutdown ────────────────────────────────────────────────
 async function main() {
+  console.log('[startup] NODE_ENV:', env.NODE_ENV);
+  console.log('[startup] PORT:', env.PORT);
+  console.log('[startup] SQLITE_HUB_API_URL:', env.SQLITE_HUB_API_URL);
+  console.log('[startup] SQLITE_HUB_DB:', env.SQLITE_HUB_DB);
+  console.log('[startup] SQLITE_HUB_API_KEY:', env.SQLITE_HUB_API_KEY ? `${env.SQLITE_HUB_API_KEY.slice(0, 8)}...` : '*** MISSING ***');
+  console.log('[startup] ADMIN_TOKEN:', env.ADMIN_TOKEN ? 'set' : '*** MISSING ***');
+  console.log('[startup] CF_API_TOKEN:', env.CF_API_TOKEN ? 'set' : 'not set');
+
+  console.log('[startup] bootstrapping schema...');
   await bootstrapSchema();
+  console.log('[startup] seeding system templates...');
   await seedSystemTemplates();
 
   const server: ServerType = serve({ fetch: app.fetch, port: env.PORT }, () => {
