@@ -49,7 +49,7 @@ app.use('/api/*', cors({
 }));
 
 // ── Health ────────────────────────────────────────────────────────────────────
-app.get('/health', (c) => c.json({ ok: true, service: 'emailflair-backend', ts: Date.now() }));
+app.get('/health', (c) => c.json({ ok: true, service: 'emailflair-backend', ts: Date.now(), 'version': 1 }));
 
 // ── Public: send (API key protected + rate limited) ───────────────────────────
 app.use('/v1/*', requireApiKey);
