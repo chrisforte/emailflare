@@ -18,7 +18,7 @@ const api = axios.create({ baseURL: '/' });
 
 api.interceptors.request.use((config) => {
   const token = getToken();
-  if (token) {
+  if (token && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;

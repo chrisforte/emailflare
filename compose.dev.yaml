@@ -21,10 +21,12 @@ services:
       context: ./services/admin
       dockerfile: Dockerfile
       target: dev
+    command: sh -c "npm install && npm run dev"
     volumes:
       - ./services/admin/src:/app/src
       - ./services/admin/.tanstack:/app/.tanstack
       - ./services/admin/index.html:/app/index.html:ro
+      - ./services/admin/package.json:/app/package.json
       - admin-node-modules:/app/node_modules
     expose:
       - "5173"

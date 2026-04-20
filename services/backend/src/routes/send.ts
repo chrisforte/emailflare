@@ -2,23 +2,27 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
-import { emailLogs, templates, domains } from '../db.js';
+import { db, emailLogs, templates, domains } from '../db.js';
 import { sendEmail } from '../services/cloudflare.js';
+import { renderLayout } from '../emails/render.js';
+import type { LayoutName } from '../emails/render.js';
 import type { ApiKeyContext } from '../middleware/apiKey.js';
 
 const app = new Hono();
 
 const sendSchema = z.object({
   from: z.string().email(),
+  fromName: z.string().optional(),
   to: z.union([z.string().email(), z.array(z.string().email())]),
   subject: z.string().min(1).optional(),
   html: z.string().optional(),
   text: z.string().optional(),
   templateId: z.string().optional(),
+  templateSlug: z.string().optional(),
   variables: z.record(z.string()).optional(),
   replyTo: z.string().email().optional(),
-}).refine(d => d.templateId || d.html || d.text, {
-  message: 'Provide templateId or at least one of html/text',
+}).refine(d => d.templateId || d.templateSlug || d.html || d.text, {
+  message: 'Provide templateId, templateSlug, or at least one of html/text',
 });
 
 // POST /v1/send
@@ -32,14 +36,24 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
   let templateId: string | null = null;
   let domainId: string | null = null;
 
-  // Resolve template
-  if (body.templateId) {
-    const template = await templates.findOne({ where: { id: body.templateId } });
+  // Resolve template (custom or system/layout)
+  if (body.templateSlug || body.templateId) {
+    const template = body.templateSlug
+      ? await templates.findOne({ where: { slug: body.templateSlug } })
+      : await templates.findOne({ where: { id: body.templateId! } });
     if (!template) return c.json({ error: 'Template not found' }, 404);
 
-    subject = body.subject ?? template.subject;
-    html = applyVariables(template.html_body, body.variables ?? {});
-    text = template.text_body ? applyVariables(template.text_body, body.variables ?? {}) : undefined;
+    const vars = body.variables ?? {};
+    subject = applyVariables(body.subject ?? template.subject, vars);
+
+    if (template.layout) {
+      // System template — render via React Email
+      html = await renderLayout(template.layout as LayoutName, vars);
+    } else {
+      // Custom template — use stored HTML
+      html = applyVariables(template.html_body, vars);
+      text = template.text_body ? applyVariables(template.text_body, vars) : undefined;
+    }
     templateId = template.id;
     domainId = template.domain_id;
   }
@@ -72,7 +86,7 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
   for (const recipient of toList) {
     try {
       const cfResult = await sendEmail({
-        from: body.from,
+        from: body.fromName ? { address: body.from, name: body.fromName } : body.from,
         to: recipient,
         subject,
         html,

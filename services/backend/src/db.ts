@@ -1,5 +1,8 @@
 import { SqliteHubClient } from '@sqlite-hub/client';
+import { nanoid } from 'nanoid';
 import { env } from './env.js';
+import { LAYOUTS } from './emails/render.js';
+import type { LayoutName } from './emails/render.js';
 
 const client = new SqliteHubClient({
   apiKey: env.SQLITE_HUB_API_KEY,
@@ -24,10 +27,12 @@ export interface DomainRow {
 export interface TemplateRow {
   id: string;
   name: string;
+  slug: string | null;
   subject: string;
   html_body: string;
   text_body: string | null;
   layout: string | null;
+  is_system: number; // 0 | 1
   domain_id: string | null;
   created_at: string;
   updated_at: string;
@@ -88,15 +93,23 @@ export async function bootstrapSchema(): Promise<void> {
     CREATE TABLE IF NOT EXISTS templates (
       id          TEXT PRIMARY KEY,
       name        TEXT NOT NULL,
+      slug        TEXT UNIQUE,
       subject     TEXT NOT NULL,
-      html_body   TEXT NOT NULL,
+      html_body   TEXT NOT NULL DEFAULT '',
       text_body   TEXT,
       layout      TEXT,
+      is_system   INTEGER NOT NULL DEFAULT 0,
       domain_id   TEXT,
       created_at  TEXT NOT NULL,
       updated_at  TEXT NOT NULL
     )
   `);
+
+  // Migrations: add columns that predate schema changes
+  // Note: SQLite ALTER TABLE ADD COLUMN does not support UNIQUE — add index separately
+  try { await db.exec(`ALTER TABLE templates ADD COLUMN slug TEXT`); } catch { /* already exists */ }
+  try { await db.exec(`ALTER TABLE templates ADD COLUMN is_system INTEGER NOT NULL DEFAULT 0`); } catch { /* already exists */ }
+  try { await db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_templates_slug ON templates(slug) WHERE slug IS NOT NULL`); } catch { /* ignore */ }
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS api_keys (
@@ -136,3 +149,37 @@ export async function bootstrapSchema(): Promise<void> {
 
   console.log('[db] schema bootstrapped');
 }
+
+// ── System template subjects ──────────────────────────────────────────────────
+
+const SYSTEM_SUBJECTS: Record<LayoutName, string> = {
+  'welcome':      'Welcome to {{appName}}, {{name}}!',
+  'magic-link':   'Your sign-in link for {{appName}}',
+  'notification': '{{title}}',
+  'otp':          'Your {{appName}} verification code: {{code}}',
+};
+
+export async function seedSystemTemplates(): Promise<void> {
+  const now = new Date().toISOString();
+  for (const [layoutId, { label }] of Object.entries(LAYOUTS) as [LayoutName, { label: string; variables: string[] }][]) {
+    // Use findOne + insert so we only hit the write endpoint when needed
+    const existing = await templates.findOne({ where: { slug: layoutId } });
+    if (!existing) {
+      await templates.insert({
+        id: nanoid(),
+        name: label,
+        slug: layoutId,
+        subject: SYSTEM_SUBJECTS[layoutId],
+        html_body: '',
+        text_body: null,
+        layout: layoutId,
+        is_system: 1,
+        domain_id: null,
+        created_at: now,
+        updated_at: now,
+      });
+    }
+  }
+  console.log('[db] system templates seeded');
+}
+

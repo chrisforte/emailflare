@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react';
 import { Globe, FileText, Key, Send, CheckCircle2, XCircle, Clock, RefreshCw } from 'lucide-react';
 import api from '../api';
 
+interface DomainBreakdown {
+  name: string;
+  sent: number;
+  failed: number;
+}
+
 interface Stats {
   totalDomains: number;
   verifiedDomains: number;
@@ -10,6 +16,8 @@ interface Stats {
   totalEmails: number;
   sentToday: number;
   failedToday: number;
+  cfDailyLimit: number;
+  domainBreakdown: DomainBreakdown[];
 }
 
 interface LogRow {
@@ -80,16 +88,6 @@ function timeAgo(iso: string) {
   if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
   if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`;
   return `${Math.floor(secs / 86400)}d ago`;
-}
-
-interface Stats {
-  totalDomains: number;
-  verifiedDomains: number;
-  totalTemplates: number;
-  totalKeys: number;
-  totalEmails: number;
-  sentToday: number;
-  failedToday: number;
 }
 
 export default function Dashboard() {
@@ -291,33 +289,74 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* All-time volume card */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Total volume</span>
-            <Send size={13} className="text-orange-400" />
-          </div>
-          <div className="text-4xl font-bold text-white tabular-nums mb-1">{stats.totalEmails.toLocaleString()}</div>
-          <div className="text-xs text-zinc-500 mb-5">emails sent all time</div>
-
-          {/* simple fill bar */}
-          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden mb-5">
-            <div className="h-full bg-orange-500 rounded-full" style={{ width: `${Math.min(100, (stats.totalEmails / Math.max(stats.totalEmails, 500)) * 100)}%` }} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-            {[
-              { label: "Today's sent", value: stats.sentToday, color: 'text-emerald-400' },
-              { label: "Today's failed", value: stats.failedToday, color: stats.failedToday > 0 ? 'text-red-400' : 'text-zinc-600' },
-            ].map(({ label, value, color }) => (
-              <div key={label}>
-                <div className="text-[10px] text-zinc-600 uppercase tracking-wider mb-0.5">{label}</div>
-                <div className={`text-lg font-bold tabular-nums ${color}`}>{value}</div>
+        {/* CF Daily Limit card */}
+        {(() => {
+          const limit = stats.cfDailyLimit;
+          const used = stats.sentToday;
+          const pct = Math.min(100, Math.round((used / limit) * 100));
+          const limitColor = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#10b981';
+          const limitLabel = pct >= 90 ? 'Critical' : pct >= 70 ? 'Warning' : 'Healthy';
+          return (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium">CF Daily limit</span>
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ color: limitColor, backgroundColor: `${limitColor}18` }}>{limitLabel}</span>
               </div>
-            ))}
+              <div className="flex items-center gap-4 mb-4">
+                <div className="relative flex-shrink-0">
+                  <Ring pct={pct} size={80} stroke={8} color={limitColor} />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-sm font-bold text-white tabular-nums">{pct}%</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-white tabular-nums">{used.toLocaleString()}<span className="text-sm text-zinc-500 font-normal"> / {limit.toLocaleString()}</span></div>
+                  <div className="text-xs text-zinc-500 mt-0.5">emails sent today</div>
+                  <div className="text-xs mt-2" style={{ color: limitColor }}>{limit - used} remaining</div>
+                </div>
+              </div>
+              <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: limitColor }} />
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* ── Per-domain breakdown ────────────────────────────────── */}
+      {stats.domainBreakdown.length > 0 && (
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl mb-4">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
+            <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Today's sends by domain</span>
+            <span className="text-xs text-zinc-600">{stats.sentToday} / {stats.cfDailyLimit} limit</span>
+          </div>
+          <div className="divide-y divide-zinc-800">
+            <div className="grid grid-cols-[1fr_100px_100px_120px] px-5 py-2.5 text-[10px] text-zinc-600 uppercase tracking-wider font-medium">
+              <span>Domain</span>
+              <span className="text-right">Sent</span>
+              <span className="text-right">Failed</span>
+              <span className="text-right">Share of limit</span>
+            </div>
+            {stats.domainBreakdown.map(d => {
+              const pct = Math.min(100, Math.round((d.sent / stats.cfDailyLimit) * 100));
+              const barColor = pct >= 50 ? '#ef4444' : pct >= 25 ? '#f59e0b' : '#10b981';
+              return (
+                <div key={d.name} className="grid grid-cols-[1fr_100px_100px_120px] px-5 py-3 items-center hover:bg-zinc-800/40 transition-colors">
+                  <span className="text-sm text-white truncate pr-4 font-mono">{d.name}</span>
+                  <span className="text-sm text-emerald-400 font-medium tabular-nums text-right">{d.sent}</span>
+                  <span className={`text-sm font-medium tabular-nums text-right ${d.failed > 0 ? 'text-red-400' : 'text-zinc-600'}`}>{d.failed}</span>
+                  <div className="flex items-center gap-2 justify-end">
+                    <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: barColor }} />
+                    </div>
+                    <span className="text-xs text-zinc-500 tabular-nums w-9 text-right">{pct}%</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
-      </div>
+      )}
 
       {/* ── Recent logs table ───────────────────────────────────── */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl">

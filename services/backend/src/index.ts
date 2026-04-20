@@ -5,7 +5,7 @@ import { logger } from 'hono/logger';
 import { secureHeaders } from 'hono/secure-headers';
 import { HTTPException } from 'hono/http-exception';
 
-import { bootstrapSchema } from './db.js';
+import { bootstrapSchema, seedSystemTemplates } from './db.js';
 import { env } from './env.js';
 import { requireAdminToken } from './middleware/auth.js';
 import { requireApiKey } from './middleware/apiKey.js';
@@ -74,6 +74,7 @@ app.onError((err, c) => {
 // ── Startup ───────────────────────────────────────────────────────────────────
 async function main() {
   await bootstrapSchema();
+  await seedSystemTemplates();
 
   serve({ fetch: app.fetch, port: env.PORT }, () => {
     console.log(`[server] emailflair backend running on port ${env.PORT}`);
