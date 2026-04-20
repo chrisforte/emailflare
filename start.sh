@@ -37,6 +37,8 @@ cat > /tmp/Caddyfile <<EOF
 }
 
 :$PORT {
+  root * /usr/share/caddy
+
   handle /health {
     reverse_proxy localhost:${BACKEND_PORT}
   }
@@ -55,7 +57,6 @@ cat > /tmp/Caddyfile <<EOF
   }
 
   handle {
-    root * /usr/share/caddy
     try_files {path} /index.html
     file_server
   }
