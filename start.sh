@@ -30,6 +30,12 @@ echo "✓ Backend ready on port $BACKEND_PORT"
 
 echo "[3/3] Starting Caddy on port $PORT..."
 
+echo "--- Static files in /usr/share/caddy ---"
+ls /usr/share/caddy/
+echo "--- Assets ---"
+ls /usr/share/caddy/assets/ 2>/dev/null || echo "NO ASSETS DIR FOUND"
+echo "----------------------------------------"
+
 cat > /tmp/Caddyfile <<EOF
 {
   auto_https off
@@ -52,11 +58,14 @@ cat > /tmp/Caddyfile <<EOF
   }
 
   handle {
+    root * /usr/share/caddy
     try_files {path} /index.html
     file_server
   }
 }
 EOF
+
+caddy fmt --overwrite /tmp/Caddyfile
 
 echo "--- Generated Caddyfile ---"
 cat /tmp/Caddyfile
