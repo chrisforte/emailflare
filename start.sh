@@ -51,11 +51,6 @@ cat > /tmp/Caddyfile <<EOF
     reverse_proxy localhost:${BACKEND_PORT}
   }
 
-  handle /assets/* {
-    header Cache-Control "public, max-age=31536000"
-    file_server
-  }
-
   handle {
     try_files {path} /index.html
     file_server
@@ -63,5 +58,8 @@ cat > /tmp/Caddyfile <<EOF
 }
 EOF
 
-caddy fmt --overwrite /tmp/Caddyfile
+echo "--- Generated Caddyfile ---"
+cat /tmp/Caddyfile
+echo "---------------------------"
+
 caddy run --config /tmp/Caddyfile
