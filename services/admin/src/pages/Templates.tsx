@@ -1,6 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, FileText, Cpu, X, Mail, ChevronDown } from 'lucide-react';
 import api from '../api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 interface Template {
   id: string;
@@ -27,10 +39,6 @@ function extractVars(text: string): string[] {
   return Array.from(vars);
 }
 
-const inputCls =
-  'w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-orange-500 transition-colors';
-const labelCls = 'block text-xs font-medium text-zinc-400 mb-1.5';
-
 function TemplateCard({ t, active, varsOpen, onToggleVars, onClick, detectedVars, varValues, onVarChange }: {
   t: Template;
   active: boolean;
@@ -43,57 +51,51 @@ function TemplateCard({ t, active, varsOpen, onToggleVars, onClick, detectedVars
 }) {
   const hasVars = t.variables.length > 0;
   return (
-    <div
-      className={`w-full text-left rounded-xl transition-all duration-100 overflow-hidden ${
-        active
-          ? 'bg-orange-500/10 border border-orange-500/20'
-          : 'hover:bg-white/[0.03] border border-transparent'
-      }`}
-    >
-      {/* Clickable header row */}
+    <div className={cn(
+      'w-full text-left rounded-xl transition-all duration-100 overflow-hidden border',
+      active ? 'bg-primary/10 border-primary/20' : 'hover:bg-muted/50 border-transparent'
+    )}>
       <div onClick={onClick} className="px-3 py-3 cursor-pointer">
         <div className="flex items-start justify-between gap-2 mb-0.5">
-          <span className={`text-[13px] font-medium truncate leading-tight ${active ? 'text-orange-100' : 'text-zinc-200'}`}>
+          <span className="text-[13px] font-medium truncate leading-tight text-foreground">
             {t.name}
           </span>
           {t.is_system === 1 && (
-            <span className="text-[9px] font-bold text-purple-400/70 bg-purple-500/10 px-1.5 py-0.5 rounded uppercase shrink-0">sys</span>
+            <Badge variant="secondary" className="text-[9px] text-purple-400 bg-purple-500/10 border-purple-500/20 px-1.5 py-0.5 uppercase shrink-0">sys</Badge>
           )}
         </div>
         <div className="flex items-center justify-between gap-2 mt-0.5">
-          <p className="text-[11px] text-zinc-600 truncate leading-tight">{t.subject}</p>
+          <p className="text-[11px] text-muted-foreground truncate leading-tight">{t.subject}</p>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[10px] text-zinc-700">
+            <span className="text-[10px] text-muted-foreground/40">
               {new Date(t.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
             {active && hasVars && (
               <span
                 role="button"
                 onClick={onToggleVars}
-                className={`flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-md transition-colors ${
-                  varsOpen
-                    ? 'text-orange-400 bg-orange-500/15'
-                    : 'text-zinc-600 hover:text-zinc-400 bg-zinc-800/60'
-                }`}
+                className={cn(
+                  'flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-md transition-colors',
+                  varsOpen ? 'text-primary bg-primary/15' : 'text-muted-foreground hover:text-foreground bg-muted/60'
+                )}
               >
                 <span>{t.variables.length} vars</span>
-                <ChevronDown size={9} className={`transition-transform duration-150 ${varsOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={9} className={cn('transition-transform duration-150', varsOpen && 'rotate-180')} />
               </span>
             )}
           </div>
         </div>
       </div>
-      {/* Inline variable inputs — expands inside the card */}
       {active && varsOpen && detectedVars.length > 0 && (
-        <div className="px-3 pb-3 pt-1 border-t border-orange-500/10 space-y-2.5">
+        <div className="px-3 pb-3 pt-1 border-t border-primary/10 flex flex-col gap-2.5">
           {detectedVars.map(v => (
             <div key={v}>
-              <label className="block text-[10px] font-mono text-orange-400/70 mb-1">{`{{${v}}}`}</label>
-              <input
+              <Label className="text-[10px] font-mono text-primary/70">{`{{${v}}}`}</Label>
+              <Input
                 value={varValues[v] ?? ''}
                 onChange={e => onVarChange(v, e.target.value)}
                 placeholder={`Enter ${v}`}
-                className="w-full bg-black/30 border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-zinc-700 focus:outline-none focus:border-orange-500/40 transition-colors"
+                className="mt-1 h-7 text-xs bg-black/30"
               />
             </div>
           ))}
@@ -110,12 +112,12 @@ export default function TemplatesPage() {
   const [editing, setEditing] = useState<Template | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
 
-  // Preview slide-over (works for both system + custom templates)
   const [previewing, setPreviewing] = useState<Template | null>(null);
   const [previewVars, setPreviewVars] = useState<Record<string, string>>({});
   const [previewHtml, setPreviewHtml] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
   const [varsOpen, setVarsOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Template | null>(null);
 
   async function load() {
     setLoading(true);
@@ -164,12 +166,9 @@ export default function TemplatesPage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     const payload = {
-      name: form.name,
-      slug: form.slug || undefined,
-      subject: form.subject,
-      htmlBody: form.htmlBody,
-      textBody: form.textBody || undefined,
-      domainId: form.domainId || undefined,
+      name: form.name, slug: form.slug || undefined,
+      subject: form.subject, htmlBody: form.htmlBody,
+      textBody: form.textBody || undefined, domainId: form.domainId || undefined,
     };
     if (mode === 'create') {
       await api.post('/api/templates', payload);
@@ -180,13 +179,14 @@ export default function TemplatesPage() {
     load();
   }
 
-  async function handleDelete(t: Template) {
-    if (!confirm(`Delete template "${t.name}"?`)) return;
-    await api.delete(`/api/templates/${t.id}`);
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    await api.delete(`/api/templates/${deleteTarget.id}`);
+    if (previewing?.id === deleteTarget.id) setPreviewing(null);
+    setDeleteTarget(null);
     load();
   }
 
-  // Live preview for edit/create form
   const editPreviewVars = useMemo(() => extractVars(`${form.subject} ${form.htmlBody}`), [form.subject, form.htmlBody]);
   const [editVarValues, setEditVarValues] = useState<Record<string, string>>({});
   const editPreviewHtml = useMemo(() => {
@@ -200,100 +200,89 @@ export default function TemplatesPage() {
     );
   }, [form.htmlBody, editVarValues]);
 
-  // Variables for the preview slide-over
   const previewDetectedVars = useMemo(() => {
     if (!previewing) return [];
-    return previewing.variables.length > 0
-      ? previewing.variables
-      : extractVars(`${previewing.subject} ${previewing.html_body}`);
+    return previewing.variables.length > 0 ? previewing.variables : extractVars(`${previewing.subject} ${previewing.html_body}`);
   }, [previewing]);
 
   const systemTemplates = templates.filter(t => t.is_system === 1);
   const customTemplates = templates.filter(t => t.is_system === 0);
 
+  // ── Edit / Create view ───────────────────────────────────────────────────
   if (mode !== 'list') {
     return (
       <div className="flex h-full">
         {/* Form panel */}
-        <div className="w-[480px] flex-shrink-0 border-r border-zinc-800 overflow-y-auto p-8">
+        <div className="w-[480px] flex-shrink-0 border-r border-border overflow-y-auto p-8">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-xl font-bold text-white">
+            <h1 className="text-xl font-bold">
               {mode === 'create' ? 'New template' : `Edit — ${editing?.name}`}
             </h1>
-            <button onClick={() => { setMode('list'); setEditVarValues({}); }} className="text-zinc-500 hover:text-zinc-300">
-              <X size={16} />
-            </button>
+            <Button variant="ghost" size="icon" className="size-7" onClick={() => { setMode('list'); setEditVarValues({}); }}>
+              <X size={14} />
+            </Button>
           </div>
-          <form onSubmit={handleSave} className="space-y-4">
-            {(['name', 'subject'] as const).map(field => (
-              <div key={field}>
-                <label className={labelCls + ' capitalize'}>{field}</label>
-                <input
-                  value={form[field]}
-                  onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
-                  required
-                  className={inputCls}
-                />
-              </div>
-            ))}
-            <div>
-              <label className={labelCls}>Slug <span className="text-zinc-600">(auto-generated if empty)</span></label>
-              <input
+          <form onSubmit={handleSave} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label>Name</Label>
+              <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Subject</Label>
+              <Input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} required />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Slug <span className="text-muted-foreground font-normal">(auto-generated if empty)</span></Label>
+              <Input
                 value={form.slug}
                 onChange={e => setForm(f => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') }))}
                 placeholder="auto-generated-from-name"
-                className={`${inputCls} font-mono`}
+                className="font-mono"
               />
-              <p className="text-[10px] text-zinc-600 mt-1">Used as <code className="text-zinc-500">templateSlug</code> in the send API.</p>
+              <p className="text-[10px] text-muted-foreground">Used as <code className="text-muted-foreground">templateSlug</code> in the send API.</p>
             </div>
-            <div>
-              <label className={labelCls}>HTML body</label>
-              <textarea
+            <div className="flex flex-col gap-1.5">
+              <Label>HTML body</Label>
+              <Textarea
                 value={form.htmlBody}
                 onChange={e => setForm(f => ({ ...f, htmlBody: e.target.value }))}
-                required
-                rows={12}
-                className={`${inputCls} font-mono`}
+                required rows={12}
+                className="font-mono"
                 placeholder="<p>Hello {{name}},</p>"
               />
             </div>
-            <div>
-              <label className={labelCls}>Plain-text body <span className="text-zinc-600">(optional)</span></label>
-              <textarea
+            <div className="flex flex-col gap-1.5">
+              <Label>Plain-text body <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Textarea
                 value={form.textBody}
                 onChange={e => setForm(f => ({ ...f, textBody: e.target.value }))}
-                rows={4}
-                className={`${inputCls} font-mono`}
+                rows={4} className="font-mono"
                 placeholder="Hello {{name}}, ..."
               />
             </div>
             <div className="flex gap-2 pt-2">
-              <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg px-5 py-2 transition-colors">
-                {mode === 'create' ? 'Create' : 'Save changes'}
-              </button>
-              <button type="button" onClick={() => { setMode('list'); setEditVarValues({}); }} className="text-sm text-zinc-500 hover:text-zinc-300 px-4 py-2">
-                Cancel
-              </button>
+              <Button type="submit">{mode === 'create' ? 'Create' : 'Save changes'}</Button>
+              <Button type="button" variant="ghost" onClick={() => { setMode('list'); setEditVarValues({}); }}>Cancel</Button>
             </div>
           </form>
         </div>
 
-        {/* Preview panel */}
+        {/* Live preview panel */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="px-5 py-3 border-b border-zinc-800 flex items-center justify-between flex-shrink-0">
-            <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Live Preview</span>
-            {form.subject && <span className="text-xs text-zinc-600 truncate max-w-xs">{form.subject}</span>}
+          <div className="px-5 py-3 border-b border-border flex items-center justify-between flex-shrink-0">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Live Preview</span>
+            {form.subject && <span className="text-xs text-muted-foreground truncate max-w-xs">{form.subject}</span>}
           </div>
           {editPreviewVars.length > 0 && (
-            <div className="px-5 py-3 border-b border-zinc-800 flex flex-wrap gap-3">
+            <div className="px-5 py-3 border-b border-border flex flex-wrap gap-3">
               {editPreviewVars.map(v => (
                 <div key={v} className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-orange-400">{`{{${v}}}`}</span>
-                  <input
+                  <span className="text-xs font-mono text-primary">{`{{${v}}}`}</span>
+                  <Input
                     value={editVarValues[v] ?? ''}
                     onChange={e => setEditVarValues(p => ({ ...p, [v]: e.target.value }))}
                     placeholder={v}
-                    className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-orange-500 w-28"
+                    className="h-7 text-xs w-28"
                   />
                 </div>
               ))}
@@ -301,9 +290,25 @@ export default function TemplatesPage() {
           )}
           <div className="flex-1 relative">
             {editPreviewHtml ? (
-              <iframe srcDoc={editPreviewHtml} className="w-full h-full border-0 bg-white" sandbox="allow-same-origin" title="Template preview" />
+              <div className="h-full overflow-auto">
+                <div className="p-4">
+                  <div className="max-w-[640px] mx-auto">
+                    <div className="bg-[#1e1e1e] rounded-t-xl border border-[#3a3a3a] border-b-0 px-4 py-2.5 flex items-center gap-2">
+                      <div className="flex gap-1.5">
+                        <div className="size-2.5 rounded-full bg-[#ff5f57]" />
+                        <div className="size-2.5 rounded-full bg-[#febc2e]" />
+                        <div className="size-2.5 rounded-full bg-[#28c840]" />
+                      </div>
+                      {form.subject && <span className="text-[11px] text-[#999] font-mono ml-2 truncate">{form.subject}</span>}
+                    </div>
+                    <div className="bg-white rounded-b-xl overflow-hidden border border-[#3a3a3a] border-t-0">
+                      <iframe srcDoc={editPreviewHtml} className="w-full h-full border-0 bg-white" style={{ minHeight: '400px' }} sandbox="allow-same-origin" title="Template preview" />
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-zinc-700">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted-foreground">
                 <Mail size={40} strokeWidth={1} />
                 <p className="text-sm">Your preview will appear here</p>
               </div>
@@ -314,49 +319,57 @@ export default function TemplatesPage() {
     );
   }
 
+  // ── List view ────────────────────────────────────────────────────────────
   return (
     <div className="flex h-full">
+      {/* Delete confirm dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete template?</DialogTitle>
+            <DialogDescription>
+              "{deleteTarget?.name}" will be permanently removed and cannot be restored.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* ── Left pane: template list ──────────────────────────────────── */}
-      <div className="w-[560px] flex-shrink-0 border-r border-white/[0.06] flex flex-col overflow-hidden">
-        {/* Header — same style as Domains/Logs */}
+      <div className="w-[560px] flex-shrink-0 border-r border-border flex flex-col overflow-hidden">
         <div className="px-5 pt-5 pb-4 flex-shrink-0 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <FileText size={14} className="text-orange-500" />
-              <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Email</span>
+              <FileText size={14} className="text-primary" />
+              <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Email</span>
             </div>
-            <h1 className="text-2xl font-bold text-white">Templates</h1>
+            <h1 className="text-2xl font-bold">Templates</h1>
           </div>
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg px-4 py-2 transition-colors"
-          >
-            <Plus size={14} /> New template
-          </button>
+          <Button onClick={openCreate}>
+            <Plus size={14} data-icon="inline-start" /> New template
+          </Button>
         </div>
 
-        {/* List */}
-        <div className="flex-1 overflow-y-auto">
+        <ScrollArea className="flex-1">
           {loading ? (
-            <div className="p-3 space-y-1.5">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-[70px] bg-[#111114] border border-white/[0.04] rounded-lg animate-pulse" />
-              ))}
+            <div className="p-3 flex flex-col gap-1.5">
+              {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-[70px] rounded-lg" />)}
             </div>
           ) : (
-            <div className="p-2 space-y-4">
-              {/* System / built-in */}
+            <div className="p-2 flex flex-col gap-4">
               {systemTemplates.length > 0 && (
                 <div>
                   <div className="flex items-center gap-1.5 px-3 pt-2 pb-1">
                     <Cpu size={10} className="text-purple-400" />
-                    <span className="text-[10px] font-medium text-zinc-600 uppercase tracking-wide">Built-in</span>
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Built-in</span>
                   </div>
-                  <div className="space-y-px">
+                  <div className="flex flex-col gap-px">
                     {systemTemplates.map(t => (
                       <TemplateCard
-                        key={t.id}
-                        t={t}
+                        key={t.id} t={t}
                         active={previewing?.id === t.id}
                         varsOpen={previewing?.id === t.id && varsOpen}
                         onToggleVars={e => { e.stopPropagation(); setVarsOpen(v => !v); }}
@@ -374,25 +387,23 @@ export default function TemplatesPage() {
                 </div>
               )}
 
-              {/* Custom */}
               <div>
                 <div className="flex items-center gap-1.5 px-3 pb-1">
-                  <FileText size={10} className="text-orange-400" />
-                  <span className="text-[10px] font-medium text-zinc-600 uppercase tracking-wide">Custom</span>
+                  <FileText size={10} className="text-primary" />
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Custom</span>
                 </div>
                 {customTemplates.length === 0 ? (
                   <div className="px-3 py-6 text-center">
-                    <p className="text-[11px] text-zinc-700">No custom templates yet</p>
-                    <button onClick={openCreate} className="mt-2 text-[11px] text-orange-500 hover:text-orange-400 transition-colors">
+                    <p className="text-[11px] text-muted-foreground">No custom templates yet</p>
+                    <Button variant="link" size="sm" onClick={openCreate} className="mt-1 h-auto text-[11px] p-0">
                       Create your first →
-                    </button>
+                    </Button>
                   </div>
                 ) : (
-                  <div className="space-y-px">
+                  <div className="flex flex-col gap-px">
                     {customTemplates.map(t => (
                       <TemplateCard
-                        key={t.id}
-                        t={t}
+                        key={t.id} t={t}
                         active={previewing?.id === t.id}
                         varsOpen={previewing?.id === t.id && varsOpen}
                         onToggleVars={e => { e.stopPropagation(); setVarsOpen(v => !v); }}
@@ -411,102 +422,90 @@ export default function TemplatesPage() {
               </div>
             </div>
           )}
-        </div>
+        </ScrollArea>
       </div>
 
       {/* ── Right pane: preview ───────────────────────────────────────── */}
-      <div className="flex-1 overflow-hidden flex flex-col bg-[#0a0a0d]">
+      <div className="flex-1 overflow-hidden flex flex-col">
         {!previewing ? (
-          <div className="h-full flex flex-col items-center justify-center gap-3 text-zinc-700 select-none">
-            <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center mb-1">
+          <div className="h-full flex flex-col items-center justify-center gap-3 text-muted-foreground select-none">
+            <div className="size-14 rounded-2xl bg-white/[0.03] border border-border flex items-center justify-center mb-1">
               <Mail size={22} strokeWidth={1.2} className="opacity-50" />
             </div>
             <p className="text-sm">Select a template to preview</p>
-            <button onClick={openCreate} className="text-xs text-orange-500/70 hover:text-orange-400 transition-colors mt-1">
+            <Button variant="link" size="sm" onClick={openCreate} className="text-xs text-primary/70 h-auto p-0">
               or create a new one →
-            </button>
+            </Button>
           </div>
         ) : (
           <>
             {/* Header */}
-            <div className="px-6 py-4 border-b border-white/[0.06] flex-shrink-0 bg-[#0c0c0e] flex items-center justify-between gap-4">
+            <div className="px-6 py-4 border-b border-border flex-shrink-0 flex items-center justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                  <h2 className="font-semibold text-white text-[15px] leading-tight">{previewing.name}</h2>
+                  <h2 className="font-semibold text-[15px] leading-tight">{previewing.name}</h2>
                   {previewing.is_system === 1 && (
-                    <span className="text-[10px] font-bold bg-purple-500/15 text-purple-400 px-1.5 py-0.5 rounded uppercase tracking-wide">built-in</span>
+                    <Badge variant="secondary" className="text-[10px] text-purple-400 bg-purple-500/15 uppercase tracking-wide">built-in</Badge>
                   )}
                   {previewing.slug && (
-                    <span className="text-[11px] text-orange-400/80 bg-orange-500/8 px-1.5 py-0.5 rounded font-mono border border-orange-500/10">{previewing.slug}</span>
+                    <Badge variant="outline" className="text-[11px] text-primary/80 font-mono border-primary/10">{previewing.slug}</Badge>
                   )}
                 </div>
-                <p className="text-xs text-zinc-500 truncate">{previewing.subject}</p>
+                <p className="text-xs text-muted-foreground truncate">{previewing.subject}</p>
               </div>
               {previewing.is_system === 0 && (
                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <button
-                    onClick={() => openEdit(previewing)}
-                    className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/[0.05] transition-colors border border-white/[0.07]"
-                  >
+                  <Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs" onClick={() => openEdit(previewing)}>
                     <Pencil size={11} /> Edit
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (!confirm(`Delete template "${previewing.name}"?`)) return;
-                      await api.delete(`/api/templates/${previewing.id}`);
-                      setPreviewing(null);
-                      load();
-                    }}
-                    className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-colors border border-white/[0.07]"
-                  >
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs text-muted-foreground hover:text-destructive hover:border-destructive/40" onClick={() => setDeleteTarget(previewing)}>
                     <Trash2 size={11} /> Delete
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
 
-            {/* Email preview — centered card on dark bg */}
-            <div className="flex-1 overflow-y-auto p-6">
-              {previewLoading ? (
-                <div className="flex items-center justify-center h-32">
-                  <div className="flex items-center gap-2 text-zinc-600">
-                    <div className="w-3.5 h-3.5 border-2 border-zinc-700 border-t-orange-500 rounded-full animate-spin" />
+            {/* Email preview */}
+            <ScrollArea className="flex-1">
+              <div className="p-6">
+                {previewLoading ? (
+                  <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground">
+                    <div className="size-3.5 border-2 border-muted border-t-primary rounded-full animate-spin" />
                     <span className="text-xs">Rendering…</span>
                   </div>
-                </div>
-              ) : previewHtml ? (
-                <div className="max-w-[640px] mx-auto">
-                  {/* Fake email client chrome */}
-                  <div className="bg-[#1a1a1f] rounded-t-xl border border-white/[0.06] border-b-0 px-4 py-2.5 flex items-center gap-2">
-                    <div className="flex gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+                ) : previewHtml ? (
+                  <div className="max-w-[640px] mx-auto">
+                    <div className="bg-[#1e1e1e] rounded-t-xl border border-[#3a3a3a] border-b-0 px-4 py-2.5 flex items-center gap-2">
+                      <div className="flex gap-1.5">
+                        <div className="size-2.5 rounded-full bg-[#ff5f57]" />
+                        <div className="size-2.5 rounded-full bg-[#febc2e]" />
+                        <div className="size-2.5 rounded-full bg-[#28c840]" />
+                      </div>
+                      <span className="text-[11px] text-[#999] font-mono ml-2 truncate">{previewing.subject}</span>
                     </div>
-                    <span className="text-[11px] text-zinc-600 font-mono ml-2 truncate">{previewing.subject}</span>
+                    <div className="bg-white rounded-b-xl overflow-hidden border border-border border-t-0 shadow-2xl shadow-black/50">
+                      <iframe
+                        srcDoc={previewHtml}
+                        className="w-full border-0 block"
+                        style={{ minHeight: '480px', height: 'auto' }}
+                        sandbox="allow-same-origin"
+                        title="Template preview"
+                        onLoad={e => {
+                          const iframe = e.currentTarget;
+                          const body = iframe.contentDocument?.body;
+                          if (body) iframe.style.height = body.scrollHeight + 'px';
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="bg-white rounded-b-xl overflow-hidden border border-white/[0.06] border-t-0 shadow-2xl shadow-black/50">
-                    <iframe
-                      srcDoc={previewHtml}
-                      className="w-full border-0 block"
-                      style={{ minHeight: '480px', height: 'auto' }}
-                      sandbox="allow-same-origin"
-                      title="Template preview"
-                      onLoad={e => {
-                        const iframe = e.currentTarget;
-                        const body = iframe.contentDocument?.body;
-                        if (body) iframe.style.height = body.scrollHeight + 'px';
-                      }}
-                    />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-32 gap-2 text-muted-foreground">
+                    <Mail size={20} strokeWidth={1} className="opacity-40" />
+                    <p className="text-xs">No preview available</p>
                   </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-32 gap-2 text-zinc-700">
-                  <Mail size={20} strokeWidth={1} className="opacity-40" />
-                  <p className="text-xs">No preview available</p>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            </ScrollArea>
           </>
         )}
       </div>
@@ -515,3 +514,17 @@ export default function TemplatesPage() {
 }
 
 
+interface Template {
+  id: string;
+  name: string;
+  slug: string | null;
+  subject: string;
+  html_body: string;
+  text_body: string | null;
+  layout: string | null;
+  is_system: number;
+  domain_id: string | null;
+  variables: string[];
+  created_at: string;
+  updated_at: string;
+}

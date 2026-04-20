@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Globe, Send, RefreshCw, CheckCircle2, XCircle, ArrowRight,
-  TrendingUp, AlertTriangle,
+  TrendingUp, AlertTriangle, Mail, Activity,
 } from 'lucide-react';
 import api from '../api';
+import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -96,7 +101,7 @@ function AreaChart({ daily }: { daily: DailyBucket[] }) {
 
   if (!daily.length) {
     return (
-      <div className="h-[180px] flex flex-col items-center justify-center gap-2 text-zinc-700">
+      <div className="h-[180px] flex flex-col items-center justify-center gap-2 text-muted-foreground">
         <TrendingUp size={20} className="opacity-40" />
         <span className="text-xs">No data for this period</span>
       </div>
@@ -141,8 +146,8 @@ function AreaChart({ daily }: { daily: DailyBucket[] }) {
       >
         <defs>
           <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#f97316" stopOpacity="0.18" />
-            <stop offset="80%" stopColor="#f97316" stopOpacity="0" />
+            <stop offset="0%" stopColor="#f97316" stopOpacity="0.12" />
+            <stop offset="85%" stopColor="#f97316" stopOpacity="0" />
           </linearGradient>
           <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stopColor="#f97316" stopOpacity="0.6" />
@@ -153,36 +158,20 @@ function AreaChart({ daily }: { daily: DailyBucket[] }) {
         {yGrid.map(t => {
           const gy = padY + (1 - t) * plotH;
           return (
-            <line
-              key={t}
-              x1={padX} x2={W - padX} y1={gy} y2={gy}
-              stroke="#ffffff" strokeOpacity="0.04" strokeWidth="1"
-            />
+            <line key={t} x1={padX} x2={W - padX} y1={gy} y2={gy}
+              stroke="currentColor" strokeOpacity="0.06" strokeWidth="1" className="text-foreground" />
           );
         })}
 
         <path d={areaPath} fill="url(#areaFill)" />
-        <path
-          d={linePath}
-          stroke="url(#lineGrad)"
-          strokeWidth="2"
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        <path d={linePath} stroke="url(#lineGrad)" strokeWidth="2" fill="none"
+          strokeLinecap="round" strokeLinejoin="round" />
 
         {tooltip && (
-          <>
-            <line
-              x1={tooltip.x} x2={tooltip.x}
-              y1={padY} y2={H - padBottom}
-              stroke="#ffffff" strokeOpacity="0.1" strokeWidth="1"
-              strokeDasharray="4 3"
-            />
-            <circle
-              cx={tooltip.x} cy={tooltip.y}
-              r={4} fill="#f97316" stroke="#0c0c0e" strokeWidth="2"
-            />
+          <>  
+            <line x1={tooltip.x} x2={tooltip.x} y1={padY} y2={H - padBottom}
+              stroke="currentColor" strokeOpacity="0.1" strokeWidth="1" strokeDasharray="4 3" className="text-foreground" />
+            <circle cx={tooltip.x} cy={tooltip.y} r={4} fill="#ea580c" stroke="var(--color-card)" strokeWidth="2" />
           </>
         )}
       </svg>
@@ -190,14 +179,12 @@ function AreaChart({ daily }: { daily: DailyBucket[] }) {
       {tooltip && (() => {
         const pct = tooltip.x / W;
         return (
-          <div
-            className="absolute -top-2 pointer-events-none z-10"
-            style={{ left: `${pct * 100}%`, transform: pct > 0.7 ? 'translateX(-100%)' : 'translateX(-50%)' }}
-          >
-            <div className="bg-[#1a1a1f] border border-white/[0.1] rounded-lg px-3 py-2 shadow-xl text-xs whitespace-nowrap">
-              <p className="text-zinc-400 mb-1">{shortDate(tooltip.d.date)}</p>
-              <p className="text-white font-medium">{tooltip.d.sent.toLocaleString()} sent</p>
-              {tooltip.d.failed > 0 && <p className="text-red-400">{tooltip.d.failed} failed</p>}
+          <div className="absolute -top-2 pointer-events-none z-10"
+            style={{ left: `${pct * 100}%`, transform: pct > 0.7 ? 'translateX(-100%)' : 'translateX(-50%)' }}>
+            <div className="bg-popover border border-border rounded-lg px-3 py-2 shadow-xl text-xs whitespace-nowrap">
+              <p className="text-muted-foreground mb-1">{shortDate(tooltip.d.date)}</p>
+              <p className="text-foreground font-medium">{tooltip.d.sent.toLocaleString()} sent</p>
+              {tooltip.d.failed > 0 && <p className="text-destructive">{tooltip.d.failed} failed</p>}
             </div>
           </div>
         );
@@ -207,10 +194,10 @@ function AreaChart({ daily }: { daily: DailyBucket[] }) {
         <div className="flex justify-between mt-2 px-1">
           {daily.length <= 8
             ? daily.map((d, i) => (
-              <span key={i} className="text-[10px] text-zinc-700 tabular-nums">{shortDate(d.date)}</span>
+              <span key={i} className="text-[10px] text-muted-foreground/50 tabular-nums">{shortDate(d.date)}</span>
             ))
             : [0, Math.floor(daily.length / 4), Math.floor(daily.length / 2), Math.floor((daily.length * 3) / 4), daily.length - 1].map(i => (
-              <span key={i} className="text-[10px] text-zinc-700 tabular-nums">{shortDate(daily[i].date)}</span>
+              <span key={i} className="text-[10px] text-muted-foreground/50 tabular-nums">{shortDate(daily[i].date)}</span>
             ))
           }
         </div>
@@ -219,49 +206,28 @@ function AreaChart({ daily }: { daily: DailyBucket[] }) {
   );
 }
 
-// ─── KPI Card ─────────────────────────────────────────────────────────────────
+// ─── Page Skeleton ────────────────────────────────────────────────────────────
 
-function KpiCard({ label, value, sub, accent = '#f97316', children }: {
-  label: string;
-  value: string;
-  sub?: string;
-  accent?: string;
-  children?: React.ReactNode;
-}) {
+function DashboardSkeleton() {
   return (
-    <div className="bg-[#111114] border border-white/[0.07] rounded-xl p-5 flex flex-col justify-between hover:border-white/[0.12] transition-all duration-200">
-      <p className="text-[11px] font-medium text-zinc-600 uppercase tracking-wider mb-3">{label}</p>
-      <div>
-        <p className="text-[28px] font-bold tabular-nums leading-none" style={{ color: accent }}>{value}</p>
-        {sub && <p className="text-xs text-zinc-600 mt-1.5 leading-tight">{sub}</p>}
-        {children && <div className="mt-3">{children}</div>}
-      </div>
-    </div>
-  );
-}
-
-// ─── Skeleton ────────────────────────────────────────────────────────────────
-
-function Skeleton() {
-  return (
-    <div className="p-6 lg:p-8 min-h-full animate-pulse">
-      <div className="flex items-center justify-between mb-6">
-        <div className="space-y-1.5">
-          <div className="h-5 w-24 bg-white/[0.06] rounded-md" />
-          <div className="h-3 w-40 bg-white/[0.04] rounded" />
+    <div className="p-6 lg:p-8 min-h-full flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1.5">
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-3 w-40" />
         </div>
         <div className="flex gap-2">
-          <div className="h-8 w-28 bg-white/[0.06] rounded-lg" />
-          <div className="h-8 w-8 bg-white/[0.06] rounded-lg" />
+          <Skeleton className="h-8 w-28" />
+          <Skeleton className="h-8 w-8" />
         </div>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        {[...Array(4)].map((_, i) => <div key={i} className="h-[100px] bg-[#111114] border border-white/[0.07] rounded-xl" />)}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-[100px] rounded-xl" />)}
       </div>
-      <div className="h-[260px] bg-[#111114] border border-white/[0.07] rounded-xl mb-4" />
+      <Skeleton className="h-[260px] rounded-xl" />
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <div className="lg:col-span-3 h-[240px] bg-[#111114] border border-white/[0.07] rounded-xl" />
-        <div className="lg:col-span-2 h-[240px] bg-[#111114] border border-white/[0.07] rounded-xl" />
+        <Skeleton className="lg:col-span-3 h-[240px] rounded-xl" />
+        <Skeleton className="lg:col-span-2 h-[240px] rounded-xl" />
       </div>
     </div>
   );
@@ -291,7 +257,7 @@ export default function Dashboard() {
 
   useEffect(() => { load(range); }, [range]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!stats) return <Skeleton />;
+  if (!stats) return <DashboardSkeleton />;
 
   const totalToday = stats.sentToday + stats.failedToday;
   const deliveryRate = totalToday > 0 ? (stats.sentToday / totalToday) * 100 : 100;
@@ -303,152 +269,179 @@ export default function Dashboard() {
   const limitRemaining = stats.cfDailyLimit - stats.sentToday;
 
   return (
-    <div className="p-6 lg:p-8 min-h-full">
+    <div className="p-6 lg:p-8 min-h-full flex flex-col gap-4">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-white tracking-tight">Dashboard</h1>
-          <p className="text-xs text-zinc-600 mt-0.5">
+          <h1 className="text-lg font-semibold tracking-tight">Dashboard</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex bg-[#111114] border border-white/[0.07] rounded-lg p-[3px]">
+          <div className="flex bg-card border border-border rounded-lg p-[3px]">
             {RANGES.map(r => (
               <button
                 key={r}
                 onClick={() => setRange(r)}
-                className={`text-xs font-medium px-3 py-1.5 rounded-md transition-all duration-150 ${
-                  range === r
-                    ? 'bg-white/[0.08] text-white'
-                    : 'text-zinc-600 hover:text-zinc-300'
+                className={`text-xs font-semibold px-3 py-1.5 rounded-md transition-all duration-150 ${
+                  range === r ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {r}
               </button>
             ))}
           </div>
-          <button
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => load(range)}
             disabled={refreshing}
-            className="flex items-center justify-center w-8 h-8 bg-[#111114] border border-white/[0.07] hover:border-white/[0.14] rounded-lg text-zinc-500 hover:text-zinc-300 transition-all duration-150 disabled:opacity-50"
             aria-label="Refresh"
+            className="size-8"
           >
             <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* ── KPI tiles ──────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <KpiCard
-          label="Sent today"
-          value={fmt(stats.sentToday)}
-          sub={stats.failedToday > 0 ? `${stats.failedToday} failed` : 'No failures today'}
-          accent="#f97316"
-        />
-        <KpiCard
-          label="All-time total"
-          value={fmt(stats.totalEmails)}
-          sub="emails sent"
-          accent="#e4e4e7"
-        />
-        <KpiCard
-          label="Delivery rate"
-          value={`${deliveryPct}%`}
-          accent={rateColor}
-        >
-          <span
-            className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
-            style={{ color: rateColor, background: `${rateColor}18` }}
-          >
-            {deliveryRate < 95 && <AlertTriangle size={9} />}
-            {rateLabel}
-          </span>
-        </KpiCard>
-        <div className="bg-[#111114] border border-white/[0.07] rounded-xl p-5 hover:border-white/[0.12] transition-all duration-200">
-          <p className="text-[11px] font-medium text-zinc-600 uppercase tracking-wider mb-3">CF Daily limit</p>
-          <p className="text-[28px] font-bold tabular-nums leading-none text-white">{fmt(stats.sentToday)}</p>
-          <p className="text-xs text-zinc-600 mt-1.5">{fmt(limitRemaining)} of {fmt(stats.cfDailyLimit)} remaining</p>
-          <div className="mt-3">
-            <div className="h-1 bg-white/[0.06] rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-700"
-                style={{
-                  width: `${limitPct}%`,
-                  backgroundColor: limitPct >= 90 ? '#ef4444' : limitPct >= 70 ? '#f59e0b' : '#f97316',
-                }}
-              />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+
+        {/* Sent today */}
+        <Card className="p-4">
+          <div className="flex items-center gap-1.5 mb-3">
+            <div className="size-5 rounded-md bg-orange-50 flex items-center justify-center">
+              <Send size={11} className="text-primary" />
             </div>
-            <p className="text-[10px] text-zinc-700 mt-1">{limitPct.toFixed(1)}% used</p>
+            <p className="text-[11px] font-semibold text-muted-foreground">Sent today</p>
           </div>
-        </div>
+          <p className="text-[26px] font-bold tabular-nums tracking-tight leading-none text-foreground">{fmt(stats.sentToday)}</p>
+          <p className="text-[11.5px] text-muted-foreground mt-2">
+            {stats.failedToday > 0
+              ? <span className="text-destructive">{stats.failedToday} failed</span>
+              : <span className="text-emerald-600">&#10003; All delivered</span>}
+          </p>
+        </Card>
+
+        {/* All-time */}
+        <Card className="p-4">
+          <div className="flex items-center gap-1.5 mb-3">
+            <div className="size-5 rounded-md bg-blue-50 flex items-center justify-center">
+              <Mail size={11} className="text-blue-500" />
+            </div>
+            <p className="text-[11px] font-semibold text-muted-foreground">All-time</p>
+          </div>
+          <p className="text-[26px] font-bold tabular-nums tracking-tight leading-none text-foreground">{fmt(stats.totalEmails)}</p>
+          <p className="text-[11.5px] text-muted-foreground mt-2">emails delivered</p>
+        </Card>
+
+        {/* Delivery rate */}
+        <Card className="p-4">
+          <div className="flex items-center gap-1.5 mb-3">
+            <div className="size-5 rounded-md flex items-center justify-center"
+              style={{ background: `${rateColor}15` }}>
+              <Activity size={11} style={{ color: rateColor }} />
+            </div>
+            <p className="text-[11px] font-semibold text-muted-foreground">Delivery rate</p>
+          </div>
+          <p className="text-[26px] font-bold tabular-nums tracking-tight leading-none" style={{ color: rateColor }}>{deliveryPct}%</p>
+          <div className="mt-2">
+            <span className={cn(
+              'inline-flex items-center gap-1 text-[10.5px] font-semibold px-1.5 py-0.5 rounded-md',
+              deliveryRate >= 95 ? 'bg-emerald-50 text-emerald-700' :
+              deliveryRate >= 80 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'
+            )}>
+              {deliveryRate < 95 && <AlertTriangle size={9} />}
+              {rateLabel}
+            </span>
+          </div>
+        </Card>
+
+        {/* CF Daily quota */}
+        <Card className="p-4">
+          <div className="flex items-center gap-1.5 mb-3">
+            <div className="size-5 rounded-md bg-violet-50 flex items-center justify-center">
+              <TrendingUp size={11} className="text-violet-500" />
+            </div>
+            <p className="text-[11px] font-semibold text-muted-foreground">Daily quota</p>
+          </div>
+          <p className="text-[26px] font-bold tabular-nums tracking-tight leading-none text-foreground">{fmt(stats.sentToday)}</p>
+          <p className="text-[11.5px] text-muted-foreground mt-2">
+            {fmt(limitRemaining)} of {fmt(stats.cfDailyLimit)} remaining
+          </p>
+          <div className="mt-2.5">
+            <div className="h-1 bg-muted rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-700"
+                style={{ width: `${limitPct}%`, backgroundColor: limitPct >= 90 ? '#ef4444' : limitPct >= 70 ? '#f59e0b' : '#ea580c' }} />
+            </div>
+            <p className="text-[10px] text-muted-foreground/50 mt-1">{limitPct.toFixed(1)}% used</p>
+          </div>
+        </Card>
       </div>
 
       {/* ── Volume chart ────────────────────────────────────────────────────── */}
-      <div className="bg-[#111114] border border-white/[0.07] rounded-xl px-5 pt-5 pb-3 mb-4">
+      <Card className="px-5 pt-5 pb-3">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-sm font-medium text-white">Email volume</p>
-            <p className="text-xs text-zinc-600 mt-0.5">
+            <p className="text-sm font-medium">Email volume</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
               {stats.daily.reduce((a, d) => a + d.sent, 0).toLocaleString()} sent ·{' '}
               {range === '1d' ? 'past 24h' : range === '7d' ? 'past 7 days' : 'past 30 days'}
             </p>
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-zinc-600">
-            <span className="w-3 h-[2px] bg-orange-500 rounded inline-block" />
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span className="w-3 h-[2px] bg-primary rounded inline-block" />
             Sent
           </div>
         </div>
         <AreaChart daily={stats.daily} />
-      </div>
+      </Card>
 
       {/* ── Bottom 2-col ────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
 
         {/* Domain breakdown */}
-        <div className="lg:col-span-3 bg-[#111114] border border-white/[0.07] rounded-xl overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-[14px] border-b border-white/[0.06]">
+        <Card className="lg:col-span-3 overflow-hidden p-0">
+          <div className="flex items-center justify-between px-5 py-[14px] border-b border-border">
             <div>
-              <p className="text-sm font-medium text-white">Domains</p>
-              <p className="text-xs text-zinc-600 mt-0.5">
+              <p className="text-sm font-medium">Domains</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {stats.totalDomains} total · {stats.verifiedDomains} verified
               </p>
             </div>
-            <a href="/domains" className="text-[11px] text-zinc-600 hover:text-orange-400 flex items-center gap-1 transition-colors">
+            <a href="/domains" className="text-[11px] text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors">
               Manage <ArrowRight size={10} />
             </a>
           </div>
 
           {stats.domainBreakdown.length === 0 ? (
-            <div className="py-12 flex flex-col items-center gap-2 text-zinc-700">
+            <div className="py-12 flex flex-col items-center gap-2 text-muted-foreground">
               <Globe size={18} className="opacity-40" />
               <span className="text-xs">No domains configured yet</span>
             </div>
           ) : (
-            <div className="divide-y divide-white/[0.04]">
+            <div className="divide-y divide-border">
               {stats.domainBreakdown.map(d => {
                 const total = d.sent + d.failed;
                 const rate = total > 0 ? Math.round((d.sent / total) * 100) : null;
                 const share = stats.cfDailyLimit > 0 ? Math.min(100, Math.round((d.sent / stats.cfDailyLimit) * 100)) : 0;
                 const shareColor = share >= 50 ? '#ef4444' : share >= 25 ? '#f59e0b' : '#10b981';
                 return (
-                  <div key={d.name} className="px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
+                  <div key={d.name} className="px-5 py-3.5 hover:bg-muted/50 transition-colors">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${d.verified ? 'bg-emerald-500' : 'bg-amber-500/60'}`} />
-                        <span className="text-[13px] text-zinc-200 font-mono truncate">{d.name}</span>
+                        <span className={`size-1.5 rounded-full flex-shrink-0 ${d.verified ? 'bg-emerald-500' : 'bg-amber-500/60'}`} />
+                        <span className="text-[13px] text-foreground font-mono truncate">{d.name}</span>
                       </div>
                       <div className="flex items-center gap-4 text-xs flex-shrink-0 ml-3">
                         {total === 0 ? (
-                          <span className="text-zinc-700 tabular-nums">No emails yet</span>
+                          <span className="text-muted-foreground tabular-nums">No emails yet</span>
                         ) : (
                           <>
-                            <span className="text-zinc-500 tabular-nums">{d.sent.toLocaleString()} sent</span>
-                            {d.failed > 0 && (
-                              <span className="text-red-400 tabular-nums">{d.failed} failed</span>
-                            )}
+                            <span className="text-muted-foreground tabular-nums">{d.sent.toLocaleString()} sent</span>
+                            {d.failed > 0 && <span className="text-destructive tabular-nums">{d.failed} failed</span>}
                             {rate !== null && (
                               <span className="font-medium tabular-nums" style={{ color: rate >= 95 ? '#10b981' : '#f59e0b' }}>
                                 {rate}%
@@ -460,13 +453,11 @@ export default function Dashboard() {
                     </div>
                     {total > 0 && (
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-0.5 bg-white/[0.06] rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-700"
-                            style={{ width: `${share}%`, backgroundColor: shareColor }}
-                          />
+                        <div className="flex-1 h-0.5 bg-border rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all duration-700"
+                            style={{ width: `${share}%`, backgroundColor: shareColor }} />
                         </div>
-                        <span className="text-[10px] text-zinc-700 tabular-nums w-8 text-right">{share}%</span>
+                        <span className="text-[10px] text-muted-foreground/50 tabular-nums w-8 text-right">{share}%</span>
                       </div>
                     )}
                   </div>
@@ -476,57 +467,96 @@ export default function Dashboard() {
           )}
 
           {stats.totalDomains > stats.verifiedDomains && (
-            <div className="px-5 py-3 border-t border-white/[0.04] flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500/60 flex-shrink-0" />
-              <span className="text-xs text-zinc-600">
+            <div className="px-5 py-3 border-t border-border flex items-center gap-2">
+              <span className="size-1.5 rounded-full bg-amber-500/60 flex-shrink-0" />
+              <span className="text-xs text-muted-foreground">
                 {stats.totalDomains - stats.verifiedDomains} domain{stats.totalDomains - stats.verifiedDomains !== 1 ? 's' : ''} pending DNS verification
               </span>
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Recent activity */}
-        <div className="lg:col-span-2 bg-[#111114] border border-white/[0.07] rounded-xl overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-[14px] border-b border-white/[0.06]">
-            <p className="text-sm font-medium text-white">Recent activity</p>
-            <a href="/logs" className="text-[11px] text-zinc-600 hover:text-orange-400 flex items-center gap-1 transition-colors">
+        <Card className="lg:col-span-2 overflow-hidden p-0">
+          <div className="flex items-center justify-between px-5 py-[14px] border-b border-border">
+            <p className="text-sm font-medium">Recent activity</p>
+            <a href="/logs" className="text-[11px] text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors">
               All logs <ArrowRight size={10} />
             </a>
           </div>
 
           {logs.length === 0 ? (
-            <div className="py-12 flex flex-col items-center gap-2 text-zinc-700">
+            <div className="py-12 flex flex-col items-center gap-2 text-muted-foreground">
               <Send size={18} className="opacity-40" />
               <span className="text-xs">No emails sent yet</span>
             </div>
           ) : (
-            <div className="divide-y divide-white/[0.04]">
+            <div className="divide-y divide-border">
               {logs.map(log => (
-                <div key={log.id} className="flex items-start gap-3 px-5 py-3 hover:bg-white/[0.02] transition-colors">
+                <div className="flex items-start gap-3 px-5 py-3 hover:bg-muted/40nsition-colors">
                   <div className="mt-0.5 flex-shrink-0">
                     {log.status === 'sent'
                       ? <CheckCircle2 size={13} className="text-emerald-500" />
-                      : <XCircle size={13} className="text-red-400" />}
+                      : <XCircle size={13} className="text-destructive" />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13px] text-zinc-200 truncate leading-tight">
+                    <p className="text-[13px] text-foreground truncate leading-tight">
                       {log.subject || '(no subject)'}
                     </p>
-                    <p className="text-[11px] text-zinc-600 font-mono truncate mt-0.5">{log.to_address}</p>
+                    <p className="text-[11px] text-muted-foreground font-mono truncate mt-0.5">{log.to_address}</p>
                     {log.error && (
-                      <p className="text-[11px] text-red-400/80 truncate mt-0.5">{log.error}</p>
+                      <p className="text-[11px] text-destructive/80 truncate mt-0.5">{log.error}</p>
                     )}
                   </div>
-                  <span className="text-[10px] text-zinc-700 whitespace-nowrap flex-shrink-0 mt-0.5">
+                  <Badge variant="outline" className="text-[10px] text-muted-foreground/50 whitespace-nowrap flex-shrink-0 mt-0.5 border-0 px-0">
                     {timeAgo(log.sent_at)}
-                  </span>
+                  </Badge>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </Card>
 
       </div>
     </div>
   );
+}
+
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface DomainBreakdown {
+  name: string;
+  verified: boolean;
+  sent: number;
+  failed: number;
+}
+
+interface DailyBucket {
+  date: string;
+  sent: number;
+  failed: number;
+}
+
+interface Stats {
+  totalDomains: number;
+  verifiedDomains: number;
+  totalTemplates: number;
+  totalKeys: number;
+  totalEmails: number;
+  sentToday: number;
+  failedToday: number;
+  cfDailyLimit: number;
+  domainBreakdown: DomainBreakdown[];
+  daily: DailyBucket[];
+}
+
+interface LogRow {
+  id: string;
+  to_address: string;
+  from_address: string;
+  subject: string;
+  status: 'sent' | 'failed';
+  error: string | null;
+  sent_at: string;
 }

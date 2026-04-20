@@ -6,6 +6,8 @@ services:
       dockerfile: Dockerfile
       target: dev
     command: sh -c "npm install && tsx watch src/index.ts"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=development
       - SQLITE_HUB_API_URL=http://host.docker.internal:4004
