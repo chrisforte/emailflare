@@ -1,37 +1,42 @@
+import { timingSafeEqual } from 'node:crypto';
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import { db } from '../db.js';
-import { signToken } from '../middleware/auth.js';
+import { env } from '../env.js';
+import { getSession, saveSession, clearSession } from '../middleware/auth.js';
 
 const app = new Hono();
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  token: z.string().min(1),
 });
 
+// POST /api/auth/login — public, no session required
 app.post('/login', zValidator('json', loginSchema), async (c) => {
-  const { email, password } = c.req.valid('json');
+  const { token } = c.req.valid('json');
 
-  const passwordHash = createHash('sha256').update(password).digest('hex');
-  const user = await db.table('admin_users').findOne({
-    where: { email, password_hash: passwordHash },
-  });
+  const expected = Buffer.from(env.ADMIN_TOKEN);
+  const provided = Buffer.from(token);
+  const valid =
+    provided.length === expected.length &&
+    timingSafeEqual(expected, provided);
 
-  if (!user) {
-    return c.json({ error: 'Invalid email or password' }, 401);
-  }
+  if (!valid) return c.json({ error: 'Invalid token' }, 401);
 
-  const token = await signToken({ sub: (user as any).id, email: (user as any).email });
-  return c.json({ token, email: (user as any).email });
+  await saveSession(c, { isLoggedIn: true });
+  return c.json({ ok: true });
 });
 
+// POST /api/auth/logout — public, clears session
+app.post('/logout', (c) => {
+  clearSession(c);
+  return c.json({ ok: true });
+});
+
+// GET /api/auth/me — protected by requireAdminToken in index.ts
 app.get('/me', async (c) => {
-  // Protected by requireJwt in index.ts — user is already validated
-  const user = c.get('user' as never) as { sub: string; email: string };
-  return c.json({ id: user.sub, email: user.email });
+  const session = await getSession(c);
+  return c.json({ ok: session.isLoggedIn });
 });
 
 export default app;

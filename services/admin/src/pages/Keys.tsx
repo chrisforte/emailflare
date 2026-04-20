@@ -8,11 +8,21 @@ interface ApiKey {
   key_prefix: string;
   scope: 'global' | 'domain' | 'multi';
   active: number;
+  last_used_at: string | null;
+  send_count: number;
   created_at: string;
 }
 
 interface NewKey extends ApiKey {
   key: string;
+}
+
+function timeAgo(iso: string) {
+  const secs = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (secs < 60)    return `${secs}s ago`;
+  if (secs < 3600)  return `${Math.floor(secs / 60)}m ago`;
+  if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`;
+  return `${Math.floor(secs / 86400)}d ago`;
 }
 
 export default function KeysPage() {
@@ -22,6 +32,7 @@ export default function KeysPage() {
   const [newKey, setNewKey] = useState<NewKey | null>(null);
   const [copied, setCopied] = useState(false);
   const [form, setForm] = useState({ name: '', scope: 'global' as const });
+  const [revokeId, setRevokeId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -42,8 +53,13 @@ export default function KeysPage() {
   }
 
   async function handleRevoke(key: ApiKey) {
-    if (!confirm(`Revoke key "${key.name}"? This cannot be undone.`)) return;
-    await api.delete(`/api/keys/${key.id}`);
+    setRevokeId(key.id);
+  }
+
+  async function confirmRevoke() {
+    if (!revokeId) return;
+    await api.delete(`/api/keys/${revokeId}`);
+    setRevokeId(null);
     load();
   }
 
@@ -55,6 +71,21 @@ export default function KeysPage() {
 
   return (
     <div className="p-8">
+      <div className="max-w-[580px]">
+      {/* Confirm revoke modal */}
+      {revokeId && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-sm">
+            <h2 className="text-white font-semibold mb-2">Revoke API key?</h2>
+            <p className="text-zinc-400 text-sm mb-5">This key will stop working immediately and cannot be restored.</p>
+            <div className="flex gap-2">
+              <button onClick={confirmRevoke} className="bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg px-4 py-2 transition-colors">Revoke</button>
+              <button onClick={() => setRevokeId(null)} className="text-sm text-zinc-400 hover:text-white px-4 py-2">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -127,7 +158,13 @@ export default function KeysPage() {
                   <span className="font-medium text-white text-sm">{k.name}</span>
                   <span className="text-xs bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded font-mono">{k.scope}</span>
                 </div>
-                <code className="text-xs text-zinc-600 font-mono mt-0.5">{k.key_prefix}…</code>
+                <div className="flex items-center gap-3 mt-0.5">
+                  <code className="text-xs text-zinc-600 font-mono">{k.key_prefix}…</code>
+                  <span className="text-xs text-zinc-600">{k.send_count.toLocaleString()} sends</span>
+                  {k.last_used_at && (
+                    <span className="text-xs text-zinc-600">last used {timeAgo(k.last_used_at)}</span>
+                  )}
+                </div>
               </div>
               <button onClick={() => handleRevoke(k)} className="text-xs text-zinc-500 hover:text-red-400 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-zinc-800 transition-colors">
                 <Trash2 size={11} /> Revoke
@@ -136,6 +173,7 @@ export default function KeysPage() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

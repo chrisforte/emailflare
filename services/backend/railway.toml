@@ -1,0 +1,10 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+buildTarget = "prod"
+
+[deploy]
+# backend is a private service — no public domain needed
+# Railway still checks /health internally via TCP
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

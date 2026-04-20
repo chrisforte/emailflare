@@ -16,6 +16,7 @@
     "@react-email/render": "^1.0.5",
     "@sqlite-hub/client": "^0.4.2",
     "hono": "^4.7.5",
+    "iron-session": "^8.0.3",
     "jose": "^5.10.0",
     "nanoid": "^5.1.5",
     "react": "^19.1.0",

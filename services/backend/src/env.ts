@@ -4,10 +4,32 @@ const required = (name: string): string => {
   return val;
 };
 
+const DEV_SESSION_SECRET = 'emailflair-dev-secret-change-in-production-32ch';
+
+function sessionSecret(): string {
+  const val = process.env.SESSION_SECRET;
+  if (!val) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Missing required environment variable: SESSION_SECRET');
+    }
+    console.warn('[env] SESSION_SECRET not set — using insecure dev default');
+    return DEV_SESSION_SECRET;
+  }
+  if (val.length < 32) throw new Error('SESSION_SECRET must be at least 32 characters');
+  return val;
+}
+
+function adminToken(): string {
+  const val = required('ADMIN_TOKEN');
+  if (val.length < 32) throw new Error('ADMIN_TOKEN must be at least 32 characters');
+  return val;
+}
+
 export const env = {
   NODE_ENV: process.env.NODE_ENV ?? 'development',
   PORT: parseInt(process.env.PORT ?? '3000', 10),
-  ADMIN_TOKEN: required('ADMIN_TOKEN'),
+  ADMIN_TOKEN: adminToken(),
+  SESSION_SECRET: sessionSecret(),
   SQLITE_HUB_API_KEY: required('SQLITE_HUB_API_KEY'),
   SQLITE_HUB_API_URL: process.env.SQLITE_HUB_API_URL ?? 'https://api.mesahub.app',
   SQLITE_HUB_DB: process.env.SQLITE_HUB_DB ?? 'emailflair',

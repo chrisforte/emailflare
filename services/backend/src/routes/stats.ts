@@ -5,11 +5,21 @@ const CF_DAILY_LIMIT = 1000;
 
 const app = new Hono();
 
-// GET /api/stats
+function rangeStart(range: string): string {
+  const now = new Date();
+  switch (range) {
+    case '7d':  now.setDate(now.getDate() - 6);  now.setHours(0, 0, 0, 0); break;
+    case '30d': now.setDate(now.getDate() - 29); now.setHours(0, 0, 0, 0); break;
+    default:    now.setHours(0, 0, 0, 0); // '1d' = today
+  }
+  return now.toISOString();
+}
+
+// GET /api/stats?range=1d|7d|30d
 app.get('/', async (c) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayIso = today.toISOString();
+  const range   = (c.req.query('range') ?? '1d') as '1d' | '7d' | '30d';
+  const fromIso = rangeStart(range);
+  const todayIso = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.toISOString(); })();
 
   const [
     totalDomains,
@@ -20,29 +30,43 @@ app.get('/', async (c) => {
     sentToday,
     failedToday,
     domainBreakdownResult,
+    dailyResult,
   ] = await Promise.all([
     domains.count(),
     domains.count({ where: { verified: 1 } }),
     templates.count(),
     apiKeys.count({ where: { active: 1 } }),
     emailLogs.count(),
-    emailLogs.count({ where: { status: 'sent', sent_at: { gte: todayIso } } }),
+    emailLogs.count({ where: { status: 'sent',   sent_at: { gte: todayIso } } }),
     emailLogs.count({ where: { status: 'failed', sent_at: { gte: todayIso } } }),
     db.query(
       `SELECT
-         COALESCE(d.name, el.from_address) AS domain_name,
-         SUM(CASE WHEN el.status = 'sent'   THEN 1 ELSE 0 END) AS sent,
-         SUM(CASE WHEN el.status = 'failed' THEN 1 ELSE 0 END) AS failed
-       FROM email_logs el
-       LEFT JOIN domains d ON el.domain_id = d.id
-       WHERE el.sent_at >= ?
-       GROUP BY el.domain_id, d.name, el.from_address
-       ORDER BY sent DESC`,
-      [todayIso],
+         d.name AS domain_name,
+         d.verified,
+         COALESCE(SUM(CASE WHEN el.status = 'sent'   AND el.sent_at >= ? THEN 1 ELSE 0 END), 0) AS sent,
+         COALESCE(SUM(CASE WHEN el.status = 'failed' AND el.sent_at >= ? THEN 1 ELSE 0 END), 0) AS failed
+       FROM domains d
+       LEFT JOIN email_logs el ON el.domain_id = d.id
+       GROUP BY d.id, d.name, d.verified
+       ORDER BY sent DESC, d.name ASC`,
+      [fromIso, fromIso],
+    ),
+    // Daily buckets for sparkline (date, sent, failed)
+    db.query(
+      `SELECT
+         strftime('%Y-%m-%d', sent_at) AS date,
+         SUM(CASE WHEN status = 'sent'   THEN 1 ELSE 0 END) AS sent,
+         SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed
+       FROM email_logs
+       WHERE sent_at >= ?
+       GROUP BY strftime('%Y-%m-%d', sent_at)
+       ORDER BY date ASC`,
+      [fromIso],
     ),
   ]);
 
   return c.json({
+    range,
     totalDomains,
     verifiedDomains,
     totalTemplates,
@@ -51,8 +75,14 @@ app.get('/', async (c) => {
     sentToday,
     failedToday,
     cfDailyLimit: CF_DAILY_LIMIT,
-    domainBreakdown: (domainBreakdownResult.rows as Array<{ domain_name: string; sent: number; failed: number }>).map(r => ({
+    domainBreakdown: (domainBreakdownResult.rows as Array<{ domain_name: string; verified: number; sent: number; failed: number }>).map(r => ({
       name: r.domain_name,
+      verified: r.verified === 1,
+      sent: Number(r.sent),
+      failed: Number(r.failed),
+    })),
+    daily: (dailyResult.rows as Array<{ date: string; sent: number; failed: number }>).map(r => ({
+      date: r.date,
       sent: Number(r.sent),
       failed: Number(r.failed),
     })),

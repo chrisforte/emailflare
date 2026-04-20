@@ -45,6 +45,8 @@ export interface ApiKeyRow {
   key_prefix: string;
   scope: 'global' | 'domain' | 'multi';
   active: number; // 0 | 1
+  last_used_at: string | null;
+  send_count: number;
   created_at: string;
 }
 
@@ -63,6 +65,7 @@ export interface EmailLogRow {
   domain_id: string | null;
   template_id: string | null;
   api_key_id: string | null;
+  idempotency_key: string | null;
   error: string | null;
   sent_at: string;
 }
@@ -72,6 +75,12 @@ export const templates  = db.table<TemplateRow>('templates');
 export const apiKeys    = db.table<ApiKeyRow>('api_keys');
 export const apiKeyDomains = db.table<ApiKeyDomainRow>('api_key_domains');
 export const emailLogs  = db.table<EmailLogRow>('email_logs');
+
+/** Delete a domain and cascade-remove its api_key_domains associations. */
+export async function deleteDomainCascade(domainId: string): Promise<void> {
+  await apiKeyDomains.delete({ where: { domain_id: domainId } });
+  await domains.delete({ where: { id: domainId } });
+}
 
 // ── Schema bootstrap ──────────────────────────────────────────────────────────
 
@@ -113,15 +122,20 @@ export async function bootstrapSchema(): Promise<void> {
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS api_keys (
-      id          TEXT PRIMARY KEY,
-      name        TEXT NOT NULL,
-      key_hash    TEXT NOT NULL UNIQUE,
-      key_prefix  TEXT NOT NULL,
-      scope       TEXT NOT NULL DEFAULT 'global',
-      active      INTEGER NOT NULL DEFAULT 1,
-      created_at  TEXT NOT NULL
+      id           TEXT PRIMARY KEY,
+      name         TEXT NOT NULL,
+      key_hash     TEXT NOT NULL UNIQUE,
+      key_prefix   TEXT NOT NULL,
+      scope        TEXT NOT NULL DEFAULT 'global',
+      active       INTEGER NOT NULL DEFAULT 1,
+      last_used_at TEXT,
+      send_count   INTEGER NOT NULL DEFAULT 0,
+      created_at   TEXT NOT NULL
     )
   `);
+  // Migrations for api_keys
+  try { await db.exec(`ALTER TABLE api_keys ADD COLUMN last_used_at TEXT`); } catch { /* exists */ }
+  try { await db.exec(`ALTER TABLE api_keys ADD COLUMN send_count INTEGER NOT NULL DEFAULT 0`); } catch { /* exists */ }
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS api_key_domains (
@@ -133,19 +147,29 @@ export async function bootstrapSchema(): Promise<void> {
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS email_logs (
-      id             TEXT PRIMARY KEY,
-      to_address     TEXT NOT NULL,
-      from_address   TEXT NOT NULL,
-      subject        TEXT NOT NULL,
-      status         TEXT NOT NULL DEFAULT 'pending',
-      cf_message_id  TEXT,
-      domain_id      TEXT,
-      template_id    TEXT,
-      api_key_id     TEXT,
-      error          TEXT,
-      sent_at        TEXT NOT NULL
+      id               TEXT PRIMARY KEY,
+      to_address       TEXT NOT NULL,
+      from_address     TEXT NOT NULL,
+      subject          TEXT NOT NULL,
+      status           TEXT NOT NULL DEFAULT 'pending',
+      cf_message_id    TEXT,
+      domain_id        TEXT,
+      template_id      TEXT,
+      api_key_id       TEXT,
+      idempotency_key  TEXT,
+      error            TEXT,
+      sent_at          TEXT NOT NULL
     )
   `);
+  // Migrations for email_logs
+  try { await db.exec(`ALTER TABLE email_logs ADD COLUMN idempotency_key TEXT`); } catch { /* exists */ }
+
+  // Indices
+  try { await db.exec(`CREATE INDEX IF NOT EXISTS idx_logs_sent_at   ON email_logs(sent_at)`); } catch { /* ignore */ }
+  try { await db.exec(`CREATE INDEX IF NOT EXISTS idx_logs_status    ON email_logs(status)`); } catch { /* ignore */ }
+  try { await db.exec(`CREATE INDEX IF NOT EXISTS idx_logs_api_key   ON email_logs(api_key_id)`); } catch { /* ignore */ }
+  try { await db.exec(`CREATE INDEX IF NOT EXISTS idx_logs_domain    ON email_logs(domain_id)`); } catch { /* ignore */ }
+  try { await db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_logs_idempotency ON email_logs(idempotency_key) WHERE idempotency_key IS NOT NULL`); } catch { /* ignore */ }
 
   console.log('[db] schema bootstrapped');
 }
@@ -153,10 +177,26 @@ export async function bootstrapSchema(): Promise<void> {
 // ── System template subjects ──────────────────────────────────────────────────
 
 const SYSTEM_SUBJECTS: Record<LayoutName, string> = {
-  'welcome':      'Welcome to {{appName}}, {{name}}!',
-  'magic-link':   'Your sign-in link for {{appName}}',
-  'notification': '{{title}}',
-  'otp':          'Your {{appName}} verification code: {{code}}',
+  'welcome':                'Welcome to {{appName}}, {{name}}!',
+  'magic-link':             'Your sign-in link for {{appName}}',
+  'notification':           '{{title}}',
+  'otp':                    'Your {{appName}} verification code: {{code}}',
+  'email-verify':           'Verify your email address for {{appName}}',
+  'password-reset':         'Reset your {{appName}} password',
+  'password-changed':       'Your {{appName}} password has been changed',
+  'new-login':              'New sign-in to your {{appName}} account',
+  'order-confirm':          'Order #{{orderId}} confirmed',
+  'invoice':                'Invoice #{{invoiceId}} from {{appName}}',
+  'subscription-started':   'Welcome to {{planName}} — your subscription is active',
+  'subscription-cancelled': 'Your {{appName}} subscription has been cancelled',
+  'trial-ending':           'Your {{appName}} trial ends in {{daysLeft}} days',
+  'team-invite':            '{{inviterName}} invited you to join {{teamName}}',
+  'alert':                  '[{{severity}}] {{title}}',
+  'digest':                 'Your {{period}} digest — {{appName}}',
+  'announcement':           '{{title}}',
+  'feedback':               'Share your feedback — {{appName}}',
+  'account-deleted':        'Your {{appName}} account has been deleted',
+  'plain':                  '{{subject}}',
 };
 
 export async function seedSystemTemplates(): Promise<void> {

@@ -1,16 +1,16 @@
-:80 {
+:{$PORT:80} {
   @health path /health
   handle @health {
-    reverse_proxy backend:3000
+    reverse_proxy {$BACKEND_UPSTREAM:backend:3000}
   }
 
   @api path /api/* /v1/*
   handle @api {
-    reverse_proxy backend:3000
+    reverse_proxy {$BACKEND_UPSTREAM:backend:3000}
   }
 
   handle {
-    reverse_proxy admin:80
+    reverse_proxy {$ADMIN_UPSTREAM:admin:80}
   }
 
   log {

@@ -30,7 +30,7 @@ export const MagicLink: React.FC<MagicLinkProps> = ({
           <Section className="my-8">
             <Button
               href={magicUrl}
-              className="bg-violet-600 text-white font-semibold rounded-lg px-6 py-3 no-underline"
+              className="bg-orange-500 text-white font-semibold rounded-lg px-6 py-3 no-underline"
             >
               Sign in →
             </Button>

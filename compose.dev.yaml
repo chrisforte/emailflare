@@ -5,6 +5,7 @@ services:
       context: ./services/backend
       dockerfile: Dockerfile
       target: dev
+    command: sh -c "npm install && tsx watch src/index.ts"
     environment:
       - NODE_ENV=development
       - SQLITE_HUB_API_URL=http://host.docker.internal:4004
@@ -12,7 +13,7 @@ services:
       - host.docker.internal:host-gateway
     volumes:
       - ./services/backend/src:/app/src
-      - ./services/backend/package.json:/app/package.json:ro
+      - ./services/backend/package.json:/app/package.json
       - backend-node-modules:/app/node_modules
 
   admin:

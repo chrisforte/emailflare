@@ -39,7 +39,7 @@ export const Notification: React.FC<NotificationProps> = ({
             <Section className="my-4">
               <Button
                 href={actionUrl}
-                className="bg-violet-600 text-white font-semibold rounded-lg px-6 py-3 no-underline"
+                className="bg-orange-500 text-white font-semibold rounded-lg px-6 py-3 no-underline"
               >
                 {actionLabel} →
               </Button>

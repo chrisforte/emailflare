@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
-import { db, emailLogs, templates, domains } from '../db.js';
+import { db, emailLogs, templates, apiKeys } from '../db.js';
 import { sendEmail } from '../services/cloudflare.js';
 import { renderLayout } from '../emails/render.js';
 import type { LayoutName } from '../emails/render.js';
@@ -30,13 +30,22 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
   const body = c.req.valid('json');
   const apiKey = c.get('apiKey' as never) as ApiKeyContext;
 
+  // ── Idempotency check ─────────────────────────────────────────────────────
+  const idempotencyKey = c.req.header('Idempotency-Key') ?? null;
+  if (idempotencyKey) {
+    const existing = await emailLogs.findOne({ where: { idempotency_key: idempotencyKey } });
+    if (existing) {
+      return c.json({ cached: true, results: [{ to: existing.to_address, cfId: existing.cf_message_id ?? undefined }] });
+    }
+  }
+
   let html = body.html;
   let text = body.text;
   let subject = body.subject ?? '';
   let templateId: string | null = null;
   let domainId: string | null = null;
 
-  // Resolve template (custom or system/layout)
+  // ── Resolve template ──────────────────────────────────────────────────────
   if (body.templateSlug || body.templateId) {
     const template = body.templateSlug
       ? await templates.findOne({ where: { slug: body.templateSlug } })
@@ -47,10 +56,8 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
     subject = applyVariables(body.subject ?? template.subject, vars);
 
     if (template.layout) {
-      // System template — render via React Email
       html = await renderLayout(template.layout as LayoutName, vars);
     } else {
-      // Custom template — use stored HTML
       html = applyVariables(template.html_body, vars);
       text = template.text_body ? applyVariables(template.text_body, vars) : undefined;
     }
@@ -58,11 +65,10 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
     domainId = template.domain_id;
   }
 
-  // Resolve domain from sender address if not set via template
+  // ── Resolve domain from sender ────────────────────────────────────────────
   if (!domainId) {
     const senderDomain = body.from.split('@')[1];
     if (senderDomain) {
-      // Match by name substring (sending subdomain like "mail.example.com" vs "example.com")
       const result = await db.query(
         `SELECT id FROM domains WHERE name = ? OR name LIKE ? LIMIT 1`,
         [senderDomain, `%.${senderDomain}`],
@@ -71,17 +77,18 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
     }
   }
 
-  // Enforce domain-scoped key restrictions
+  // ── Enforce domain-scoped key restrictions ────────────────────────────────
   if (apiKey.scope !== 'global' && domainId && !apiKey.allowedDomainIds.includes(domainId)) {
     return c.json({ error: 'API key not authorized for this domain' }, 403);
   }
 
-  const logId = nanoid();
   const now = new Date().toISOString();
-  const toList = Array.isArray(body.to) ? body.to : [body.to];
+  // Deduplicate recipients
+  const toList = [...new Set(Array.isArray(body.to) ? body.to : [body.to])];
 
-  // Send each recipient (CF API accepts single recipient per call)
+  // ── Send each recipient ───────────────────────────────────────────────────
   const results: Array<{ to: string; cfId?: string; error?: string }> = [];
+  let successCount = 0;
 
   for (const recipient of toList) {
     try {
@@ -104,11 +111,13 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
         domain_id: domainId,
         template_id: templateId,
         api_key_id: apiKey.keyId,
+        idempotency_key: idempotencyKey,
         error: null,
         sent_at: now,
       });
 
       results.push({ to: recipient, cfId: cfResult.id });
+      successCount++;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
 
@@ -122,11 +131,26 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
         domain_id: domainId,
         template_id: templateId,
         api_key_id: apiKey.keyId,
+        idempotency_key: null,
         error: message,
         sent_at: now,
       });
 
       results.push({ to: recipient, error: message });
+    }
+  }
+
+  // ── Update key usage stats ────────────────────────────────────────────────
+  if (successCount > 0) {
+    const key = await apiKeys.findOne({ where: { id: apiKey.keyId } });
+    if (key) {
+      await apiKeys.update({
+        where: { id: apiKey.keyId },
+        set: {
+          last_used_at: now,
+          send_count: (key.send_count ?? 0) + successCount,
+        },
+      });
     }
   }
 

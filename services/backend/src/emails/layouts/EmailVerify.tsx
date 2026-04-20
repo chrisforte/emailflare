@@ -1,43 +1,48 @@
 import * as React from 'react';
 import {
   Body, Button, Container, Head, Heading, Html,
-  Preview, Section, Text, Tailwind,
+  Preview, Section, Text, Tailwind, Hr,
 } from '@react-email/components';
 
-interface WelcomeProps {
+interface EmailVerifyProps {
   name?: string;
   appName?: string;
-  loginUrl?: string;
+  verifyUrl?: string;
+  expiresIn?: string;
 }
 
-export const Welcome: React.FC<WelcomeProps> = ({
+export const EmailVerify: React.FC<EmailVerifyProps> = ({
   name = 'there',
-  appName = 'EmailFlair',
-  loginUrl = '#',
+  appName = 'our app',
+  verifyUrl = '#',
+  expiresIn = '24 hours',
 }) => (
   <Html>
     <Head />
-    <Preview>Welcome to {appName}</Preview>
+    <Preview>Verify your email address for {appName}</Preview>
     <Tailwind>
       <Body className="bg-slate-50 font-sans py-8">
         <Container className="bg-white rounded-xl shadow-sm max-w-[600px] mx-auto px-8 py-10">
           <Heading className="text-2xl font-bold text-slate-900 mt-0">
-            Welcome to {appName} 👋
+            Confirm your email address
           </Heading>
           <Text className="text-slate-600 text-base leading-relaxed">
-            Hi {name}, we're excited to have you on board.
-            You can now start sending beautiful emails.
+            Hi {name}, thanks for signing up for {appName}. Please verify your email
+            address by clicking the button below. This link expires in{' '}
+            <strong>{expiresIn}</strong>.
           </Text>
           <Section className="my-8">
             <Button
-              href={loginUrl}
+              href={verifyUrl}
               className="bg-orange-500 text-white font-semibold rounded-lg px-6 py-3 no-underline"
             >
-              Get started →
+              Verify email address →
             </Button>
           </Section>
+          <Hr className="border-slate-200 my-6" />
           <Text className="text-slate-400 text-sm">
-            If you didn't create an account, you can safely ignore this email.
+            If you didn't create an account with {appName}, you can safely ignore this email.
+            Your email address will not be added without confirmation.
           </Text>
         </Container>
       </Body>
@@ -45,4 +50,4 @@ export const Welcome: React.FC<WelcomeProps> = ({
   </Html>
 );
 
-export default Welcome;
+export default EmailVerify;

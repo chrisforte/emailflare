@@ -28,7 +28,7 @@ export const OTP: React.FC<OTPProps> = ({
             Hi {name}, use the code below to verify your identity. It expires in <strong>{expiresIn}</strong>.
           </Text>
           <Section className="my-8 text-center">
-            <Text className="text-4xl font-bold tracking-[0.3em] text-violet-600 bg-violet-50 rounded-xl px-8 py-6 font-mono">
+            <Text className="text-4xl font-bold tracking-[0.3em] text-orange-500 bg-orange-50 rounded-xl px-8 py-6 font-mono">
               {code}
             </Text>
           </Section>

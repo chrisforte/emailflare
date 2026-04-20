@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, RefreshCw, Trash2, CheckCircle2, Clock, ExternalLink, Globe, X } from 'lucide-react';
+import { Plus, RefreshCw, Trash2, CheckCircle2, Clock, ExternalLink, Globe, X, ShieldCheck, ShieldOff } from 'lucide-react';
 import api from '../api';
 
 interface Domain {
@@ -30,6 +30,7 @@ export default function DomainsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [verifying, setVerifying] = useState<string | null>(null);
   const [dnsModal, setDnsModal] = useState<{ domain: Domain; records: DnsRecord[] } | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -67,9 +68,10 @@ export default function DomainsPage() {
     }
   }
 
-  async function handleDelete(domain: Domain) {
-    if (!confirm(`Delete domain "${domain.name}"?`)) return;
-    await api.delete(`/api/domains/${domain.id}`);
+  async function confirmDelete() {
+    if (!deleteId) return;
+    await api.delete(`/api/domains/${deleteId}`);
+    setDeleteId(null);
     load();
   }
 
@@ -80,6 +82,21 @@ export default function DomainsPage() {
 
   return (
     <div className="p-8">
+      <div className="max-w-[580px]">
+      {/* Confirm delete modal */}
+      {deleteId && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-sm">
+            <h2 className="text-white font-semibold mb-2">Delete domain?</h2>
+            <p className="text-zinc-400 text-sm mb-5">This will remove the domain and revoke all associated API key bindings. This cannot be undone.</p>
+            <div className="flex gap-2">
+              <button onClick={confirmDelete} className="bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg px-4 py-2 transition-colors">Delete</button>
+              <button onClick={() => setDeleteId(null)} className="text-sm text-zinc-400 hover:text-white px-4 py-2">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -167,8 +184,11 @@ export default function DomainsPage() {
                     <Clock size={14} className="text-amber-400 flex-shrink-0" />
                   )}
                   <span className="font-medium text-white text-sm">{d.name}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${d.verified ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
-                    {d.verified ? 'Verified' : 'Pending'}
+                  {/* DKIM / Return-path icon-only indicators */}
+                  <span title={d.dkim_selector ? 'DKIM configured' : 'DKIM not configured'}>
+                    {d.dkim_selector
+                      ? <ShieldCheck size={13} className="text-emerald-500/70" />
+                      : <ShieldOff size={13} className="text-zinc-700" />}
                   </span>
                 </div>
                 <div className="text-xs text-zinc-600 mt-1 font-mono">{d.id}</div>
@@ -189,7 +209,7 @@ export default function DomainsPage() {
                   {verifying === d.id ? '…' : 'Verify'}
                 </button>
                 <button
-                  onClick={() => handleDelete(d)}
+                  onClick={() => setDeleteId(d.id)}
                   className="text-xs text-zinc-600 hover:text-red-400 px-2.5 py-1.5 rounded-md hover:bg-zinc-800 transition-colors"
                 >
                   <Trash2 size={11} />
@@ -200,6 +220,7 @@ export default function DomainsPage() {
         </div>
       )}
 
+      </div>
       {/* DNS records modal */}
       {dnsModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50" onClick={() => setDnsModal(null)}>

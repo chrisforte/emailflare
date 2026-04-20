@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
-import { domains } from '../db.js';
+import { domains, deleteDomainCascade } from '../db.js';
 import { createSendingSubdomain, listSendingSubdomains, getSubdomainDnsRecords, getSendingSubdomain, getZoneByHostname } from '../services/cloudflare.js';
 
 const app = new Hono();
@@ -96,7 +96,7 @@ app.delete('/:id', async (c) => {
   const domain = await domains.findOne({ where: { id: c.req.param('id') } });
   if (!domain) return c.json({ error: 'Domain not found' }, 404);
 
-  await domains.delete({ where: { id: domain.id } });
+  await deleteDomainCascade(domain.id);
   return c.json({ deleted: true });
 });
 

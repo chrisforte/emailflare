@@ -36,6 +36,8 @@ app.post('/', zValidator('json', createSchema), async (c) => {
     key_prefix: keyPrefix,
     scope,
     active: 1,
+    last_used_at: null,
+    send_count: 0,
     created_at: new Date().toISOString(),
   });
 

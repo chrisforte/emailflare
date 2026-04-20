@@ -1,4 +1,5 @@
 import { serve } from '@hono/node-server';
+import type { ServerType } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
@@ -9,38 +10,68 @@ import { bootstrapSchema, seedSystemTemplates } from './db.js';
 import { env } from './env.js';
 import { requireAdminToken } from './middleware/auth.js';
 import { requireApiKey } from './middleware/apiKey.js';
+import { checkRateLimit } from './middleware/rateLimit.js';
 
-import domainsRoutes  from './routes/domains.js';
+import authRoutes      from './routes/auth.js';
+import domainsRoutes   from './routes/domains.js';
 import templatesRoutes from './routes/templates.js';
-import keysRoutes     from './routes/keys.js';
-import logsRoutes     from './routes/logs.js';
-import statsRoutes    from './routes/stats.js';
-import sendRoutes     from './routes/send.js';
+import keysRoutes      from './routes/keys.js';
+import logsRoutes      from './routes/logs.js';
+import statsRoutes     from './routes/stats.js';
+import sendRoutes      from './routes/send.js';
 import { LAYOUTS, renderLayout } from './emails/render.js';
 import type { LayoutName } from './emails/render.js';
+
+// Allowed origins for the admin UI
+const ADMIN_ORIGINS = env.NODE_ENV === 'production'
+  ? (process.env.ADMIN_ORIGIN ? [process.env.ADMIN_ORIGIN] : [])
+  : ['http://localhost:5173', 'http://admin:5173', 'http://emailflare.localhost:1355'];
 
 const app = new Hono();
 
 // ── Global middleware ─────────────────────────────────────────────────────────
 app.use('*', logger());
 app.use('*', secureHeaders());
-app.use('*', cors({
+
+// Public API: wide-open CORS (callers send from any origin)
+app.use('/v1/*', cors({
   origin: '*',
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowMethods: ['POST', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// Admin UI: origin-restricted + credentials (for session cookie)
+app.use('/api/*', cors({
+  origin: ADMIN_ORIGINS,
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type'],
+  credentials: true,
 }));
 
 // ── Health ────────────────────────────────────────────────────────────────────
 app.get('/health', (c) => c.json({ ok: true, service: 'emailflair-backend', ts: Date.now() }));
 
-// ── Public: send (API key protected) ─────────────────────────────────────────
+// ── Public: send (API key protected + rate limited) ───────────────────────────
 app.use('/v1/*', requireApiKey);
+app.use('/v1/*', async (c, next) => {
+  const apiKey = c.get('apiKey' as never) as { keyId: string };
+  const rl = checkRateLimit(apiKey.keyId);
+  c.header('X-RateLimit-Limit',     String(rl.limit));
+  c.header('X-RateLimit-Remaining', String(rl.remaining));
+  c.header('X-RateLimit-Reset',     String(Math.ceil(rl.resetAt / 1000)));
+  if (!rl.allowed) {
+    return c.json({ error: 'Rate limit exceeded' }, 429);
+  }
+  await next();
+});
 app.route('/v1/send', sendRoutes);
 
-// ── Admin API (token protected) ─────────────────────────────────────────────
+// ── Auth routes (public — login/logout/me) ───────────────────────────────────
+app.route('/api/auth', authRoutes);
+
+// ── Admin API (session protected) ────────────────────────────────────────────
 const admin = new Hono();
 admin.use('*', requireAdminToken);
-admin.get('/me', (c) => c.json({ ok: true }));
 admin.get('/layouts', (c) => c.json(
   Object.entries(LAYOUTS).map(([id, { label, variables }]) => ({ id, label, variables }))
 ));
@@ -71,14 +102,25 @@ app.onError((err, c) => {
   return c.json({ error: 'Internal server error' }, 500);
 });
 
-// ── Startup ───────────────────────────────────────────────────────────────────
+// ── Startup + graceful shutdown ────────────────────────────────────────────────
 async function main() {
   await bootstrapSchema();
   await seedSystemTemplates();
 
-  serve({ fetch: app.fetch, port: env.PORT }, () => {
+  const server: ServerType = serve({ fetch: app.fetch, port: env.PORT }, () => {
     console.log(`[server] emailflair backend running on port ${env.PORT}`);
   });
+
+  function shutdown(signal: string) {
+    console.log(`[server] ${signal} received — shutting down`);
+    server.close(() => {
+      console.log('[server] closed');
+      process.exit(0);
+    });
+  }
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT',  () => shutdown('SIGINT'));
 }
 
 main().catch((err) => {
