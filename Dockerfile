@@ -20,7 +20,7 @@ COPY services/admin/package.json services/admin/pnpm-lock.yaml services/admin/pn
 RUN pnpm install --frozen-lockfile
 
 COPY services/admin/ ./
-RUN pnpm run build
+RUN pnpm exec vite build
 
 # ── Stage: prod (Caddy + Node) ────────────────────────────────────────────────
 FROM caddy:2-alpine AS caddy-bin
