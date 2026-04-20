@@ -49,7 +49,15 @@ app.use('/api/*', cors({
 }));
 
 // ── Health ────────────────────────────────────────────────────────────────────
-app.get('/health', (c) => c.json({ ok: true, service: 'emailflair-backend', ts: Date.now(), 'version': 1 }));
+app.get('/health', (c) => c.json({
+  ok: true,
+  service: 'emailflare-backend',
+  ts: Date.now(),
+  git: {
+    commit: process.env.RAILWAY_GIT_COMMIT_SHA?.slice(0, 7) ?? 'local',
+    branch: process.env.RAILWAY_GIT_BRANCH ?? 'local',
+  },
+}));
 
 // ── Public: send (API key protected + rate limited) ───────────────────────────
 app.use('/v1/*', requireApiKey);
