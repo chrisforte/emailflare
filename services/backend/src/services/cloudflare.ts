@@ -36,6 +36,33 @@ export interface CFZone {
   status: string;
 }
 
+/** Fetch every active zone on the account (handles pagination). */
+export async function listAllZones(): Promise<CFZone[]> {
+  const all: CFZone[] = [];
+  let page = 1;
+  while (true) {
+    const res = await fetch(
+      `${CF_BASE}/zones?status=active&per_page=50&page=${page}`,
+      {
+        headers: {
+          Authorization: `Bearer ${env.CF_API_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    const json = (await res.json()) as {
+      success: boolean;
+      result: CFZone[];
+      result_info: { total_pages: number; page: number };
+    };
+    if (!json.success) break;
+    all.push(...json.result);
+    if (json.result_info.page >= json.result_info.total_pages) break;
+    page++;
+  }
+  return all;
+}
+
 /**
  * Find a Cloudflare zone for the given hostname.
  * Tries progressively shorter suffixes (e.g. mail.example.com → example.com).

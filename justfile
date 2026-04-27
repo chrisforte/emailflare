@@ -43,6 +43,16 @@ dev:
 
     echo "Starting EmailFlare Development Environment"
     echo ""
+
+    # Free Mailpit ports if already bound (e.g. leftover processes)
+    for port in 2025 8026; do
+        pid=$(lsof -ti tcp:$port 2>/dev/null || true)
+        if [ -n "$pid" ]; then
+            echo "Killing process on port $port (pid $pid)..."
+            kill -9 $pid 2>/dev/null || true
+        fi
+    done
+
     echo "Starting containers (Docker will assign a random port)..."
     docker compose --env-file .env -f compose.yaml -f compose.dev.yaml up -d --build --force-recreate {{EDGE_SERVICE}}
 

@@ -7,6 +7,7 @@ export interface ApiKeyContext {
   keyId: string;
   scope: string;
   allowedDomainIds: string[];
+  isTest: boolean;
 }
 
 export const requireApiKey = createMiddleware<{ Variables: { apiKey: ApiKeyContext } }>(async (c, next) => {
@@ -26,6 +27,6 @@ export const requireApiKey = createMiddleware<{ Variables: { apiKey: ApiKeyConte
     allowedDomainIds = rows.map(r => r.domain_id);
   }
 
-  c.set('apiKey', { keyId: key.id, scope: key.scope, allowedDomainIds });
+  c.set('apiKey', { keyId: key.id, scope: key.scope, allowedDomainIds, isTest: key.key_type === 'test' });
   await next();
 });

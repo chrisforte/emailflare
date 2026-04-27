@@ -19,6 +19,7 @@ interface ApiKey {
   id: string;
   name: string;
   key_prefix: string;
+  key_type: 'test' | 'live';
   scope: 'global' | 'domain' | 'multi';
   active: number;
   last_used_at: string | null;
@@ -44,7 +45,7 @@ export default function KeysPage() {
   const [creating, setCreating] = useState(false);
   const [newKey, setNewKey] = useState<NewKey | null>(null);
   const [copied, setCopied] = useState(false);
-  const [form, setForm] = useState({ name: '', scope: 'global' as const });
+  const [form, setForm] = useState({ name: '', type: 'live' as 'test' | 'live', scope: 'global' as const });
   const [revokeId, setRevokeId] = useState<string | null>(null);
 
   async function load() {
@@ -61,7 +62,7 @@ export default function KeysPage() {
     const { data } = await api.post<NewKey>('/api/keys', form);
     setNewKey(data);
     setCreating(false);
-    setForm({ name: '', scope: 'global' });
+    setForm({ name: '', type: 'live', scope: 'global' });
     load();
   }
 
@@ -117,7 +118,9 @@ export default function KeysPage() {
           <Alert className="mb-6 border-emerald-200 bg-emerald-50">
             <AlertDescription className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-emerald-700 mb-1">Copy your new API key — it won't be shown again</p>
+                <p className="text-sm font-semibold text-emerald-700 mb-1">
+                  {newKey.key_type === 'test' ? 'Test key created — ' : ''}Copy your new API key — it won't be shown again
+                </p>
                 <code className="text-xs font-mono text-emerald-800 break-all">{newKey.key}</code>
                 <div>
                   <Button variant="ghost" size="sm" onClick={() => setNewKey(null)} className="mt-2 h-auto p-0 text-xs text-muted-foreground">
@@ -155,21 +158,36 @@ export default function KeysPage() {
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <Label>Scope</Label>
+                    <Label>Type</Label>
                     <Select
-                      value={form.scope}
-                      onValueChange={v => setForm(f => ({ ...f, scope: v as typeof form.scope }))}
+                      value={form.type}
+                      onValueChange={v => setForm(f => ({ ...f, type: v as typeof form.type }))}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="global">Global</SelectItem>
-                        <SelectItem value="domain">Domain</SelectItem>
-                        <SelectItem value="multi">Multi-domain</SelectItem>
+                        <SelectItem value="live">Live</SelectItem>
+                        <SelectItem value="test">Test</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label>Scope</Label>
+                  <Select
+                    value={form.scope}
+                    onValueChange={v => setForm(f => ({ ...f, scope: v as typeof form.scope }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="global">Global</SelectItem>
+                      <SelectItem value="domain">Domain</SelectItem>
+                      <SelectItem value="multi">Multi-domain</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit">Create</Button>
@@ -194,8 +212,10 @@ export default function KeysPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-sm">{k.name}</span>
-                    <Badge variant="secondary" className="font-mono text-xs">{k.scope}</Badge>
-                  </div>
+                    <Badge variant="secondary" className="font-mono text-xs">{k.scope}</Badge>                    {k.key_type === 'test'
+                      ? <Badge className="text-[10px] bg-amber-500/10 text-amber-600 border-amber-200">test</Badge>
+                      : <Badge className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-200">live</Badge>
+                    }                  </div>
                   <div className="flex items-center gap-3 mt-0.5">
                     <code className="text-xs text-muted-foreground font-mono">{k.key_prefix}…</code>
                     <span className="text-xs text-muted-foreground">{k.send_count.toLocaleString()} sends</span>

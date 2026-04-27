@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { nanoid } from 'nanoid';
 import { db, emailLogs, templates, apiKeys } from '../db.js';
 import { sendEmail } from '../services/cloudflare.js';
+import { sendEmailViaSmtp } from '../services/smtp.js';
 import { renderLayout } from '../emails/render.js';
 import type { LayoutName } from '../emails/render.js';
 import type { ApiKeyContext } from '../middleware/apiKey.js';
@@ -29,6 +30,7 @@ const sendSchema = z.object({
 app.post('/', zValidator('json', sendSchema), async (c) => {
   const body = c.req.valid('json');
   const apiKey = c.get('apiKey' as never) as ApiKeyContext;
+  const { isTest } = apiKey;
 
   // ── Idempotency check ─────────────────────────────────────────────────────
   const idempotencyKey = c.req.header('Idempotency-Key') ?? null;
@@ -92,7 +94,8 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
 
   for (const recipient of toList) {
     try {
-      const cfResult = await sendEmail({
+      const sendFn = isTest ? sendEmailViaSmtp : sendEmail;
+      const cfResult = await sendFn({
         from: body.fromName ? { address: body.from, name: body.fromName } : body.from,
         to: recipient,
         subject,
@@ -113,6 +116,7 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
         api_key_id: apiKey.keyId,
         idempotency_key: idempotencyKey,
         error: null,
+        is_test: isTest ? 1 : 0,
         sent_at: now,
       });
 
@@ -133,6 +137,7 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
         api_key_id: apiKey.keyId,
         idempotency_key: null,
         error: message,
+        is_test: isTest ? 1 : 0,
         sent_at: now,
       });
 

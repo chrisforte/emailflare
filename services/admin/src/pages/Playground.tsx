@@ -114,6 +114,8 @@ export default function PlaygroundPage() {
   const [previewHtml, setPreviewHtml] = useState('');
   const [rightTab, setRightTab] = useState<RightTab>('preview');
 
+  const keyMode: 'test' | 'live' | null = apiKey.startsWith('eftest_') ? 'test' : apiKey.startsWith('eflive_') || apiKey.startsWith('emailflair_') ? 'live' : null;
+
   useEffect(() => {
     Promise.all([
       api.get<Template[]>('/api/templates'),
@@ -299,7 +301,15 @@ export default function PlaygroundPage() {
 
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">API key</Label>
-                <Input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="ef_live_…" autoComplete="off" />
+                <div className="flex gap-2 items-center">
+                  <Input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="eftest_… or eflive_…" autoComplete="off" className="flex-1" />
+                  {keyMode === 'test' && (
+                    <Badge className="text-[10px] bg-amber-500/10 text-amber-600 border-amber-200 whitespace-nowrap">Test mode</Badge>
+                  )}
+                  {keyMode === 'live' && (
+                    <Badge className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-200 whitespace-nowrap">Live mode</Badge>
+                  )}
+                </div>
               </div>
 
               <div className="flex flex-col gap-1.5">

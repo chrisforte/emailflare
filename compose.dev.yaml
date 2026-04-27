@@ -11,12 +11,25 @@ services:
     environment:
       - NODE_ENV=development
       - SQLITE_HUB_API_URL=http://host.docker.internal:4004
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
     extra_hosts:
       - host.docker.internal:host-gateway
     volumes:
       - ./services/backend/src:/app/src
       - ./services/backend/package.json:/app/package.json
       - backend-node-modules:/app/node_modules
+    depends_on:
+      - mailpit
+
+  mailpit:
+    container_name: emailflare-mailpit
+    image: axllent/mailpit:latest
+    environment:
+      - MP_UI_BASE_PATH=/mailpit
+    ports:
+      - "2025:1025"
+      - "8026:8025"
 
   admin:
     container_name: emailflare-admin

@@ -16,18 +16,20 @@ app.get('/', async (c) => {
 
 const createSchema = z.object({
   name: z.string().min(1),
+  type: z.enum(['test', 'live']).default('live'),
   scope: z.enum(['global', 'domain', 'multi']).default('global'),
   domainIds: z.array(z.string()).optional(),
 });
 
 // POST /api/keys
 app.post('/', zValidator('json', createSchema), async (c) => {
-  const { name, scope, domainIds } = c.req.valid('json');
+  const { name, type, scope, domainIds } = c.req.valid('json');
 
-  // Generate key: emailflair_<40 hex chars>
-  const rawKey = `emailflair_${randomBytes(20).toString('hex')}`;
+  // Generate key: eftest_<40 hex> or eflive_<40 hex>
+  const prefix = type === 'test' ? 'eftest_' : 'eflive_';
+  const rawKey = `${prefix}${randomBytes(20).toString('hex')}`;
   const keyHash = createHash('sha256').update(rawKey).digest('hex');
-  const keyPrefix = rawKey.slice(0, 18); // "emailflair_" + first 7 hex chars
+  const keyPrefix = rawKey.slice(0, 14); // "eftest_" or "eflive_" (7) + first 7 hex chars
 
   const row = await apiKeys.insert({
     id: nanoid(),
@@ -35,6 +37,7 @@ app.post('/', zValidator('json', createSchema), async (c) => {
     key_hash: keyHash,
     key_prefix: keyPrefix,
     scope,
+    key_type: type,
     active: 1,
     last_used_at: null,
     send_count: 0,

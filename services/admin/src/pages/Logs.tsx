@@ -20,6 +20,7 @@ interface LogRow {
   domain_id: string | null;
   template_id: string | null;
   error: string | null;
+  is_test: number;
   sent_at: string;
 }
 
@@ -286,9 +287,14 @@ export default function LogsPage() {
                         : <XCircle size={13} className="text-destructive" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-medium truncate leading-tight text-foreground">
-                        {log.subject || <span className="text-muted-foreground italic font-normal">No subject</span>}
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-[13px] font-medium truncate leading-tight text-foreground">
+                          {log.subject || <span className="text-muted-foreground italic font-normal">No subject</span>}
+                        </p>
+                        {log.is_test === 1 && (
+                          <Badge className="text-[9px] px-1 py-0 h-4 bg-amber-500/10 text-amber-600 border-amber-200 flex-shrink-0">test</Badge>
+                        )}
+                      </div>
                       <p className="text-[11px] text-muted-foreground font-mono truncate mt-0.5">{log.to_address}</p>
                       {log.error && (
                         <p className="text-[11px] text-destructive/70 truncate mt-0.5">{log.error}</p>
@@ -351,6 +357,7 @@ interface LogRow {
   domain_id: string | null;
   template_id: string | null;
   error: string | null;
+  is_test: number;
   sent_at: string;
 }
 

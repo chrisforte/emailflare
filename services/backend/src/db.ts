@@ -1,15 +1,13 @@
 import { SqliteHubClient } from '@sqlite-hub/client';
 import { nanoid } from 'nanoid';
 import { env } from './env.js';
+import { parseMesahubUrl } from './lib/mesahub-url.js';
 import { LAYOUTS } from './emails/render.js';
 import type { LayoutName } from './emails/render.js';
 
-const client = new SqliteHubClient({
-  apiKey: env.SQLITE_HUB_API_KEY,
-  apiUrl: env.SQLITE_HUB_API_URL,
-});
-
-export const db = client.db(env.SQLITE_HUB_DB);
+const { apiUrl, apiKey, dbName } = parseMesahubUrl(env.MESAHUB_URL);
+const client = new SqliteHubClient({ apiKey, apiUrl });
+export const db = client.db(dbName);
 
 // ── Table handles ─────────────────────────────────────────────────────────────
 
@@ -47,6 +45,7 @@ export interface ApiKeyRow {
   key_hash: string;
   key_prefix: string;
   scope: 'global' | 'domain' | 'multi';
+  key_type: 'test' | 'live';
   active: number; // 0 | 1
   last_used_at: string | null;
   send_count: number;
@@ -72,6 +71,7 @@ export interface EmailLogRow {
   api_key_id: string | null;
   idempotency_key: string | null;
   error: string | null;
+  is_test: number; // 0 | 1
   sent_at: string;
 }
 
@@ -132,6 +132,7 @@ export async function bootstrapSchema(): Promise<void> {
       key_hash     TEXT NOT NULL UNIQUE,
       key_prefix   TEXT NOT NULL,
       scope        TEXT NOT NULL DEFAULT 'global',
+      key_type     TEXT NOT NULL DEFAULT 'live',
       active       INTEGER NOT NULL DEFAULT 1,
       last_used_at TEXT,
       send_count   INTEGER NOT NULL DEFAULT 0,
@@ -141,6 +142,7 @@ export async function bootstrapSchema(): Promise<void> {
   // Migrations for api_keys
   try { await db.exec(`ALTER TABLE api_keys ADD COLUMN last_used_at TEXT`); } catch { /* exists */ }
   try { await db.exec(`ALTER TABLE api_keys ADD COLUMN send_count INTEGER NOT NULL DEFAULT 0`); } catch { /* exists */ }
+  try { await db.exec(`ALTER TABLE api_keys ADD COLUMN key_type TEXT NOT NULL DEFAULT 'live'`); } catch { /* exists */ }
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS api_key_domains (
@@ -163,11 +165,13 @@ export async function bootstrapSchema(): Promise<void> {
       api_key_id       TEXT,
       idempotency_key  TEXT,
       error            TEXT,
+      is_test          INTEGER NOT NULL DEFAULT 0,
       sent_at          TEXT NOT NULL
     )
   `);
   // Migrations for email_logs
   try { await db.exec(`ALTER TABLE email_logs ADD COLUMN idempotency_key TEXT`); } catch { /* exists */ }
+  try { await db.exec(`ALTER TABLE email_logs ADD COLUMN is_test INTEGER NOT NULL DEFAULT 0`); } catch { /* exists */ }
 
   // Indices
   try { await db.exec(`CREATE INDEX IF NOT EXISTS idx_logs_sent_at   ON email_logs(sent_at)`); } catch { /* ignore */ }
