@@ -119,11 +119,6 @@ export async function bootstrapSchema(): Promise<void> {
     )
   `);
 
-  // Migrations: add columns that predate schema changes
-  // Note: SQLite ALTER TABLE ADD COLUMN does not support UNIQUE — add index separately
-  try { await db.exec(`ALTER TABLE templates ADD COLUMN slug TEXT`); } catch { /* already exists */ }
-  try { await db.exec(`ALTER TABLE templates ADD COLUMN is_system INTEGER NOT NULL DEFAULT 0`); } catch { /* already exists */ }
-  try { await db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_templates_slug ON templates(slug) WHERE slug IS NOT NULL`); } catch { /* ignore */ }
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS api_keys (
@@ -139,10 +134,6 @@ export async function bootstrapSchema(): Promise<void> {
       created_at   TEXT NOT NULL
     )
   `);
-  // Migrations for api_keys
-  try { await db.exec(`ALTER TABLE api_keys ADD COLUMN last_used_at TEXT`); } catch { /* exists */ }
-  try { await db.exec(`ALTER TABLE api_keys ADD COLUMN send_count INTEGER NOT NULL DEFAULT 0`); } catch { /* exists */ }
-  try { await db.exec(`ALTER TABLE api_keys ADD COLUMN key_type TEXT NOT NULL DEFAULT 'live'`); } catch { /* exists */ }
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS api_key_domains (
@@ -169,9 +160,6 @@ export async function bootstrapSchema(): Promise<void> {
       sent_at          TEXT NOT NULL
     )
   `);
-  // Migrations for email_logs
-  try { await db.exec(`ALTER TABLE email_logs ADD COLUMN idempotency_key TEXT`); } catch { /* exists */ }
-  try { await db.exec(`ALTER TABLE email_logs ADD COLUMN is_test INTEGER NOT NULL DEFAULT 0`); } catch { /* exists */ }
 
   // Indices
   try { await db.exec(`CREATE INDEX IF NOT EXISTS idx_logs_sent_at   ON email_logs(sent_at)`); } catch { /* ignore */ }
