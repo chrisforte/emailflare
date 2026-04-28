@@ -31,7 +31,7 @@ const ADMIN_ORIGINS = env.NODE_ENV === 'production'
 const app = new Hono();
 
 // ── Global middleware ─────────────────────────────────────────────────────────
-app.use('*', logger());
+if (env.NODE_ENV !== 'production') app.use('*', logger());
 app.use('*', secureHeaders());
 
 // Public API: wide-open CORS (callers send from any origin)
@@ -114,15 +114,16 @@ app.onError((err, c) => {
 
 // ── Startup + graceful shutdown ────────────────────────────────────────────────
 async function main() {
-  console.log('[startup] NODE_ENV:', env.NODE_ENV);
-  console.log('[startup] PORT:', env.PORT);
-  console.log('[startup] MESAHUB_URL:', env.MESAHUB_URL.replace(/mh:\/\/[^@]+@/, 'mh://***@'));
-  console.log('[startup] ADMIN_TOKEN:', env.ADMIN_TOKEN ? 'set' : '*** MISSING ***');
-  console.log('[startup] CF_API_TOKEN:', env.CF_API_TOKEN ? 'set' : 'not set');
-
-  console.log('[startup] bootstrapping schema...');
+  if (env.NODE_ENV !== 'production') {
+    console.log('[startup] NODE_ENV:', env.NODE_ENV);
+    console.log('[startup] PORT:', env.PORT);
+    console.log('[startup] MESAHUB_URL:', env.MESAHUB_URL.replace(/mh:\/\/[^@]+@/, 'mh://***@'));
+    console.log('[startup] ADMIN_TOKEN:', env.ADMIN_TOKEN ? 'set' : '*** MISSING ***');
+    console.log('[startup] CF_API_TOKEN:', env.CF_API_TOKEN ? 'set' : 'not set');
+    console.log('[startup] bootstrapping schema...');
+  }
   await bootstrapSchema();
-  console.log('[startup] seeding system templates...');
+  if (env.NODE_ENV !== 'production') console.log('[startup] seeding system templates...');
   await seedSystemTemplates();
 
   const server: ServerType = serve({ fetch: app.fetch, port: env.PORT }, () => {

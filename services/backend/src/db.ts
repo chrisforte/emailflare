@@ -168,7 +168,7 @@ export async function bootstrapSchema(): Promise<void> {
   try { await db.exec(`CREATE INDEX IF NOT EXISTS idx_logs_domain    ON email_logs(domain_id)`); } catch { /* ignore */ }
   try { await db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_logs_idempotency ON email_logs(idempotency_key) WHERE idempotency_key IS NOT NULL`); } catch { /* ignore */ }
 
-  console.log('[db] schema bootstrapped');
+  if (process.env.NODE_ENV !== 'production') console.log('[db] schema bootstrapped');
 }
 
 // ── System template subjects ──────────────────────────────────────────────────
@@ -217,6 +217,6 @@ export async function seedSystemTemplates(): Promise<void> {
       });
     }
   }
-  console.log('[db] system templates seeded');
+  if (process.env.NODE_ENV !== 'production') console.log('[db] system templates seeded');
 }
 
