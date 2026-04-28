@@ -77,13 +77,12 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            # tag trunk branch as "latest"
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/trunk' }}
-            # tag semver releases (v1.2.3 → 1.2.3, 1.2, 1)
+            # latest always points to the newest tag
+            type=raw,value=latest
+            # semver: v1.2.3 → 1.2.3, 1.2, 1
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            # short sha for every build
-            type=sha,prefix=sha-
+            type=semver,pattern={{major}}
 
       - name: Build and push
         uses: docker/build-push-action@v6
