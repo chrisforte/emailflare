@@ -32,9 +32,11 @@ export function parseMesahubUrl(raw: string): ParsedMesahubUrl {
   }
 
   const isLocalhost = host === 'localhost' || host === '127.0.0.1';
-  // Hostnames with no dots are internal names (Docker service names, etc.) — use HTTP
-  const isInternal = !host.includes('.');
-  const scheme = (isLocalhost || isInternal) ? 'http' : 'https';
+  // Hostnames with no dots are Docker/internal service names (e.g. "myservice").
+  // Hostnames ending in .internal are private network domains (e.g. *.railway.internal).
+  // Both must use plain HTTP — TLS is not available on these networks.
+  const isPrivate = isLocalhost || !host.includes('.') || host.endsWith('.internal');
+  const scheme = isPrivate ? 'http' : 'https';
   const portPart = parsed.port ? `:${parsed.port}` : '';
   const apiUrl = `${scheme}://${host}${portPart}`;
 

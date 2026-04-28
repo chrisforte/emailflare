@@ -15,8 +15,8 @@ importers:
         specifier: ^0.4.3
         version: 0.4.3(hono@4.12.14)(zod@3.25.76)
       '@mesahub/client':
-        specifier: ^0.5.0
-        version: 0.5.0
+        specifier: ^0.5.1
+        version: 0.5.1
       '@react-email/components':
         specifier: ^0.0.36
         version: 0.0.36(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -237,8 +237,8 @@ packages:
       hono: '>=3.9.0'
       zod: ^3.19.1
 
-  '@mesahub/client@0.5.0':
-    resolution: {integrity: sha512-+EuuxbnjqTR7cK218E9fTKpz/9nxRkkVNlFL64Kjm4qbrVg/GN93RrIBa88z2yKwqCIUj6OiWr723mMfcVDOww==}
+  '@mesahub/client@0.5.1':
+    resolution: {integrity: sha512-pbEgfafDkwuXIKSFNlx7mHehKIpt7zHZ6h53HKXbIaZFdqgKzZXGSz5vwSvVLsKDy0qWyiEUBrFtXhVofcxung==}
     engines: {node: '>=16.0.0'}
 
   '@pingpong-js/core@1.0.1':
@@ -657,7 +657,7 @@ snapshots:
       hono: 4.12.14
       zod: 3.25.76
 
-  '@mesahub/client@0.5.0':
+  '@mesahub/client@0.5.1':
     dependencies:
       '@pingpong-js/fetch': 1.0.2
 
