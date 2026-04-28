@@ -25,12 +25,13 @@ jobs:
             path: services/backend
           - name: admin
             path: services/admin
-          - name: landing
-            path: services/landing
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -38,9 +39,6 @@ jobs:
           node-version: 22
           cache: pnpm
           cache-dependency-path: ${{ matrix.path }}/pnpm-lock.yaml
-
-      - name: Enable Corepack
-        run: corepack enable
 
       - name: Install dependencies
         working-directory: ${{ matrix.path }}
