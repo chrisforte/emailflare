@@ -3,13 +3,15 @@ import { env } from '../env.js';
 import type { CFSendEmailParams, CFSendEmailResult } from './cloudflare.js';
 
 function getTransporter() {
+  const isImplicitTls = env.SMTP_PORT === 465;
   return nodemailer.createTransport({
     host: env.SMTP_HOST,
     port: env.SMTP_PORT,
-    secure: false,
+    secure: isImplicitTls,
     ...(env.SMTP_USER
       ? { auth: { user: env.SMTP_USER, pass: env.SMTP_PASS } }
       : {}),
+    tls: { rejectUnauthorized: env.NODE_ENV === 'production' },
   });
 }
 
@@ -19,7 +21,7 @@ export async function sendEmailViaSmtp(params: CFSendEmailParams): Promise<CFSen
   const from =
     typeof params.from === 'string'
       ? params.from
-      : `"${params.from.name}" <${params.from.address}>`;
+      : `"${params.from.name.replace(/[\r\n]/g, ' ')}" <${params.from.address}>`;
 
   await transporter.sendMail({
     from,

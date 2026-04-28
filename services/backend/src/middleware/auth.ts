@@ -32,7 +32,7 @@ export async function saveSession(c: Context, data: SessionData): Promise<void> 
   setCookie(c, SESSION_COOKIE, sealed, {
     httpOnly: true,
     secure: env.NODE_ENV === 'production',
-    sameSite: 'Lax',
+    sameSite: 'Strict',
     path: '/',
     maxAge: SESSION_TTL,
   });

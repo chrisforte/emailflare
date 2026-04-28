@@ -14,6 +14,14 @@ interface Entry {
 
 const store = new Map<string, Entry>();
 
+// Sweep expired entries periodically to prevent unbounded memory growth.
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of store) {
+    if (now >= entry.resetAt) store.delete(key);
+  }
+}, WINDOW_MS);
+
 export interface RateLimitResult {
   allowed: boolean;
   remaining: number;

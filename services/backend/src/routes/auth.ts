@@ -4,6 +4,7 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { env } from '../env.js';
 import { getSession, saveSession, clearSession } from '../middleware/auth.js';
+import { checkLoginRateLimit } from '../middleware/loginRateLimit.js';
 
 const app = new Hono();
 
@@ -13,6 +14,15 @@ const loginSchema = z.object({
 
 // POST /api/auth/login — public, no session required
 app.post('/login', zValidator('json', loginSchema), async (c) => {
+  const ip =
+    c.req.header('CF-Connecting-IP') ??
+    c.req.header('X-Forwarded-For')?.split(',')[0].trim() ??
+    'unknown';
+
+  if (!checkLoginRateLimit(ip)) {
+    return c.json({ error: 'Too many login attempts. Try again in a minute.' }, 429);
+  }
+
   const { token } = c.req.valid('json');
 
   const expected = Buffer.from(env.ADMIN_TOKEN);
@@ -33,7 +43,7 @@ app.post('/logout', (c) => {
   return c.json({ ok: true });
 });
 
-// GET /api/auth/me — protected by requireAdminToken in index.ts
+// GET /api/auth/me — reads session cookie; not sensitive (returns only isLoggedIn bool)
 app.get('/me', async (c) => {
   const session = await getSession(c);
   return c.json({ ok: session.isLoggedIn });

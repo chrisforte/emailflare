@@ -55,6 +55,11 @@ export interface CFZone {
   status: string;
 }
 
+interface CFZoneListResponse {
+  result: CFZone[];
+  result_info: { total_pages: number; page: number };
+}
+
 /** Fetch every active zone on the account (handles pagination). */
 export async function listAllZones(): Promise<CFZone[]> {
   const all: CFZone[] = [];
@@ -67,14 +72,18 @@ export async function listAllZones(): Promise<CFZone[]> {
           Authorization: `Bearer ${env.CF_API_TOKEN}`,
           'Content-Type': 'application/json',
         },
-      }
+      },
     );
-    const json = (await res.json()) as {
-      success: boolean;
-      result: CFZone[];
-      result_info: { total_pages: number; page: number };
-    };
-    if (!json.success) break;
+    const json = (await res.json()) as CFResponse<CFZone[]> & { result_info: { total_pages: number; page: number } };
+    if (!json.success) {
+      const first = json.errors?.[0];
+      const msg = first?.message ?? 'Cloudflare API error';
+      throw new CloudflareApiError(`CF API error: ${msg}`, {
+        code: first?.code ?? null,
+        path: `/zones?page=${page}`,
+        status: res.status,
+      });
+    }
     all.push(...json.result);
     if (json.result_info.page >= json.result_info.total_pages) break;
     page++;

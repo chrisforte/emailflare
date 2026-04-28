@@ -23,10 +23,28 @@ import sendRoutes      from './routes/send.js';
 import { LAYOUTS, renderLayout } from './emails/render.js';
 import type { LayoutName } from './emails/render.js';
 
-// Allowed origins for the admin UI
+// Allowed origins for the admin UI.
+// ADMIN_ORIGIN accepts comma-separated bare domains (no scheme needed).
+// e.g. "admin.example.com" or "admin.example.com,admin2.example.com"
+// localhost / 127.0.0.1 get http://, everything else gets https://.
+function parseAdminOrigins(raw: string): string[] {
+  return raw
+    .split(',')
+    .map(d => d.trim())
+    .filter(Boolean)
+    .map(d => {
+      const isLocal = d.startsWith('localhost') || d.startsWith('127.0.0.1');
+      return `${isLocal ? 'http' : 'https'}://${d}`;
+    });
+}
+
 const ADMIN_ORIGINS = env.NODE_ENV === 'production'
-  ? (process.env.ADMIN_ORIGIN ? [process.env.ADMIN_ORIGIN] : [])
+  ? (process.env.ADMIN_ORIGIN ? parseAdminOrigins(process.env.ADMIN_ORIGIN) : [])
   : ['http://localhost:5173', 'http://admin:5173', 'http://emailflare.localhost:1355'];
+
+if (env.NODE_ENV === 'production' && ADMIN_ORIGINS.length === 0) {
+  console.warn('[startup] WARNING: ADMIN_ORIGIN is not set. All cross-origin /api/* requests will be blocked.');
+}
 
 const app = new Hono();
 
@@ -52,12 +70,8 @@ app.use('/api/*', cors({
 // ── Health ────────────────────────────────────────────────────────────────────
 app.get('/health', (c) => c.json({
   ok: true,
-  service: 'emailflare-backend',
+  service: 'emailflare',
   ts: Date.now(),
-  git: {
-    commit: process.env.RAILWAY_GIT_COMMIT_SHA?.slice(0, 7) ?? 'local',
-    branch: process.env.RAILWAY_GIT_BRANCH ?? 'local',
-  },
 }));
 
 // ── Public: send (API key protected + rate limited) ───────────────────────────
@@ -127,7 +141,7 @@ async function main() {
   await seedSystemTemplates();
 
   const server: ServerType = serve({ fetch: app.fetch, port: env.PORT }, () => {
-    console.log(`[server] emailflair backend running on port ${env.PORT}`);
+    console.log(`[server] emailflare backend running on port ${env.PORT}`);
   });
 
   function shutdown(signal: string) {

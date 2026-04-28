@@ -191,11 +191,13 @@ export default function TemplatesPage() {
   const [editVarValues, setEditVarValues] = useState<Record<string, string>>({});
   const editPreviewHtml = useMemo(() => {
     if (!form.htmlBody) return '';
+    const escHtml = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     return form.htmlBody.replace(
       /\{\{(\w+)\}\}/g,
       (_, k) =>
         editVarValues[k]
-          ? `<span style="background:#fef9c3;color:#713f12;padding:0 2px;border-radius:2px">${editVarValues[k]}</span>`
+          ? `<span style="background:#fef9c3;color:#713f12;padding:0 2px;border-radius:2px">${escHtml(editVarValues[k])}</span>`
           : `<span style="background:#fee2e2;color:#991b1b;padding:0 2px;border-radius:2px;font-size:12px">{{${k}}}</span>`,
     );
   }, [form.htmlBody, editVarValues]);

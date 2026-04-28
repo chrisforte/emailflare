@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
-import { db, emailLogs, templates, apiKeys } from '../db.js';
+import { db, emailLogs, templates } from '../db.js';
 import { sendEmail } from '../services/cloudflare.js';
 import { sendEmailViaSmtp } from '../services/smtp.js';
 import { renderLayout } from '../emails/render.js';
@@ -14,14 +14,14 @@ const app = new Hono();
 const sendSchema = z.object({
   from: z.string().email(),
   fromName: z.string().optional(),
-  to: z.union([z.string().email(), z.array(z.string().email())]),
+  to: z.union([z.string().email(), z.array(z.string().email()).max(50)]),
+  replyTo: z.string().email().optional(),
   subject: z.string().min(1).optional(),
   html: z.string().optional(),
   text: z.string().optional(),
   templateId: z.string().optional(),
   templateSlug: z.string().optional(),
   variables: z.record(z.string()).optional(),
-  replyTo: z.string().email().optional(),
 }).refine(d => d.templateId || d.templateSlug || d.html || d.text, {
   message: 'Provide templateId, templateSlug, or at least one of html/text',
 });
@@ -35,7 +35,7 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
   // ── Idempotency check ─────────────────────────────────────────────────────
   const idempotencyKey = c.req.header('Idempotency-Key') ?? null;
   if (idempotencyKey) {
-    const existing = await emailLogs.findOne({ where: { idempotency_key: idempotencyKey } });
+    const existing = await emailLogs.findOne({ where: { idempotency_key: idempotencyKey, api_key_id: apiKey.keyId } });
     if (existing) {
       return c.json({ cached: true, results: [{ to: existing.to_address, cfId: existing.cf_message_id ?? undefined }] });
     }
@@ -80,8 +80,10 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
   }
 
   // ── Enforce domain-scoped key restrictions ────────────────────────────────
-  if (apiKey.scope !== 'global' && domainId && !apiKey.allowedDomainIds.includes(domainId)) {
-    return c.json({ error: 'API key not authorized for this domain' }, 403);
+  if (apiKey.scope !== 'global') {
+    if (!domainId || !apiKey.allowedDomainIds.includes(domainId)) {
+      return c.json({ error: 'API key not authorized for this domain' }, 403);
+    }
   }
 
   const now = new Date().toISOString();
@@ -145,18 +147,12 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
     }
   }
 
-  // ── Update key usage stats ────────────────────────────────────────────────
+  // ── Update key usage stats (atomic increment to avoid race condition) ────────
   if (successCount > 0) {
-    const key = await apiKeys.findOne({ where: { id: apiKey.keyId } });
-    if (key) {
-      await apiKeys.update({
-        where: { id: apiKey.keyId },
-        set: {
-          last_used_at: now,
-          send_count: (key.send_count ?? 0) + successCount,
-        },
-      });
-    }
+    await db.query(
+      `UPDATE api_keys SET last_used_at = ?, send_count = send_count + ? WHERE id = ?`,
+      [now, successCount, apiKey.keyId],
+    );
   }
 
   const allFailed = results.every(r => r.error);
