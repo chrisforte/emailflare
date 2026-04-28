@@ -3,8 +3,48 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="EmailFlare is a self-hosted email sending platform built on Cloudflare Email Sending. Clean REST API, domain management, scoped API keys, React Email templates, and an admin UI — all in one Docker container." />
+
   <title>EmailFlare — Self-hosted email sending for Cloudflare</title>
+  <meta name="description" content="EmailFlare is a self-hosted email sending platform built on Cloudflare Email Sending. Clean REST API, domain management, scoped API keys, React Email templates, and an admin UI — all in one Docker container." />
+  <meta name="keywords" content="emailflare, self-hosted email, cloudflare email sending, transactional email, open source email api, docker email server, react email templates" />
+  <meta name="author" content="EmailFlare contributors" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://emailflare.dev/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://emailflare.dev/" />
+  <meta property="og:site_name" content="EmailFlare" />
+  <meta property="og:title" content="EmailFlare — Self-hosted email sending for Cloudflare" />
+  <meta property="og:description" content="EmailFlare is a self-hosted email sending platform built on Cloudflare Email Sending. Clean REST API, domain management, scoped API keys, React Email templates, and an admin UI — all in one Docker container." />
+  <meta property="og:image" content="https://emailflare.dev/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="en_US" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://emailflare.dev/" />
+  <meta name="twitter:title" content="EmailFlare — Self-hosted email sending for Cloudflare" />
+  <meta name="twitter:description" content="EmailFlare is a self-hosted email sending platform built on Cloudflare Email Sending. Clean REST API, domain management, scoped API keys, React Email templates, and an admin UI — all in one Docker container." />
+  <meta name="twitter:image" content="https://emailflare.dev/og.png" />
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "EmailFlare",
+    "url": "https://emailflare.dev",
+    "description": "Self-hosted email sending platform built on Cloudflare Email Sending. Clean REST API, domain management, scoped API keys, React Email templates, and an admin UI — all in one Docker container.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Docker",
+    "license": "https://github.com/0xdps/emailflare/blob/trunk/LICENSE",
+    "codeRepository": "https://github.com/0xdps/emailflare",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -1339,6 +1379,12 @@
           <p>Ships with a root <code>railway.json</code> for GitHub-connected Railway deploys, and a published image at <code>ghcr.io/0xdps/emailflare:latest</code> for image-based deploys.</p>
           <span class="feature-tag">Deploy</span>
         </div>
+        <div class="feature-card">
+          <span class="feature-icon">🧪</span>
+          <h3>Mailpit Dev Stack</h3>
+          <p>A dedicated <code>compose.dev.yaml</code> swaps delivery for <a href="https://mailpit.axllent.org" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px;">Mailpit</a> — every email is intercepted and shown in a local web UI. No Cloudflare credentials needed for local development.</p>
+          <span class="feature-tag">Local Dev</span>
+        </div>
       </div>
     </div>
   </section>
@@ -1385,7 +1431,7 @@
         <div class="section-eyebrow">Self-hosting</div>
         <h2 class="section-title">Deploy in three steps.</h2>
         <p class="section-sub">
-          EmailFlare is built for minimum infrastructure. One container, one volume, no extra services to operate.
+          EmailFlare ships two compose stacks — <code style="font-family:'SF Mono',monospace;font-size:11.5px;background:oklch(22% 0.01 48);padding:1px 5px;border-radius:3px;">compose.yaml</code> for production and <code style="font-family:'SF Mono',monospace;font-size:11.5px;background:oklch(22% 0.01 48);padding:1px 5px;border-radius:3px;">compose.dev.yaml</code> for local development — with Mailpit included so emails never hit real inboxes during testing.
         </p>
       </div>
 
@@ -1411,14 +1457,11 @@
           <div class="step-title">Start the stack</div>
           <p class="step-desc">Bring up the production compose stack. The image is published to GHCR — no local build required. Or use <code style="font-family:'SF Mono',monospace;font-size:11.5px;background:oklch(22% 0.01 48);padding:1px 5px;border-radius:3px;">just prod</code> if you have Just installed.</p>
           <div class="code-block">
-            <span><span class="cb-cmt"># Docker Compose (recommended)</span></span>
-            <span><span class="cb-cmd">docker compose \</span></span>
-            <span><span class="cb-cmd">  --env-file .env.local \</span></span>
-            <span><span class="cb-cmd">  -f compose.yaml \</span></span>
-            <span><span class="cb-cmd">  up -d</span></span>
+            <span><span class="cb-cmt"># Production</span></span>
+            <span><span class="cb-cmd">docker compose --env-file .env.local -f compose.yaml up -d</span></span>
             <span>&nbsp;</span>
-            <span><span class="cb-cmt"># Or with just:</span></span>
-            <span><span class="cb-cmd">just prod</span></span>
+            <span><span class="cb-cmt"># Local dev (includes Mailpit — no real emails sent)</span></span>
+            <span><span class="cb-cmd">docker compose --env-file .env.local -f compose.dev.yaml up</span></span>
           </div>
         </div>
 
@@ -1437,6 +1480,23 @@
             <span><span class="cb-url">http://localhost:8090/mailpit/</span></span>
           </div>
         </div>
+      </div>
+
+      <!-- Dev stack callout -->
+      <div class="railway-wrap" style="margin-bottom:14px;border-color:oklch(30% 0.06 150 / 0.5);">
+        <div class="railway-left">
+          <h3 style="display:flex;align-items:center;gap:8px;"><span style="font-size:18px;">🧪</span> Test locally without touching real inboxes</h3>
+          <p>
+            <code style="font-family:'SF Mono',monospace;font-size:11.5px;background:oklch(22% 0.01 48);padding:1px 5px;border-radius:3px;">compose.dev.yaml</code> spins up the full stack with
+            <a href="https://mailpit.axllent.org" target="_blank" rel="noopener" style="color:oklch(62% 0.14 150);text-decoration:none;">Mailpit</a>
+            as the SMTP backend — every email your app sends is intercepted and displayed in Mailpit's web UI instead of being delivered.
+            Perfect for integration tests, template previews, and CI pipelines.
+            Access it at <code style="font-family:'SF Mono',monospace;font-size:11.5px;background:oklch(22% 0.01 48);padding:1px 5px;border-radius:3px;">http://localhost:8090/mailpit/</code> once the stack is running.
+          </p>
+        </div>
+        <a class="btn btn-ghost" href="https://mailpit.axllent.org" target="_blank" rel="noopener" style="white-space:nowrap;">
+          Mailpit docs →
+        </a>
       </div>
 
       <!-- Railway callout -->
