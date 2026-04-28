@@ -8,6 +8,20 @@ interface CFResponse<T> {
   result: T;
 }
 
+export class CloudflareApiError extends Error {
+  code: number | null;
+  path: string;
+  status: number;
+
+  constructor(message: string, opts: { code: number | null; path: string; status: number }) {
+    super(message);
+    this.name = 'CloudflareApiError';
+    this.code = opts.code;
+    this.path = opts.path;
+    this.status = opts.status;
+  }
+}
+
 async function cfFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${CF_BASE}${path}`, {
     ...init,
@@ -21,8 +35,13 @@ async function cfFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const json = (await res.json()) as CFResponse<T>;
 
   if (!json.success) {
-    const msg = json.errors?.[0]?.message ?? 'Cloudflare API error';
-    throw new Error(`CF API error: ${msg}`);
+    const first = json.errors?.[0];
+    const msg = first?.message ?? 'Cloudflare API error';
+    throw new CloudflareApiError(`CF API error: ${msg}`, {
+      code: first?.code ?? null,
+      path,
+      status: res.status,
+    });
   }
 
   return json.result;
@@ -142,4 +161,85 @@ export async function sendEmail(params: CFSendEmailParams): Promise<CFSendEmailR
     method: 'POST',
     body: JSON.stringify(params),
   });
+}
+
+export interface CFTokenStatus {
+  configured: boolean;
+  active: boolean;
+  tokenStatus: string | null;
+  tokenId: string | null;
+  notBefore: string | null;
+  expiresOn: string | null;
+  accountId: string | null;
+  accountName: string | null;
+  message: string;
+}
+
+interface CFTokenVerifyResult {
+  id: string;
+  status: string;
+  not_before: string | null;
+  expires_on: string | null;
+}
+
+interface CFAccountResult {
+  id: string;
+  name: string;
+}
+
+export async function getCloudflareTokenStatus(): Promise<CFTokenStatus> {
+  if (!env.CF_API_TOKEN || !env.CF_ACCOUNT_ID) {
+    return {
+      configured: false,
+      active: false,
+      tokenStatus: null,
+      tokenId: null,
+      notBefore: null,
+      expiresOn: null,
+      accountId: env.CF_ACCOUNT_ID || null,
+      accountName: null,
+      message: 'CF_API_TOKEN or CF_ACCOUNT_ID is not configured.',
+    };
+  }
+
+  let verify: CFTokenVerifyResult;
+  try {
+    verify = await cfFetch<CFTokenVerifyResult>('/user/tokens/verify');
+  } catch (error) {
+    return {
+      configured: true,
+      active: false,
+      tokenStatus: null,
+      tokenId: null,
+      notBefore: null,
+      expiresOn: null,
+      accountId: env.CF_ACCOUNT_ID,
+      accountName: null,
+      message: error instanceof Error ? error.message : 'Unable to verify Cloudflare API token.',
+    };
+  }
+
+  let accountName: string | null = null;
+  let message = verify.status === 'active'
+    ? 'Cloudflare token is active.'
+    : `Cloudflare token is not active (${verify.status}).`;
+
+  try {
+    const account = await cfFetch<CFAccountResult>(`/accounts/${env.CF_ACCOUNT_ID}`);
+    accountName = account.name;
+  } catch {
+    message += ' Account lookup failed (check Account permissions or CF_ACCOUNT_ID).';
+  }
+
+  return {
+    configured: true,
+    active: verify.status === 'active',
+    tokenStatus: verify.status,
+    tokenId: verify.id,
+    notBefore: verify.not_before,
+    expiresOn: verify.expires_on,
+    accountId: env.CF_ACCOUNT_ID,
+    accountName,
+    message,
+  };
 }

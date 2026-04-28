@@ -1,4 +1,4 @@
-import { SqliteHubClient } from '@sqlite-hub/client';
+import { MesahubClient } from '@mesahub/client';
 import { nanoid } from 'nanoid';
 import { env } from './env.js';
 import { parseMesahubUrl } from './lib/mesahub-url.js';
@@ -6,7 +6,7 @@ import { LAYOUTS } from './emails/render.js';
 import type { LayoutName } from './emails/render.js';
 
 const { apiUrl, apiKey, dbName } = parseMesahubUrl(env.MESAHUB_URL);
-const client = new SqliteHubClient({ apiKey, apiUrl });
+const client = new MesahubClient({ apiKey, apiUrl, routePrefix: 'api' });
 export const db = client.db(dbName);
 
 // ── Table handles ─────────────────────────────────────────────────────────────

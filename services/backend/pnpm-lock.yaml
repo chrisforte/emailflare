@@ -14,15 +14,15 @@ importers:
       '@hono/zod-validator':
         specifier: ^0.4.3
         version: 0.4.3(hono@4.12.14)(zod@3.25.76)
+      '@mesahub/client':
+        specifier: ^0.5.0
+        version: 0.5.0
       '@react-email/components':
         specifier: ^0.0.36
         version: 0.0.36(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       '@react-email/render':
         specifier: ^1.0.5
         version: 1.4.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
-      '@sqlite-hub/client':
-        specifier: ^0.4.2
-        version: 0.4.2
       hono:
         specifier: ^4.7.5
         version: 4.12.14
@@ -237,6 +237,10 @@ packages:
       hono: '>=3.9.0'
       zod: ^3.19.1
 
+  '@mesahub/client@0.5.0':
+    resolution: {integrity: sha512-+EuuxbnjqTR7cK218E9fTKpz/9nxRkkVNlFL64Kjm4qbrVg/GN93RrIBa88z2yKwqCIUj6OiWr723mMfcVDOww==}
+    engines: {node: '>=16.0.0'}
+
   '@pingpong-js/core@1.0.1':
     resolution: {integrity: sha512-Qg3pxyzx6EiLx8Owyl9AmRTX2b9m1XXYQ8GOtc1e+O+SAPaUMsAtMuG3Dzks4bvP56IBvdg+Bat7UxvnWpZAMw==}
     engines: {node: '>=18.0.0'}
@@ -399,10 +403,6 @@ packages:
 
   '@selderee/plugin-htmlparser2@0.11.0':
     resolution: {integrity: sha512-P33hHGdldxGabLFjPPpaTxVolMrzrcegejx+0GxjrIb9Zv48D8yAIA/QTDR2dFl7Uz7urX8aX6+5bCZslr+gWQ==}
-
-  '@sqlite-hub/client@0.4.2':
-    resolution: {integrity: sha512-1jTKGr9WNvz/mn/6oSV5OMst51nPcJmx4bhngeHlZoXcgLbrmONkULtUlrXa1mbl6ptZtvLKme/G/sPAYCTqNw==}
-    engines: {node: '>=16.0.0'}
 
   '@types/node@22.19.17':
     resolution: {integrity: sha512-wGdMcf+vPYM6jikpS/qhg6WiqSV/OhG+jeeHT/KlVqxYfD40iYJf9/AE1uQxVWFvU7MipKRkRv8NSHiCGgPr8Q==}
@@ -657,6 +657,10 @@ snapshots:
       hono: 4.12.14
       zod: 3.25.76
 
+  '@mesahub/client@0.5.0':
+    dependencies:
+      '@pingpong-js/fetch': 1.0.2
+
   '@pingpong-js/core@1.0.1': {}
 
   '@pingpong-js/fetch@1.0.2':
@@ -788,10 +792,6 @@ snapshots:
     dependencies:
       domhandler: 5.0.3
       selderee: 0.11.0
-
-  '@sqlite-hub/client@0.4.2':
-    dependencies:
-      '@pingpong-js/fetch': 1.0.2
 
   '@types/node@22.19.17':
     dependencies:

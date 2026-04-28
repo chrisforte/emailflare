@@ -18,6 +18,7 @@ import templatesRoutes from './routes/templates.js';
 import keysRoutes      from './routes/keys.js';
 import logsRoutes      from './routes/logs.js';
 import statsRoutes     from './routes/stats.js';
+import cloudflareRoutes from './routes/cloudflare.js';
 import sendRoutes      from './routes/send.js';
 import { LAYOUTS, renderLayout } from './emails/render.js';
 import type { LayoutName } from './emails/render.js';
@@ -98,6 +99,7 @@ admin.route('/templates', templatesRoutes);
 admin.route('/keys',      keysRoutes);
 admin.route('/logs',      logsRoutes);
 admin.route('/stats',     statsRoutes);
+admin.route('/cloudflare', cloudflareRoutes);
 
 app.route('/api', admin);
 
@@ -114,9 +116,7 @@ app.onError((err, c) => {
 async function main() {
   console.log('[startup] NODE_ENV:', env.NODE_ENV);
   console.log('[startup] PORT:', env.PORT);
-  console.log('[startup] SQLITE_HUB_API_URL:', env.SQLITE_HUB_API_URL);
-  console.log('[startup] SQLITE_HUB_DB:', env.SQLITE_HUB_DB);
-  console.log('[startup] SQLITE_HUB_API_KEY:', env.SQLITE_HUB_API_KEY ? `${env.SQLITE_HUB_API_KEY.slice(0, 8)}...` : '*** MISSING ***');
+  console.log('[startup] MESAHUB_URL:', env.MESAHUB_URL.replace(/mh:\/\/[^@]+@/, 'mh://***@'));
   console.log('[startup] ADMIN_TOKEN:', env.ADMIN_TOKEN ? 'set' : '*** MISSING ***');
   console.log('[startup] CF_API_TOKEN:', env.CF_API_TOKEN ? 'set' : 'not set');
 

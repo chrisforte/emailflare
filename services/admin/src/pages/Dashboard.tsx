@@ -38,6 +38,18 @@ interface Stats {
   daily: DailyBucket[];
 }
 
+interface CFTokenStatus {
+  configured: boolean;
+  active: boolean;
+  tokenStatus: string | null;
+  tokenId: string | null;
+  notBefore: string | null;
+  expiresOn: string | null;
+  accountId: string | null;
+  accountName: string | null;
+  message: string;
+}
+
 interface LogRow {
   id: string;
   to_address: string;
@@ -238,18 +250,21 @@ function DashboardSkeleton() {
 export default function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [logs, setLogs] = useState<LogRow[]>([]);
+  const [cfStatus, setCfStatus] = useState<CFTokenStatus | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [range, setRange] = useState<Range>('7d');
 
   async function load(r: Range = range) {
     setRefreshing(true);
     try {
-      const [s, l] = await Promise.all([
+      const [s, l, cf] = await Promise.all([
         api.get<Stats>(`/api/stats?range=${r}`),
         api.get<{ data: LogRow[] }>('/api/logs?limit=10&page=1'),
+        api.get<CFTokenStatus>('/api/cloudflare/status').catch(() => null),
       ]);
       setStats(s.data);
       setLogs(l.data.data ?? []);
+      setCfStatus(cf?.data ?? null);
     } finally {
       setRefreshing(false);
     }
@@ -305,6 +320,47 @@ export default function Dashboard() {
           </Button>
         </div>
       </div>
+
+      {/* ── Cloudflare token status ───────────────────────────────────────── */}
+      <Card className="px-5 py-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium">Cloudflare token</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Connection state and account ownership</p>
+          </div>
+          {cfStatus?.active ? (
+            <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white">Active</Badge>
+          ) : (
+            <Badge variant="destructive">Inactive</Badge>
+          )}
+        </div>
+
+        {cfStatus ? (
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            <div className="rounded-lg border border-border p-3 bg-muted/20">
+              <p className="text-muted-foreground mb-1">Account</p>
+              <p className="font-medium text-foreground break-all">
+                {cfStatus.accountName ?? 'Unknown account'}
+              </p>
+              <p className="text-muted-foreground/80 mt-1 break-all">
+                {cfStatus.accountId ?? 'No account id configured'}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border p-3 bg-muted/20">
+              <p className="text-muted-foreground mb-1">Token status</p>
+              <p className="font-medium text-foreground">
+                {cfStatus.tokenStatus ?? (cfStatus.configured ? 'unknown' : 'not configured')}
+              </p>
+              {cfStatus.expiresOn && (
+                <p className="text-muted-foreground/80 mt-1">Expires: {new Date(cfStatus.expiresOn).toLocaleString()}</p>
+              )}
+            </div>
+            <p className="text-muted-foreground md:col-span-2">{cfStatus.message}</p>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground mt-3">Unable to fetch Cloudflare token status.</p>
+        )}
+      </Card>
 
       {/* ── KPI tiles ──────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -493,7 +549,7 @@ export default function Dashboard() {
           ) : (
             <div className="divide-y divide-border">
               {logs.map(log => (
-                <div className="flex items-start gap-3 px-5 py-3 hover:bg-muted/40nsition-colors">
+                <div className="flex items-start gap-3 px-5 py-3 hover:bg-muted/40 transition-colors">
                   <div className="mt-0.5 flex-shrink-0">
                     {log.status === 'sent'
                       ? <CheckCircle2 size={13} className="text-emerald-500" />
@@ -520,43 +576,4 @@ export default function Dashboard() {
       </div>
     </div>
   );
-}
-
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface DomainBreakdown {
-  name: string;
-  verified: boolean;
-  sent: number;
-  failed: number;
-}
-
-interface DailyBucket {
-  date: string;
-  sent: number;
-  failed: number;
-}
-
-interface Stats {
-  totalDomains: number;
-  verifiedDomains: number;
-  totalTemplates: number;
-  totalKeys: number;
-  totalEmails: number;
-  sentToday: number;
-  failedToday: number;
-  cfDailyLimit: number;
-  domainBreakdown: DomainBreakdown[];
-  daily: DailyBucket[];
-}
-
-interface LogRow {
-  id: string;
-  to_address: string;
-  from_address: string;
-  subject: string;
-  status: 'sent' | 'failed';
-  error: string | null;
-  sent_at: string;
 }

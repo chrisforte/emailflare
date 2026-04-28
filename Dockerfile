@@ -1,13 +1,15 @@
 # ── Stage: build-core ────────────────────────────────────────────────────────
-# Builds the mesahub-server Go binary (CGO required — uses sqlite3).
-# Override MESAHUB_CORE_VERSION at build time to pin a specific tag or commit:
-#   docker build --build-arg MESAHUB_CORE_VERSION=v0.2.0 .
+# Clones mesahub-core and builds the Go binary from source.
+# The Go module lives in server/ subdirectory — go install doesn't work.
+# Override MESAHUB_CORE_VERSION at build time to pin a specific commit/tag:
+#   docker build --build-arg MESAHUB_CORE_VERSION=main .
 FROM golang:1.24-alpine AS build-core
-RUN apk add --no-cache gcc musl-dev sqlite-dev
-ARG MESAHUB_CORE_VERSION=latest
-RUN CGO_ENABLED=1 go install \
-    github.com/0xdps/mesahub-core/cmd/server@${MESAHUB_CORE_VERSION}
-RUN cp /go/bin/server /go/bin/mesahub-server
+RUN apk add --no-cache gcc musl-dev sqlite-dev git
+ARG MESAHUB_CORE_VERSION=trunk
+RUN git clone --depth 1 --branch ${MESAHUB_CORE_VERSION} \
+    https://github.com/0xdps/mesahub-core.git /mesahub-core
+WORKDIR /mesahub-core/server
+RUN CGO_ENABLED=1 GOOS=linux go build -o /go/bin/mesahub-server ./cmd/server
 
 # ── Stage: build-backend ──────────────────────────────────────────────────────
 FROM node:22-alpine AS build-backend

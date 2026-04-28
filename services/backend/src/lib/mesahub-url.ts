@@ -32,7 +32,9 @@ export function parseMesahubUrl(raw: string): ParsedMesahubUrl {
   }
 
   const isLocalhost = host === 'localhost' || host === '127.0.0.1';
-  const scheme = isLocalhost ? 'http' : 'https';
+  // Hostnames with no dots are internal names (Docker service names, etc.) — use HTTP
+  const isInternal = !host.includes('.');
+  const scheme = (isLocalhost || isInternal) ? 'http' : 'https';
   const portPart = parsed.port ? `:${parsed.port}` : '';
   const apiUrl = `${scheme}://${host}${portPart}`;
 

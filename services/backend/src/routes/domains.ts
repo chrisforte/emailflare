@@ -3,6 +3,7 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
 import { domains, deleteDomainCascade } from '../db.js';
+import { CloudflareApiError } from '../services/cloudflare.js';
 import { createSendingSubdomain, listSendingSubdomains, getSubdomainDnsRecords, getSendingSubdomain, getZoneByHostname } from '../services/cloudflare.js';
 
 const app = new Hono();
@@ -44,8 +45,23 @@ app.post('/', zValidator('json', createSchema), async (c) => {
   }
 
   // Check CF first — reuse existing subdomain if found, otherwise create it.
-  const allSubdomains = await listSendingSubdomains(zoneId);
-  const cfResult = allSubdomains.find(s => s.name === name) ?? await createSendingSubdomain(zoneId, name);
+  let cfResult;
+  try {
+    const allSubdomains = await listSendingSubdomains(zoneId);
+    cfResult = allSubdomains.find(s => s.name === name) ?? await createSendingSubdomain(zoneId, name);
+  } catch (error) {
+    if (error instanceof CloudflareApiError) {
+      if (error.code === 10000 || error.code === 9109 || error.status === 401 || error.status === 403) {
+        return c.json({
+          error: 'Cloudflare token is missing permission for Email Sending Subdomains. Required: Account: Email Security Edit; Zone: Email Routing Rules Edit; Zone: Zone Read; Zone: DNS Read/Write.',
+          cfCode: error.code,
+          cfPath: error.path,
+        }, 422);
+      }
+      return c.json({ error: error.message, cfCode: error.code, cfPath: error.path }, 502);
+    }
+    throw error;
+  }
 
   const row = await domains.insert({
     id: nanoid(),

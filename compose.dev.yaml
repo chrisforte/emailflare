@@ -1,4 +1,27 @@
 services:
+  mesahub:
+    container_name: emailflare-mesahub
+    build:
+      context: ./infra
+      dockerfile: Dockerfile.mesahub
+    env_file:
+      - .env.local
+    environment:
+      - PORT=3002
+      - ADMIN_TOKEN=${ADMIN_TOKEN}
+      - SESSION_SECRET=${SESSION_SECRET:-emailflair-dev-session-secret-change-in-prod-32chars}
+      - FILE_TOKEN_SIGNING_SECRET=${FILE_TOKEN_SIGNING_SECRET:-emailflair-dev-file-token-signing-secret-32chars}
+      - DATA_PATH=/data
+      - DB_NAME=emailflare
+    volumes:
+      - mesahub-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3002/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
+
   backend:
     container_name: emailflare-backend
     build:
@@ -7,26 +30,33 @@ services:
       target: dev
     command: sh -c "npm install && tsx watch src/index.ts"
     env_file:
-      - .env
+      - .env.local
     environment:
       - NODE_ENV=development
-      - SQLITE_HUB_API_URL=http://host.docker.internal:4004
+      # Keep backend internal port stable for Caddy upstream.
+      - PORT=3000
+      # Embedded mesahub running in the mesahub service above.
+      # Override MESAHUB_URL to point to an external instance if needed.
+      - MESAHUB_URL=mh://${ADMIN_TOKEN}@mesahub:3002/emailflare
       - SMTP_HOST=mailpit
       - SMTP_PORT=1025
+    depends_on:
+      mesahub:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
     extra_hosts:
       - host.docker.internal:host-gateway
     volumes:
       - ./services/backend/src:/app/src
       - ./services/backend/package.json:/app/package.json
       - backend-node-modules:/app/node_modules
-    depends_on:
-      - mailpit
 
   mailpit:
     container_name: emailflare-mailpit
     image: axllent/mailpit:latest
     environment:
-      - MP_UI_BASE_PATH=/mailpit
+      - MP_WEBROOT=/mailpit
     ports:
       - "2025:1025"
       - "8026:8025"
@@ -49,9 +79,18 @@ services:
 
   edge:
     container_name: emailflare-edge
+    image: caddy:2-alpine
     volumes:
       - ./infra/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+    ports:
+      - "${PORT:-8090}:80"
+    depends_on:
+      - backend
+      - admin
+      - mailpit
 
 volumes:
   backend-node-modules:
   admin-node-modules:
+  mesahub-data:
+

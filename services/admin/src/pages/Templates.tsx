@@ -353,7 +353,7 @@ export default function TemplatesPage() {
           </Button>
         </div>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           {loading ? (
             <div className="p-3 flex flex-col gap-1.5">
               {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-[70px] rounded-lg" />)}

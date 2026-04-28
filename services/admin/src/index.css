@@ -129,7 +129,10 @@
 
 /* ── Selection + focus ───────────────────────────────────────────────────── */
 ::selection { background: oklch(0.602 0.213 47.604 / 0.15); color: inherit; }
-:focus-visible { outline: 2px solid oklch(0.602 0.213 47.604); outline-offset: 2px; }
+:where(a, button, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid oklch(0.602 0.213 47.604);
+  outline-offset: 2px;
+}
 
 /* ── Smooth transitions on interactive elements ──────────────────────────── */
 a, button, [role="button"] {

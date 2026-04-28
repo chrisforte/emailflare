@@ -64,7 +64,7 @@ if [ "$_HOST" = "local" ]; then
   curl -sf -X POST "http://localhost:${MESAHUB_CORE_PORT}/api/db" \
     -H "Authorization: Bearer $_ADMIN_TOKEN" \
     -H "Content-Type: application/json" \
-    -d "{\"name\":\"${_DBNAME}\",\"slug\":\"${_DBNAME}\"}" > /dev/null 2>&1 || true
+    -d "{\"name\":\"${_DBNAME}\",\"slug\":\"${_DBNAME}\",\"owner\":\"system\"}" > /dev/null 2>&1 || true
   echo "✓ Database '${_DBNAME}' ready"
 
   # Rewrite MESAHUB_URL with the resolved token so the Node process can parse it
@@ -77,7 +77,7 @@ echo "[1/5] Starting Mailpit (SMTP :$MAILPIT_SMTP_PORT, UI :$MAILPIT_UI_PORT)...
 mailpit \
   --smtp "0.0.0.0:${MAILPIT_SMTP_PORT}" \
   --listen "0.0.0.0:${MAILPIT_UI_PORT}" \
-  --ui-base-path /mailpit \
+  --webroot /mailpit \
   ${MP_UI_AUTH:+--ui-auth "$MP_UI_AUTH"} &
 MAILPIT_PID=$!
 
