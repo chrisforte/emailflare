@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "pnpm exec tsr generate && tsc -b && vite build",
+    "build": "vite build && tsc --noEmit",
     "preview": "vite preview"
   },
   "dependencies": {
