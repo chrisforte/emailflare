@@ -12,7 +12,7 @@ The simplest path is the repo-based deploy because Railway will build directly f
 The repo ships with:
 
 - `railway.json` at the repository root
-- a production Dockerfile that bundles backend, admin, Mailpit, and embedded mesahub
+- a production Dockerfile that bundles backend, admin, and embedded mesahub
 - a healthcheck on `/health`
 
 ## Required variables
@@ -22,8 +22,8 @@ Set these in Railway:
 - `ADMIN_TOKEN`
 - `SESSION_SECRET`
 - `MESAHUB_URL`
-- `CF_API_TOKEN`
-- `CF_ACCOUNT_ID`
+- `CF_API_TOKEN` *(required for production sending; not needed if using test API keys only)*
+- `CF_ACCOUNT_ID` *(required for production sending; not needed if using test API keys only)*
 
 For the minimum-infra Railway setup, use:
 
@@ -56,6 +56,25 @@ ghcr.io/0xdps/emailflare:latest
 ```
 
 Keep the same environment variables and mount `/data` as a persistent volume.
+
+---
+
+## Testing emails on Railway without Cloudflare credentials
+
+EmailFlare has built-in test mode: **test API keys** route all sends through SMTP instead of the Cloudflare Email Sending API.
+
+To test on Railway without real email delivery:
+
+1. Add a [Mailpit](https://mailpit.axllent.org) service to your Railway project (or use [Mailtrap](https://mailtrap.io) or any SMTP catcher)
+2. Set these env vars on the EmailFlare service:
+   ```text
+   SMTP_HOST=<mailpit service hostname or external host>
+   SMTP_PORT=1025
+   ```
+3. Create a **test** API key from the admin UI (Keys page)
+4. Send using that key — emails are intercepted by Mailpit / your SMTP catcher, never delivered to real recipients
+
+`CF_API_TOKEN` and `CF_ACCOUNT_ID` are not required when using test API keys only.
 
 ## Railway template section
 

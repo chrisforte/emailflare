@@ -1231,7 +1231,7 @@
         <div class="why-card">
           <div class="why-icon">📦</div>
           <h3>One container, not an ops project</h3>
-          <p>Backend, admin UI, embedded SQLite storage, and Mailpit are bundled in one Docker image. No Postgres, no Redis, no separate services to run. Mount one volume and deploy.</p>
+          <p>Backend, admin UI, and embedded SQLite storage are bundled in one Docker image. No Postgres, no Redis, no separate services to run. Mount one volume and deploy.</p>
         </div>
       </div>
     </div>
@@ -1381,8 +1381,8 @@
         </div>
         <div class="feature-card">
           <span class="feature-icon">🧪</span>
-          <h3>Mailpit Dev Stack</h3>
-          <p>A dedicated <code>compose.dev.yaml</code> swaps delivery for <a href="https://mailpit.axllent.org" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px;">Mailpit</a> — every email is intercepted and shown in a local web UI. No Cloudflare credentials needed for local development.</p>
+          <h3>Test Keys &amp; SMTP Routing</h3>
+          <p>Create a <strong>test API key</strong> in the admin UI and all sends route through SMTP instead of Cloudflare — no CF credentials required. Point <code>SMTP_HOST</code>/<code>SMTP_PORT</code> at any catcher (<a href="https://mailpit.axllent.org" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px;">Mailpit</a>, Mailtrap, etc.). The dev compose stack bundles Mailpit automatically.</p>
           <span class="feature-tag">Local Dev</span>
         </div>
       </div>
@@ -1485,13 +1485,13 @@
       <!-- Dev stack callout -->
       <div class="railway-wrap" style="margin-bottom:14px;border-color:oklch(30% 0.06 150 / 0.5);">
         <div class="railway-left">
-          <h3 style="display:flex;align-items:center;gap:8px;"><span style="font-size:18px;">🧪</span> Test locally without touching real inboxes</h3>
+          <h3 style="display:flex;align-items:center;gap:8px;"><span style="font-size:18px;">🧪</span> Test without touching real inboxes — anywhere</h3>
           <p>
-            <code style="font-family:'SF Mono',monospace;font-size:11.5px;background:oklch(22% 0.01 48);padding:1px 5px;border-radius:3px;">compose.dev.yaml</code> spins up the full stack with
-            <a href="https://mailpit.axllent.org" target="_blank" rel="noopener" style="color:oklch(62% 0.14 150);text-decoration:none;">Mailpit</a>
-            as the SMTP backend — every email your app sends is intercepted and displayed in Mailpit's web UI instead of being delivered.
-            Perfect for integration tests, template previews, and CI pipelines.
-            Access it at <code style="font-family:'SF Mono',monospace;font-size:11.5px;background:oklch(22% 0.01 48);padding:1px 5px;border-radius:3px;">http://localhost:8090/mailpit/</code> once the stack is running.
+            EmailFlare has first-class test mode: <strong>test API keys</strong> route sends through SMTP instead of the Cloudflare Email Sending API — no CF credentials required.
+            Point <code style="font-family:'SF Mono',monospace;font-size:11.5px;background:oklch(22% 0.01 48);padding:1px 5px;border-radius:3px;">SMTP_HOST</code> and <code style="font-family:'SF Mono',monospace;font-size:11.5px;background:oklch(22% 0.01 48);padding:1px 5px;border-radius:3px;">SMTP_PORT</code> at any SMTP catcher
+            (<a href="https://mailpit.axllent.org" target="_blank" rel="noopener" style="color:oklch(62% 0.14 150);text-decoration:none;">Mailpit</a>, Mailtrap, etc.) — this works on Railway, Docker, or any other deployment.
+            For local dev, <code style="font-family:'SF Mono',monospace;font-size:11.5px;background:oklch(22% 0.01 48);padding:1px 5px;border-radius:3px;">compose.dev.yaml</code> bundles Mailpit automatically;
+            the UI is accessible at <code style="font-family:'SF Mono',monospace;font-size:11.5px;background:oklch(22% 0.01 48);padding:1px 5px;border-radius:3px;">http://localhost:8090/mailpit/</code>.
           </p>
         </div>
         <a class="btn btn-ghost" href="https://mailpit.axllent.org" target="_blank" rel="noopener" style="white-space:nowrap;">
@@ -1576,15 +1576,15 @@
           <li>
             <div class="ab-icon">✓</div>
             <div class="ab-text">
-              <strong>Four services, one image</strong>
-              <span>The production Docker image bundles the Hono API backend, React admin UI, embedded mesahub storage, and Mailpit for development email testing.</span>
+              <strong>Three services, one image</strong>
+              <span>The production Docker image bundles the Hono API backend, React admin UI, and embedded mesahub storage — nothing else. Mailpit is a separate dev-only container in <code>compose.dev.yaml</code>.</span>
             </div>
           </li>
           <li>
             <div class="ab-icon">✓</div>
             <div class="ab-text">
-              <strong>Cloudflare Email Sending only</strong>
-              <span>No AWS SES, no SMTP relay, no third-party delivery dependencies. EmailFlare sends exclusively through Cloudflare's infrastructure.</span>
+              <strong>Cloudflare Email Sending for production</strong>
+              <span>Production API keys send exclusively through Cloudflare's infrastructure — no AWS SES, no third-party relay. Test API keys route through SMTP for safe testing without CF credentials.</span>
             </div>
           </li>
           <li>

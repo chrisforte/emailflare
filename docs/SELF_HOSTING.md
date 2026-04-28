@@ -7,15 +7,15 @@ The default self-host deployment uses:
 - one application container
 - embedded mesahub with SQLite-backed storage
 - one mounted volume at `/data`
-- Cloudflare Email Sending as the outbound delivery provider
+- Cloudflare Email Sending as the outbound delivery provider (for production)
 
 You do not need Postgres, Redis, or a separate database service for the default setup.
 
 ## Requirements
 
 - Docker with Compose support
-- a Cloudflare account with Email Sending enabled
-- a Cloudflare API token with the required email sending permissions
+- a Cloudflare account with Email Sending enabled *(not required if using test API keys only)*
+- a Cloudflare API token with the required email sending permissions *(not required if using test API keys only)*
 
 ## 1. Create your environment file
 
@@ -60,7 +60,8 @@ curl http://localhost:8090/health
 Then open:
 
 - app: `http://localhost:8090`
-- Mailpit UI: `http://localhost:8090/mailpit/`
+
+> **Note:** The Mailpit UI is only available when running the dev stack (`compose.dev.yaml`). It is not included in the production image.
 
 ## 4. Persist data
 
@@ -84,3 +85,46 @@ If you are running from the published image, pull the new tag and redeploy the c
 If you want to move storage out of the app container later, replace `MESAHUB_URL` with an external mesahub URL.
 
 The minimum-infra recommendation remains the embedded local setup until you have a reason to split services.
+
+---
+
+## Local development
+
+For local development, use `compose.dev.yaml` instead of `compose.yaml`. It runs the same stack but adds a [Mailpit](https://mailpit.axllent.org) container as the SMTP backend so emails are never delivered to real inboxes.
+
+```bash
+docker compose --env-file .env.local -f compose.dev.yaml up
+# or:
+just dev
+```
+
+Once running:
+
+- app: `http://localhost:8090`
+- Mailpit UI: `http://localhost:8090/mailpit/`
+
+You do not need `CF_API_TOKEN` or `CF_ACCOUNT_ID` set when using the dev stack with test API keys.
+
+---
+
+## Test API keys and SMTP routing
+
+EmailFlare has built-in test mode that works on any deployment (local, Railway, Docker, etc.):
+
+- **Live API keys** send through the Cloudflare Email Sending API
+- **Test API keys** route sends through SMTP — no Cloudflare credentials required
+
+To use test mode on any deployment:
+
+1. Set `SMTP_HOST` and `SMTP_PORT` to any SMTP catcher ([Mailpit](https://mailpit.axllent.org), [Mailtrap](https://mailtrap.io), etc.)
+2. Create a **test** API key from the admin UI (Keys page)
+3. Send using that key — emails go to your SMTP catcher, never to real recipients
+
+Optional auth env vars:
+
+```text
+SMTP_USER=<username>
+SMTP_PASS=<password>
+```
+
+Leave them unset for unauthenticated SMTP (e.g. local Mailpit).
