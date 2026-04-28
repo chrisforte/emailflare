@@ -11,9 +11,6 @@ services:
       - .env.local
     environment:
       - NODE_ENV=production
-      # Embedded mesahub — start.sh spins up mesahub-server inside the container.
-      # Override with mh://token@host:port/db to use an external instance instead.
-      - MESAHUB_URL=${MESAHUB_URL:-mh://local/emailflare}
     volumes:
       - app-data:/data
     restart: unless-stopped
