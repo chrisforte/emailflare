@@ -1,5 +1,6 @@
 import { MesahubClient } from '@mesahub/client';
-import { nanoid } from 'nanoid';
+import { customAlphabet } from 'nanoid';
+const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 import { env } from './env.js';
 import { parseMesahubUrl } from './lib/mesahub-url.js';
 import { LAYOUTS } from './emails/render.js';

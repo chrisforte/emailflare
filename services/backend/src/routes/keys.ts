@@ -2,7 +2,8 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { createHash, randomBytes } from 'node:crypto';
-import { nanoid } from 'nanoid';
+import { customAlphabet } from 'nanoid';
+const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 import { apiKeys, apiKeyDomains } from '../db.js';
 
 const app = new Hono();

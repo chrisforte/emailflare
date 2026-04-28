@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { nanoid } from 'nanoid';
+import { customAlphabet } from 'nanoid';
+const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 import { db, emailLogs, templates } from '../db.js';
 import { sendEmail } from '../services/cloudflare.js';
 import { sendEmailViaSmtp } from '../services/smtp.js';

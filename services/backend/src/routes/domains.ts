@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { nanoid } from 'nanoid';
+import { customAlphabet } from 'nanoid';
+const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 import { domains, deleteDomainCascade } from '../db.js';
 import { CloudflareApiError } from '../services/cloudflare.js';
 import { createSendingSubdomain, listSendingSubdomains, getSubdomainDnsRecords, getSendingSubdomain, getZoneByHostname } from '../services/cloudflare.js';
