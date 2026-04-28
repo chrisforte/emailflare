@@ -17,7 +17,7 @@ It is designed for teams that want:
 
 - `services/backend`: Hono API for admin, keys, templates, stats, and email send operations
 - `services/admin`: React admin app
-- `Dockerfile`: production image that bundles backend, admin, embedded mesahub, and Mailpit
+- `Dockerfile`: production image that bundles backend, admin, and embedded mesahub
 - `compose.yaml`: single-container self-host / production-style setup
 - `compose.dev.yaml`: local development stack with hot reload
 - `railway.json`: Railway service config for repo-based deploys
@@ -58,12 +58,11 @@ Read the full guide in [docs/SELF_HOSTING.md](./docs/SELF_HOSTING.md).
 
 ## Railway
 
-This repo includes a root `railway.json` and can be deployed either:
+Deploy EmailFlare to Railway in one click:
 
-- directly from the GitHub repository with Railway reading the included Dockerfile and config
-- from the published GHCR image on platforms that prefer image-based deploys
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/emailflare)
 
-Read the Railway guide in [docs/RAILWAY.md](./docs/RAILWAY.md).
+The template pre-configures secrets, embedded storage, and a persistent `/data` volume. You only need to supply `CF_API_TOKEN` and `CF_ACCOUNT_ID`.
 
 ## Open source
 
