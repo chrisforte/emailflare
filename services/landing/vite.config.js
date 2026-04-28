@@ -1,0 +1,14 @@
+import { defineConfig } from 'vite'
+import { resolve } from 'path'
+
+export default defineConfig({
+  build: {
+    rollupOptions: {
+      input: {
+        main:            resolve(__dirname, 'index.html'),
+        'cf-token':      resolve(__dirname, 'cloudflare-token.html'),
+        mesahub:         resolve(__dirname, 'mesahub.html'),
+      },
+    },
+  },
+})

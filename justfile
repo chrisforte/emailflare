@@ -84,9 +84,9 @@ smoke:
     echo "Checking $BASE_URL ..."
     code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/health")
     [ "$code" = "200" ] || { echo "/health returned $code"; exit 1; }
-    code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/api/me" \
+    code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/api/auth/me" \
         -H "Authorization: Bearer $ADMIN_TOKEN")
-    [ "$code" = "200" ] || { echo "/api/me returned $code"; exit 1; }
+    [ "$code" = "200" ] || { echo "/api/auth/me returned $code"; exit 1; }
     echo "smoke checks passed"
 
 # Validate Docker is available and .env exists
