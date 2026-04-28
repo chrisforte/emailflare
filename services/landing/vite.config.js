@@ -6,9 +6,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main:            resolve(__dirname, 'index.html'),
-        'cf-token':      resolve(__dirname, 'cloudflare-token.html'),
-        mesahub:         resolve(__dirname, 'mesahub.html'),
+        main:           resolve(__dirname, 'index.html'),
+        'cf-token':     resolve(__dirname, 'cloudflare-token/index.html'),
+        mesahub:        resolve(__dirname, 'mesahub/index.html'),
       },
     },
   },
