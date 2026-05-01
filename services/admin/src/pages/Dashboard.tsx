@@ -459,7 +459,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
 
         {/* Domain breakdown */}
-        <Card className="lg:col-span-3 overflow-hidden p-0">
+        <Card className="lg:col-span-3 overflow-hidden p-0 gap-0">
           <div className="flex items-center justify-between px-5 py-[14px] border-b border-border">
             <div>
               <p className="text-sm font-medium">Domains</p>
@@ -486,7 +486,7 @@ export default function Dashboard() {
                 const shareColor = share >= 50 ? '#ef4444' : share >= 25 ? '#f59e0b' : '#10b981';
                 return (
                   <div key={d.name} className="px-5 py-3.5 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className={`size-1.5 rounded-full flex-shrink-0 ${d.verified ? 'bg-emerald-500' : 'bg-amber-500/60'}`} />
                         <span className="text-[13px] text-foreground font-mono truncate">{d.name}</span>
@@ -507,7 +507,7 @@ export default function Dashboard() {
                         )}
                       </div>
                     </div>
-                    {total > 0 && (
+                    {/* {total > 0 && (
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-0.5 bg-border rounded-full overflow-hidden">
                           <div className="h-full rounded-full transition-all duration-700"
@@ -515,7 +515,7 @@ export default function Dashboard() {
                         </div>
                         <span className="text-[10px] text-muted-foreground/50 tabular-nums w-8 text-right">{share}%</span>
                       </div>
-                    )}
+                    )} */}
                   </div>
                 );
               })}
@@ -533,7 +533,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Recent activity */}
-        <Card className="lg:col-span-2 overflow-hidden p-0">
+        <Card className="lg:col-span-2 overflow-hidden p-0 gap-0">
           <div className="flex items-center justify-between px-5 py-[14px] border-b border-border">
             <p className="text-sm font-medium">Recent activity</p>
             <a href="/logs" className="text-[11px] text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors">
