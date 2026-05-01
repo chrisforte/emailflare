@@ -1,49 +1,53 @@
 import * as React from 'react';
 import {
-  Body, Button, Container, Head, Heading, Html,
-  Preview, Section, Text, Tailwind, Hr,
+  Body,
+  Button,
+  Container,
+  Head,
+  Heading,
+  Html,
+  Preview,
+  Section,
+  Text,
+  Tailwind,
 } from '@react-email/components';
 import { getThemeConfig } from '../ThemeContext.js';
 
-interface EmailVerifyProps {
+interface VerificationSuccessProps {
   name?: string;
   appName?: string;
-  verifyUrl?: string;
-  expiresIn?: string;
+  confirmationTime?: string;
+  loginUrl?: string;
 }
 
-export const EmailVerify: React.FC<EmailVerifyProps> = ({
+export const VerificationSuccess: React.FC<VerificationSuccessProps> = ({
   name = 'there',
   appName = 'our app',
-  verifyUrl = '#',
-  expiresIn = '24 hours',
+  confirmationTime = 'just now',
+  loginUrl = '#',
 }) => (
   <Html>
     <Head />
-    <Preview>Verify your email address for {appName}</Preview>
+    <Preview>Your email was verified successfully</Preview>
     <Tailwind config={getThemeConfig() as any}>
       <Body className="bg-email-bg font-sans py-8">
         <Container className="bg-email-surface rounded-xl shadow-sm max-w-[600px] mx-auto px-8 py-10">
           <Heading className="text-2xl font-bold text-email-heading mt-0">
-            Confirm your email address
+            Email verified successfully
           </Heading>
           <Text className="text-email-body text-base leading-relaxed">
-            Hi {name}, thanks for signing up for {appName}. Please verify your email
-            address by clicking the button below. This link expires in{' '}
-            <strong>{expiresIn}</strong>.
+            Hi {name}, your email for {appName} was verified at {confirmationTime}.
           </Text>
           <Section className="my-8">
             <Button
-              href={verifyUrl}
+              href={loginUrl}
               className="bg-email-primary text-email-primary-fg font-semibold rounded-lg px-6 py-3 no-underline"
             >
-              Verify email address →
+              Continue to account -&gt;
             </Button>
           </Section>
-          <Hr className="border-email-border my-6" />
           <Text className="text-email-muted text-sm">
-            If you didn't create an account with {appName}, you can safely ignore this email.
-            Your email address will not be added without confirmation.
+            If this was not you, secure your account immediately.
           </Text>
         </Container>
       </Body>
@@ -51,4 +55,4 @@ export const EmailVerify: React.FC<EmailVerifyProps> = ({
   </Html>
 );
 
-export default EmailVerify;
+export default VerificationSuccess;

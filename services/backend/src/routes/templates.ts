@@ -5,6 +5,7 @@ import { customAlphabet } from 'nanoid';
 const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 import { db, templates } from '../db.js';
 import { LAYOUTS, renderLayout } from '../emails/render.js';
+import { THEMES } from '../emails/themes.js';
 import type { TemplateRow } from '../db.js';
 import type { LayoutName } from '../emails/render.js';
 
@@ -30,6 +31,16 @@ app.get('/', async (c) => {
     orderBy: [{ column: 'is_system', direction: 'desc' }, { column: 'updated_at', direction: 'desc' }],
   });
   return c.json(rows.map(enrich));
+});
+
+// GET /api/templates/themes — list available theme IDs and labels
+app.get('/themes', async (c) => {
+  const list = Object.entries(THEMES).map(([id, t]) => ({
+    id,
+    label: id.charAt(0).toUpperCase() + id.slice(1),
+    primaryColor: t.primary,
+  }));
+  return c.json(list);
 });
 
 // GET /api/templates/:idOrSlug
@@ -133,12 +144,13 @@ app.post('/:id/preview', async (c) => {
 
   const body = await c.req.json().catch(() => ({}));
   const variables: Record<string, string> = body.variables ?? {};
+  const themeId: string | undefined = body.themeId;
 
   const sub = (s: string) => s.replace(/\{\{(\w+)\}\}/g, (_, k) => variables[k] ?? `{{${k}}}`);
 
   let html: string;
   if (row.layout) {
-    html = await renderLayout(row.layout as LayoutName, variables);
+    html = await renderLayout(row.layout as LayoutName, variables, themeId);
   } else {
     html = sub(row.html_body);
   }

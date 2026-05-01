@@ -3,6 +3,7 @@ import {
   Body, Button, Container, Head, Heading, Html,
   Preview, Section, Text, Tailwind, Hr,
 } from '@react-email/components';
+import { getThemeConfig } from '../ThemeContext.js';
 
 interface SubscriptionStartedProps {
   name?: string;
@@ -26,39 +27,39 @@ export const SubscriptionStarted: React.FC<SubscriptionStartedProps> = ({
   <Html>
     <Head />
     <Preview>Welcome to {planName} — your subscription is now active</Preview>
-    <Tailwind>
-      <Body className="bg-slate-50 font-sans py-8">
-        <Container className="bg-white rounded-xl shadow-sm max-w-[600px] mx-auto px-8 py-10">
+    <Tailwind config={getThemeConfig() as any}>
+      <Body className="bg-email-bg font-sans py-8">
+        <Container className="bg-email-surface rounded-xl shadow-sm max-w-[600px] mx-auto px-8 py-10">
           <Section className="text-center mb-4">
             <Text className="text-4xl m-0">🎉</Text>
           </Section>
-          <Heading className="text-2xl font-bold text-slate-900 mt-0 text-center">
+          <Heading className="text-2xl font-bold text-email-heading mt-0 text-center">
             You're subscribed to {planName}!
           </Heading>
-          <Text className="text-slate-600 text-base leading-relaxed text-center">
+          <Text className="text-email-body text-base leading-relaxed text-center">
             Hi {name}, your {appName} subscription is now active. Here's a summary:
           </Text>
-          <Section className="bg-orange-50 border border-orange-200 rounded-xl px-6 py-5 my-6">
-            <Text className="text-slate-700 text-sm m-0 mb-2">
+          <Section className="bg-email-primary-subtle border border-email-primary-subtle rounded-xl px-6 py-5 my-6">
+            <Text className="text-email-strong text-sm m-0 mb-2">
               <strong>Plan:</strong> {planName}
             </Text>
-            <Text className="text-slate-700 text-sm m-0 mb-2">
+            <Text className="text-email-strong text-sm m-0 mb-2">
               <strong>Amount:</strong> {amount} / {billingInterval}
             </Text>
-            <Text className="text-slate-700 text-sm m-0">
+            <Text className="text-email-strong text-sm m-0">
               <strong>Next billing date:</strong> {nextBillingDate}
             </Text>
           </Section>
           <Section className="my-8 text-center">
             <Button
               href={dashboardUrl}
-              className="bg-orange-500 text-white font-semibold rounded-lg px-6 py-3 no-underline"
+              className="bg-email-primary text-email-primary-fg font-semibold rounded-lg px-6 py-3 no-underline"
             >
               Go to dashboard →
             </Button>
           </Section>
-          <Hr className="border-slate-200 my-6" />
-          <Text className="text-slate-400 text-sm">
+          <Hr className="border-email-border my-6" />
+          <Text className="text-email-muted text-sm">
             You can manage your subscription at any time from your account settings.
             To cancel or make changes, visit your billing portal.
           </Text>

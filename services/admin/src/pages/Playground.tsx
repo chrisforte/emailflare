@@ -21,6 +21,36 @@ import { cn } from '@/lib/utils';
 hljs.registerLanguage('xml', xml);
 hljs.registerLanguage('json', jsonLang);
 
+const EMAIL_THEMES = [
+  { id: 'default', label: 'Default', color: '#f97316' },
+  { id: 'ocean',   label: 'Ocean',   color: '#0ea5e9' },
+  { id: 'forest',  label: 'Forest',  color: '#16a34a' },
+  { id: 'violet',  label: 'Violet',  color: '#7c3aed' },
+  { id: 'slate',   label: 'Slate',   color: '#334155' },
+];
+
+function ThemePicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Theme</span>
+      {EMAIL_THEMES.map(t => (
+        <button
+          key={t.id}
+          type="button"
+          title={t.label}
+          onClick={() => onChange(t.id)}
+          className={cn(
+            'size-4 rounded-full border-2 transition-all duration-100',
+            value === t.id ? 'border-white scale-125 shadow-sm' : 'border-transparent opacity-50 hover:opacity-90 hover:scale-110'
+          )}
+          style={{ background: t.color }}
+        />
+      ))}
+      <span className="text-[10px] text-muted-foreground capitalize">{value}</span>
+    </div>
+  );
+}
+
 function beautifyHtml(html: string): string {
   try {
     const tab = '  ';
@@ -100,6 +130,7 @@ type RightTab = 'preview' | 'code' | 'api';
 
 export default function PlaygroundPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [templateSearch, setTemplateSearch] = useState('');
   const [domains, setDomains] = useState<Domain[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const [variables, setVariables] = useState<Record<string, string>>({});
@@ -113,6 +144,7 @@ export default function PlaygroundPage() {
   const [result, setResult] = useState<{ ok: boolean; message: string; detail?: string } | null>(null);
   const [previewHtml, setPreviewHtml] = useState('');
   const [rightTab, setRightTab] = useState<RightTab>('preview');
+  const [themeId, setThemeId] = useState('default');
 
   const keyMode: 'test' | 'live' | null = apiKey.startsWith('eftest_') ? 'test' : apiKey.startsWith('eflive_') || apiKey.startsWith('emailflair_') ? 'live' : null;
 
@@ -165,13 +197,13 @@ export default function PlaygroundPage() {
   useEffect(() => {
     if (!selectedTemplate) { setPreviewHtml(''); return; }
     if (selectedTemplate.layout) {
-      api.post<{ html: string }>(`/api/templates/${selectedTemplate.id}/preview`, { variables })
+      api.post<{ html: string }>(`/api/templates/${selectedTemplate.id}/preview`, { variables, themeId })
         .then(r => setPreviewHtml(r.data.html))
         .catch(() => setPreviewHtml('<p style="padding:1rem;color:red">Failed to render preview</p>'));
     } else {
       setPreviewHtml(applyVarsPreview(selectedTemplate.html_body, variables));
     }
-  }, [selectedTemplate, variables]);
+  }, [selectedTemplate, variables, themeId]);
 
   const codePayload = useMemo(() => {
     const templateRef = selectedTemplate?.slug
@@ -183,6 +215,7 @@ export default function PlaygroundPage() {
       to: to || 'recipient@example.com',
       ...(subject ? { subject } : {}),
       ...templateRef,
+      ...(themeId !== 'default' ? { themeId } : {}),
       variables: Object.keys(variables).length > 0 ? variables : detectedVars.reduce((acc, v) => ({ ...acc, [v]: `<${v}>` }), {}),
     };
     if (Object.keys(obj.variables as object).length === 0) delete obj.variables;
@@ -201,6 +234,23 @@ export default function PlaygroundPage() {
 
   const systemTemplates = templates.filter(t => t.is_system === 1);
   const customTemplates = templates.filter(t => t.is_system === 0);
+  const tq = templateSearch.trim().toLowerCase();
+  const filteredSystemTemplates = systemTemplates.filter(t => {
+    if (!tq) return true;
+    return (
+      t.name.toLowerCase().includes(tq)
+      || (t.slug ?? '').toLowerCase().includes(tq)
+      || t.subject.toLowerCase().includes(tq)
+    );
+  });
+  const filteredCustomTemplates = customTemplates.filter(t => {
+    if (!tq) return true;
+    return (
+      t.name.toLowerCase().includes(tq)
+      || (t.slug ?? '').toLowerCase().includes(tq)
+      || t.subject.toLowerCase().includes(tq)
+    );
+  });
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -213,6 +263,7 @@ export default function PlaygroundPage() {
         ...(senderName ? { fromName: senderName } : {}),
         to, ...(subject ? { subject } : {}),
         variables,
+        ...(themeId !== 'default' ? { themeId } : {}),
         ...(selectedTemplate.slug ? { templateSlug: selectedTemplate.slug } : { templateId: selectedTemplate.id }),
       };
       await api.post('/v1/send', payload, { headers: { Authorization: `Bearer ${apiKey}` } });
@@ -243,6 +294,12 @@ export default function PlaygroundPage() {
             {/* Template selector */}
             <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
               <p className="text-xs font-semibold">Template</p>
+              <ThemePicker value={themeId} onChange={setThemeId} />
+              <Input
+                value={templateSearch}
+                onChange={e => setTemplateSearch(e.target.value)}
+                placeholder="Search templates..."
+              />
               <Select value={selectedId} onValueChange={v => v !== null && handleSelect(v)}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="— Select a template —">
@@ -250,21 +307,24 @@ export default function PlaygroundPage() {
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {systemTemplates.length > 0 && (
+                  {filteredSystemTemplates.length > 0 && (
                     <SelectGroup>
-                      <SelectLabel>Built-in templates</SelectLabel>
-                      {systemTemplates.map(t => (
+                      <SelectLabel>Built-in templates ({filteredSystemTemplates.length})</SelectLabel>
+                      {filteredSystemTemplates.map(t => (
                         <SelectItem key={t.id} value={`t:${t.id}`}>{t.name}</SelectItem>
                       ))}
                     </SelectGroup>
                   )}
-                  {customTemplates.length > 0 && (
+                  {filteredCustomTemplates.length > 0 && (
                     <SelectGroup>
-                      <SelectLabel>Custom templates</SelectLabel>
-                      {customTemplates.map(t => (
+                      <SelectLabel>Custom templates ({filteredCustomTemplates.length})</SelectLabel>
+                      {filteredCustomTemplates.map(t => (
                         <SelectItem key={t.id} value={`t:${t.id}`}>{t.name}</SelectItem>
                       ))}
                     </SelectGroup>
+                  )}
+                  {filteredSystemTemplates.length === 0 && filteredCustomTemplates.length === 0 && (
+                    <div className="px-2 py-2 text-xs text-muted-foreground">No templates match "{templateSearch}"</div>
                   )}
                 </SelectContent>
               </Select>

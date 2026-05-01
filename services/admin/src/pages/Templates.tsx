@@ -33,6 +33,35 @@ type Mode = 'list' | 'create' | 'edit';
 
 const EMPTY_FORM = { name: '', slug: '', subject: '', htmlBody: '', textBody: '', domainId: '' };
 
+const EMAIL_THEMES = [
+  { id: 'default', label: 'Default', color: '#f97316' },
+  { id: 'ocean',   label: 'Ocean',   color: '#0ea5e9' },
+  { id: 'forest',  label: 'Forest',  color: '#16a34a' },
+  { id: 'violet',  label: 'Violet',  color: '#7c3aed' },
+  { id: 'slate',   label: 'Slate',   color: '#334155' },
+];
+
+function ThemePicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mr-0.5">Theme</span>
+      {EMAIL_THEMES.map(t => (
+        <button
+          key={t.id}
+          type="button"
+          title={t.label}
+          onClick={() => onChange(t.id)}
+          className={cn(
+            'size-4 rounded-full border-2 transition-all duration-100',
+            value === t.id ? 'border-white scale-125 shadow-sm' : 'border-transparent opacity-50 hover:opacity-90 hover:scale-110'
+          )}
+          style={{ background: t.color }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function extractVars(text: string): string[] {
   const vars = new Set<string>();
   for (const m of text.matchAll(/\{\{(\w+)\}\}/g)) if (m[1]) vars.add(m[1]);
@@ -108,6 +137,7 @@ function TemplateCard({ t, active, varsOpen, onToggleVars, onClick, detectedVars
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [mode, setMode] = useState<Mode>('list');
   const [editing, setEditing] = useState<Template | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -118,6 +148,7 @@ export default function TemplatesPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [varsOpen, setVarsOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Template | null>(null);
+  const [previewThemeId, setPreviewThemeId] = useState('default');
 
   async function load() {
     setLoading(true);
@@ -140,14 +171,14 @@ export default function TemplatesPage() {
     setMode('edit');
   }
 
-  async function openPreview(t: Template) {
+  async function openPreview(t: Template, themeId = previewThemeId) {
     setPreviewing(t);
     setPreviewVars({});
     setPreviewHtml('');
     setVarsOpen(false);
     setPreviewLoading(true);
     try {
-      const { data } = await api.post<{ html: string }>(`/api/templates/${t.id}/preview`, { variables: {} });
+      const { data } = await api.post<{ html: string }>(`/api/templates/${t.id}/preview`, { variables: {}, themeId });
       setPreviewHtml(data.html);
     } catch {
       setPreviewHtml('<p style="padding:1rem;color:red">Failed to render preview</p>');
@@ -156,12 +187,18 @@ export default function TemplatesPage() {
     }
   }
 
-  async function refreshPreview(t: Template, vars: Record<string, string>) {
+  async function refreshPreview(t: Template, vars: Record<string, string>, themeId = previewThemeId) {
     try {
-      const { data } = await api.post<{ html: string }>(`/api/templates/${t.id}/preview`, { variables: vars });
+      const { data } = await api.post<{ html: string }>(`/api/templates/${t.id}/preview`, { variables: vars, themeId });
       setPreviewHtml(data.html);
     } catch { /* keep previous */ }
   }
+
+  // Re-render preview when theme changes
+  useEffect(() => {
+    if (previewing) refreshPreview(previewing, previewVars, previewThemeId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewThemeId]);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -209,6 +246,24 @@ export default function TemplatesPage() {
 
   const systemTemplates = templates.filter(t => t.is_system === 1);
   const customTemplates = templates.filter(t => t.is_system === 0);
+
+  const q = search.trim().toLowerCase();
+  const filteredSystemTemplates = systemTemplates.filter(t => {
+    if (!q) return true;
+    return (
+      t.name.toLowerCase().includes(q)
+      || (t.slug ?? '').toLowerCase().includes(q)
+      || t.subject.toLowerCase().includes(q)
+    );
+  });
+  const filteredCustomTemplates = customTemplates.filter(t => {
+    if (!q) return true;
+    return (
+      t.name.toLowerCase().includes(q)
+      || (t.slug ?? '').toLowerCase().includes(q)
+      || t.subject.toLowerCase().includes(q)
+    );
+  });
 
   // ── Edit / Create view ───────────────────────────────────────────────────
   if (mode !== 'list') {
@@ -349,10 +404,25 @@ export default function TemplatesPage() {
               <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Email</span>
             </div>
             <h1 className="text-2xl font-bold">Templates</h1>
+            <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+              <span>{templates.length} total</span>
+              <span>•</span>
+              <span>{systemTemplates.length} built-in</span>
+              <span>•</span>
+              <span>{customTemplates.length} custom</span>
+            </div>
           </div>
           <Button onClick={openCreate}>
             <Plus size={14} data-icon="inline-start" /> New template
           </Button>
+        </div>
+
+        <div className="px-5 pb-3">
+          <Input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search templates by name, slug, or subject..."
+          />
         </div>
 
         <ScrollArea className="flex-1 min-h-0">
@@ -366,10 +436,12 @@ export default function TemplatesPage() {
                 <div>
                   <div className="flex items-center gap-1.5 px-3 pt-2 pb-1">
                     <Cpu size={10} className="text-purple-400" />
-                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Built-in</span>
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                      Built-in ({filteredSystemTemplates.length})
+                    </span>
                   </div>
                   <div className="flex flex-col gap-px">
-                    {systemTemplates.map(t => (
+                    {filteredSystemTemplates.map(t => (
                       <TemplateCard
                         key={t.id} t={t}
                         active={previewing?.id === t.id}
@@ -392,18 +464,26 @@ export default function TemplatesPage() {
               <div>
                 <div className="flex items-center gap-1.5 px-3 pb-1">
                   <FileText size={10} className="text-primary" />
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Custom</span>
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                    Custom ({filteredCustomTemplates.length})
+                  </span>
                 </div>
-                {customTemplates.length === 0 ? (
+                {filteredCustomTemplates.length === 0 ? (
                   <div className="px-3 py-6 text-center">
-                    <p className="text-[11px] text-muted-foreground">No custom templates yet</p>
-                    <Button variant="link" size="sm" onClick={openCreate} className="mt-1 h-auto text-[11px] p-0">
-                      Create your first →
-                    </Button>
+                    {q ? (
+                      <p className="text-[11px] text-muted-foreground">No custom templates match "{search}"</p>
+                    ) : (
+                      <>
+                        <p className="text-[11px] text-muted-foreground">No custom templates yet</p>
+                        <Button variant="link" size="sm" onClick={openCreate} className="mt-1 h-auto text-[11px] p-0">
+                          Create your first →
+                        </Button>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="flex flex-col gap-px">
-                    {customTemplates.map(t => (
+                    {filteredCustomTemplates.map(t => (
                       <TemplateCard
                         key={t.id} t={t}
                         active={previewing?.id === t.id}
@@ -455,16 +535,19 @@ export default function TemplatesPage() {
                 </div>
                 <p className="text-xs text-muted-foreground truncate">{previewing.subject}</p>
               </div>
-              {previewing.is_system === 0 && (
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs" onClick={() => openEdit(previewing)}>
-                    <Pencil size={11} /> Edit
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs text-muted-foreground hover:text-destructive hover:border-destructive/40" onClick={() => setDeleteTarget(previewing)}>
-                    <Trash2 size={11} /> Delete
-                  </Button>
-                </div>
-              )}
+              <div className="flex items-center gap-3 flex-shrink-0 flex-wrap">
+                <ThemePicker value={previewThemeId} onChange={id => setPreviewThemeId(id)} />
+                {previewing.is_system === 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs" onClick={() => openEdit(previewing)}>
+                      <Pencil size={11} /> Edit
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs text-muted-foreground hover:text-destructive hover:border-destructive/40" onClick={() => setDeleteTarget(previewing)}>
+                      <Trash2 size={11} /> Delete
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Email preview */}

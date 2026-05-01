@@ -23,6 +23,7 @@ const sendSchema = z.object({
   templateId: z.string().optional(),
   templateSlug: z.string().optional(),
   variables: z.record(z.string()).optional(),
+  themeId: z.string().optional(),
 }).refine(d => d.templateId || d.templateSlug || d.html || d.text, {
   message: 'Provide templateId, templateSlug, or at least one of html/text',
 });
@@ -59,7 +60,7 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
     subject = applyVariables(body.subject ?? template.subject, vars);
 
     if (template.layout) {
-      html = await renderLayout(template.layout as LayoutName, vars);
+      html = await renderLayout(template.layout as LayoutName, vars, body.themeId);
     } else {
       html = applyVariables(template.html_body, vars);
       text = template.text_body ? applyVariables(template.text_body, vars) : undefined;
