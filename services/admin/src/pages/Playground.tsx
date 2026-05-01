@@ -585,6 +585,7 @@ export default function PlaygroundPage() {
                         selectedTemplate
                           ? { field: selectedTemplate.slug ? 'templateSlug' : 'templateId', value: selectedTemplate.slug ?? selectedTemplate.id }
                           : null,
+                        { field: 'themeId', value: themeId !== 'default' ? themeId : null },
                         ...detectedVars.map(v => ({ field: `variables.${v}`, value: variables[v] || null })),
                       ].filter(Boolean) as Array<{ field: string; value: string | null }>).map(({ field, value }) => (
                         <div key={field} className="flex items-center justify-between px-4 py-2.5 text-xs">
