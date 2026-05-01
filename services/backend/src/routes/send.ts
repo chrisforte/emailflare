@@ -151,7 +151,7 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
 
   // ── Update key usage stats (atomic increment to avoid race condition) ────────
   if (successCount > 0) {
-    await db.query(
+    await db.exec(
       `UPDATE api_keys SET last_used_at = ?, send_count = send_count + ? WHERE id = ?`,
       [now, successCount, apiKey.keyId],
     );

@@ -215,12 +215,12 @@ export default function PlaygroundPage() {
       to: to || 'recipient@example.com',
       ...(subject ? { subject } : {}),
       ...templateRef,
-      ...(themeId !== 'default' ? { themeId } : {}),
+      themeId,
       variables: Object.keys(variables).length > 0 ? variables : detectedVars.reduce((acc, v) => ({ ...acc, [v]: `<${v}>` }), {}),
     };
     if (Object.keys(obj.variables as object).length === 0) delete obj.variables;
     return JSON.stringify(obj, null, 2);
-  }, [fromAddress, senderName, to, subject, hasTemplate, itemId, selectedTemplate, variables, detectedVars]);
+  }, [fromAddress, senderName, to, subject, hasTemplate, itemId, selectedTemplate, themeId, variables, detectedVars]);
 
   const curlSnippet = useMemo(
     () => `curl -X POST https://your-emailflare.com/v1/send \\\n  -H "Authorization: Bearer ${apiKey || '<YOUR_API_KEY>'}" \\\n  -H "Content-Type: application/json" \\\n  -d '${codePayload}'`,
@@ -263,7 +263,7 @@ export default function PlaygroundPage() {
         ...(senderName ? { fromName: senderName } : {}),
         to, ...(subject ? { subject } : {}),
         variables,
-        ...(themeId !== 'default' ? { themeId } : {}),
+        themeId,
         ...(selectedTemplate.slug ? { templateSlug: selectedTemplate.slug } : { templateId: selectedTemplate.id }),
       };
       await api.post('/v1/send', payload, { headers: { Authorization: `Bearer ${apiKey}` } });
@@ -585,7 +585,7 @@ export default function PlaygroundPage() {
                         selectedTemplate
                           ? { field: selectedTemplate.slug ? 'templateSlug' : 'templateId', value: selectedTemplate.slug ?? selectedTemplate.id }
                           : null,
-                        { field: 'themeId', value: themeId !== 'default' ? themeId : null },
+                        { field: 'themeId', value: themeId },
                         ...detectedVars.map(v => ({ field: `variables.${v}`, value: variables[v] || null })),
                       ].filter(Boolean) as Array<{ field: string; value: string | null }>).map(({ field, value }) => (
                         <div key={field} className="flex items-center justify-between px-4 py-2.5 text-xs">
