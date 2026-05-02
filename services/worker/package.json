@@ -1,0 +1,41 @@
+{
+  "name": "@emailflare/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "types": "wrangler types",
+    "migrations:apply:local": "wrangler d1 migrations apply emailflare --local",
+    "migrations:apply": "wrangler d1 migrations apply emailflare --remote",
+    "cf-typegen": "wrangler types",
+
+    "cf:setup": "node ../../scripts/setup.mjs",
+
+    "cf:build-admin": "cd ../admin && pnpm install --frozen-lockfile && pnpm build",
+    "cf:update": "pnpm run cf:build-admin && wrangler d1 migrations apply emailflare --remote && wrangler deploy",
+
+    "cf:rollout": "pnpm run cf:build-admin && wrangler d1 migrations apply emailflare --remote && wrangler versions upload",
+    "cf:rollout:full": "wrangler versions deploy --yes"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.4.3",
+    "@react-email/components": "^0.0.36",
+    "@react-email/render": "^1.0.5",
+    "hono": "^4.7.5",
+    "jose": "^5.10.0",
+    "nanoid": "^5.1.5",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250501.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "typescript": "^5.8.3",
+    "wrangler": "^4.0.0"
+  }
+}

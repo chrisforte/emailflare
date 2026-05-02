@@ -98,3 +98,37 @@ doctor:
     [ -f {{ENV_FILE}} ] || { echo "{{ENV_FILE}} missing — copy .env.example to .env.local and fill in values"; exit 1; }
     echo "doctor: all good"
 
+# ============================================================================
+# CLOUDFLARE WORKER  (services/worker/)
+# ============================================================================
+
+# Authenticate with Cloudflare (opens browser)
+worker-login:
+    cd services/worker && npx wrangler login
+
+# Install all dependencies (scripts + worker + admin + backend)
+install:
+    pnpm install --dir scripts
+    pnpm install --dir services/worker
+    pnpm install --dir services/admin
+    pnpm install --dir services/backend
+
+# First-time setup: creates D1 + KV, patches wrangler.jsonc, applies migrations,
+# prompts for secrets, and deploys. Safe to re-run (idempotent).
+# Copy scripts/config.example.toml → scripts/config.toml before running.
+worker-setup:
+    node scripts/setup.mjs
+
+# Apply pending D1 migrations then deploy latest code (atomic update)
+worker-update:
+    cd services/worker && pnpm run cf:update
+
+# Start local Worker dev server (uses local D1 + KV stubs)
+worker-dev:
+    cd services/worker && pnpm dev
+
+# Upload a new Worker version (migration + version upload) for gradual rollout.
+# After this, use `wrangler versions deploy` to control traffic percentage.
+worker-rollout-upload:
+    cd services/worker && pnpm run cf:rollout
+

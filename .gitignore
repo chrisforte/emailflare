@@ -8,3 +8,6 @@ dist/
 *.log
 .tanstack/
 services/admin/src/routeTree.gen.ts
+scripts/config.toml
+services/worker/.wrangler
+services/worker/.localflare
