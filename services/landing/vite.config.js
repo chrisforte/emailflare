@@ -10,6 +10,7 @@ export default defineConfig({
         docs:           resolve(__dirname, 'docs.html'),
         'cf-token':     resolve(__dirname, 'cloudflare-token/index.html'),
         mesahub:        resolve(__dirname, 'mesahub/index.html'),
+        cloudflare:     resolve(__dirname, 'cloudflare/index.html'),
       },
     },
   },

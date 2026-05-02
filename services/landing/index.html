@@ -1027,6 +1027,35 @@
     }
   </style>
   <script defer src="https://manage.anately.sh/script.js" data-website-id="c517f1e2-5f2c-4659-948e-659371cdeb46"></script>
+  <script>
+    function animateStars(target) {
+      var start = 10;
+      var duration = 900;
+      var startTime = null;
+      var els = [
+        document.getElementById('gh-stars-hero'),
+        document.getElementById('gh-stars-oss')
+      ];
+      function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+      function step(ts) {
+        if (!startTime) startTime = ts;
+        var progress = Math.min((ts - startTime) / duration, 1);
+        var current = Math.round(start + (target - start) * easeOut(progress));
+        var label = '\u2605 ' + current;
+        els.forEach(function(el) { if (el) el.textContent = label; });
+        if (progress < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    fetch('https://api.github.com/repos/0xdps/emailflare')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.stargazers_count) return;
+        animateStars(d.stargazers_count);
+      })
+      .catch(function() {});
+  </script>
 </head>
 <body>
 
@@ -1044,6 +1073,7 @@
           <li class="hide-mobile"><a href="/docs">Docs</a></li>
           <li class="hide-mobile"><a href="/cloudflare-token">CF Token</a></li>
           <li class="hide-mobile"><a href="/mesahub">MesaHub</a></li>
+          <li class="hide-mobile"><a href="/cloudflare">Workers Deploy</a></li>
           <li><a href="https://github.com/0xdps/emailflare" target="_blank" rel="noopener">GitHub</a></li>
           <li><a class="nav-cta" href="#deploy">Self-host →</a></li>
         </ul>
@@ -1073,15 +1103,17 @@
       <p class="hero-sub">
         EmailFlare wraps Cloudflare Email Sending with a clean REST API, scoped API keys,
         React Email templates, domain management, and a React admin UI —
-        all shipped in a single Docker container.
+        deploy as a Docker container <em>or</em> to Cloudflare Workers — no infrastructure required.
       </p>
 
       <div class="hero-actions">
         <a class="btn btn-primary" href="#deploy">Deploy in minutes →</a>
+        <a class="btn btn-secondary" href="/cloudflare">⚡ Deploy to Workers</a>
         <a class="btn btn-secondary" href="/docs">Read the docs</a>
         <a class="btn btn-secondary" href="https://github.com/0xdps/emailflare" target="_blank" rel="noopener">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
           View on GitHub
+          <span id="gh-stars-hero" style="display:inline-flex;align-items:center;gap:3px;margin-left:4px;padding:1px 7px;border-radius:100px;background:oklch(93% 0.006 60);border:1px solid oklch(82% 0.012 58);font-size:11.5px;font-weight:600;color:oklch(40% 0.012 58);">★ 10</span>
         </a>
       </div>
 
@@ -1570,6 +1602,14 @@
           </div>
           <span style="margin-left:auto;color:oklch(44% 0.01 58);font-size:14px;">→</span>
         </a>
+        <a href="/cloudflare" style="display:flex;align-items:center;gap:14px;background:oklch(18% 0.014 48);border:1px solid oklch(26% 0.012 48);border-radius:12px;padding:16px 20px;text-decoration:none;transition:border-color 0.15s;" onmouseover="this.style.borderColor='oklch(55% 0.22 230 / 0.5)'" onmouseout="this.style.borderColor='oklch(26% 0.012 48)'">
+          <span style="font-size:22px;flex-shrink:0;">⚡</span>
+          <div>
+            <div style="font-size:13.5px;font-weight:600;color:oklch(88% 0.01 58);margin-bottom:3px;">Deploy to Cloudflare Workers</div>
+            <div style="font-size:12.5px;color:oklch(52% 0.01 58);">No servers, no Docker — edge deploy with D1 + KV in one command.</div>
+          </div>
+          <span style="margin-left:auto;color:oklch(44% 0.01 58);font-size:14px;">→</span>
+        </a>
       </div>
     </div>
   </section>
@@ -1656,6 +1696,7 @@
         <a class="btn btn-primary" href="https://github.com/0xdps/emailflare" target="_blank" rel="noopener">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
           View on GitHub
+          <span id="gh-stars-oss" style="display:inline-flex;align-items:center;gap:3px;margin-left:4px;padding:1px 7px;border-radius:100px;background:oklch(100% 0 0 / 0.12);border:1px solid oklch(100% 0 0 / 0.18);font-size:11.5px;font-weight:600;color:oklch(88% 0.01 58);">★ 32</span>
         </a>
         <a class="btn btn-secondary" href="https://github.com/0xdps/emailflare/blob/trunk/CONTRIBUTING.md" target="_blank" rel="noopener">Contributing guide</a>
         <a class="btn btn-secondary" href="https://github.com/0xdps/emailflare/blob/trunk/docs/SELF_HOSTING.md" target="_blank" rel="noopener">Self-hosting docs</a>
