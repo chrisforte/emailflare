@@ -16,11 +16,17 @@ It is designed for teams that want:
 ## What ships in this repo
 
 - `services/backend`: Hono API for admin, keys, templates, stats, and email send operations
-- `services/admin`: React admin app
+- `services/admin`: React admin panel (Vite + React + TanStack Router)
+- `services/worker`: Cloudflare Worker — bundles the API and admin SPA for edge deployment, backed by D1 and KV
+- `services/landing`: landing and docs pages
+- `scripts/`: setup tooling for the Cloudflare Worker deployment (`setup.mjs`, `config.example.toml`)
 - `Dockerfile`: production image that bundles backend, admin, and embedded mesahub
 - `compose.yaml`: single-container self-host / production-style setup
 - `compose.dev.yaml`: local development stack with hot reload
+- `justfile`: task runner recipes for dev, prod, and Cloudflare Worker operations
 - `railway.json`: Railway service config for repo-based deploys
+- `docs/SELF_HOSTING.md`: Docker self-hosting guide
+- `docs/CLOUDFLARE.md`: Cloudflare Workers deployment guide
 
 ## Quick start
 
@@ -55,6 +61,19 @@ The default self-host path keeps infrastructure intentionally small:
 - one persistent volume mounted at `/data`
 
 Read the full guide in [docs/SELF_HOSTING.md](./docs/SELF_HOSTING.md).
+
+## Cloudflare Workers deployment
+
+Deploy EmailFlare as a Cloudflare Worker — no Docker, no servers. The Worker bundles the API and admin panel and is backed by D1 (SQLite) and KV.
+
+```bash
+just install
+cp scripts/config.example.toml scripts/config.toml
+# fill in your values
+just worker-setup
+```
+
+Read the full guide in [docs/CLOUDFLARE.md](./docs/CLOUDFLARE.md).
 
 ## Railway
 
