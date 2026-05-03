@@ -32,7 +32,7 @@ This installs `smol-toml` for the setup script, and all worker and admin depende
 just worker-login
 ```
 
-Opens a browser to complete the OAuth flow. Alternatively, set `CLOUDFLARE_API_TOKEN` in `scripts/config.toml` (see step 3).
+Opens a browser to complete the OAuth flow. This is the only authentication step needed — no API token is required for deployment.
 
 ## 3. Configure
 
@@ -44,14 +44,6 @@ Edit `scripts/config.toml`:
 
 ```toml
 [deploy]
-# API token used by wrangler to create resources and deploy.
-# Permissions needed: Workers Scripts (Edit), D1 (Edit), KV Storage (Edit),
-#                     Workers Routes (Edit), Account Settings (Read)
-cloudflare_api_token = "your-deploy-token"
-
-# Leave blank — auto-detected from your account. Set if you have multiple accounts.
-account_id = ""
-
 # D1 database name. "emailflare" is the default.
 database_name = "emailflare"
 
@@ -137,9 +129,10 @@ npx wrangler versions deploy --version-percentage <VERSION_ID>=100
 ## Updating secrets
 
 ```bash
-cd services/worker
-echo "new-value" | npx wrangler secret put SECRET_NAME
+just worker-secret SECRET_NAME
 ```
+
+You'll be prompted to enter the new value (input is hidden). Available secret names: `ADMIN_TOKEN`, `SESSION_SECRET`, `CF_API_TOKEN`, `CF_ACCOUNT_ID`, `ADMIN_ORIGIN`.
 
 ## Local development
 
@@ -153,7 +146,6 @@ Starts a local Worker dev server with a local D1 database and KV stubs. No secre
 
 | Token | Required permissions |
 |---|---|
-| Deploy token (`deploy.cloudflare_api_token`) | Workers Scripts: Edit, D1: Edit, KV Storage: Edit, Workers Routes: Edit, Account Settings: Read |
 | Runtime token (`secrets.cf_api_token`) | Email Routing: Edit, Zone: Read, DNS: Edit |
 
 Create tokens at [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens).

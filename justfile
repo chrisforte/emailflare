@@ -133,6 +133,14 @@ worker-update:
 worker-dev:
     cd services/worker && pnpm dev
 
+# Update a Worker secret interactively.
+# Usage: just worker-secret SECRET_NAME
+# e.g.   just worker-secret CF_API_TOKEN
+worker-secret name:
+    #!/usr/bin/env sh
+    printf '{{name}}: '; stty -echo; read val; stty echo; echo
+    echo "$val" | npx wrangler secret put {{name}} --cwd services/worker
+
 # Upload a new Worker version (migration + version upload) for gradual rollout.
 # After this, use `wrangler versions deploy` to control traffic percentage.
 worker-rollout-upload:
