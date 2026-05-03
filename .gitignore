@@ -11,6 +11,7 @@ services/admin/src/routeTree.gen.ts
 scripts/config.toml
 services/worker/.wrangler
 services/worker/.localflare
+*.tsbuildinfo
 
 # Compiled output from services/emails (safety net if tsc writes into src/)
 services/emails/src/**/*.js

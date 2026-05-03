@@ -12,8 +12,12 @@
     "jsx": "react-jsx",
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "paths": {
+      "@emailflare/emails": ["../emails/src/index.ts"]
+    }
   },
+  "references": [{"path": "../emails"}],
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }
