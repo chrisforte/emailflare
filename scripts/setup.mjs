@@ -57,8 +57,8 @@ const KV_NAME = 'emailflare-rate-limit';
 if (cfg.deploy?.cloudflare_api_token) {
   process.env.CLOUDFLARE_API_TOKEN = cfg.deploy.cloudflare_api_token;
 }
-if (cfg.deploy?.account_id) {
-  process.env.CLOUDFLARE_ACCOUNT_ID = cfg.deploy.account_id;
+if (cfg.deploy?.account_id ?? cfg.secrets?.cf_account_id) {
+  process.env.CLOUDFLARE_ACCOUNT_ID = cfg.deploy?.account_id ?? cfg.secrets?.cf_account_id;
 }
 
 // ─── helpers ────────────────────────────────────────────────────────────────

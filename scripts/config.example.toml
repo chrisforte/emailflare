@@ -7,16 +7,6 @@
 # interactively when running the setup script.
 
 [deploy]
-# Cloudflare API token used by wrangler during deployment.
-# Required permissions: Workers Scripts (Edit), D1 (Edit), KV Storage (Edit),
-#                       Workers Routes (Edit), Account Settings (Read)
-# Create one at: https://dash.cloudflare.com/profile/api-tokens
-cloudflare_api_token = ""
-
-# Your Cloudflare account ID (optional — auto-detected if you have one account).
-# Find it at: https://dash.cloudflare.com → right sidebar
-account_id = ""
-
 # D1 database name (default: emailflare). Change only if you need a custom name.
 database_name = "emailflare"
 
@@ -30,7 +20,6 @@ session_secret = ""
 
 # Cloudflare API token used at *runtime* to send emails via the CF Email API.
 # Required permissions: Email Routing (Edit), Zone (Read), DNS (Edit)
-# Can be the same token as deploy.cloudflare_api_token if it has all permissions.
 cf_api_token = ""
 
 # Your Cloudflare account ID (stored as a runtime secret).

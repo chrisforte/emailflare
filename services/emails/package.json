@@ -13,8 +13,8 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@react-email/components": "^0.0.36",
-    "@react-email/render": "^1.0.5",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.0.8",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
