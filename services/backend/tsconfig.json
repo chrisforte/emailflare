@@ -13,11 +13,11 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "baseUrl": ".",
     "paths": {
-      "@emailflare/emails": ["../emails/src/index.ts"]
+      "@emailflare/emails": ["../emails/dist/index.d.ts"]
     }
   },
-  "references": [{"path": "../emails"}],
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }
