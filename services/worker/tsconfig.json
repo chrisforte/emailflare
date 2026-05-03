@@ -10,7 +10,10 @@
     "noEmit": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@emailflare/emails": ["../emails/src/index.ts"]
+    }
   },
-  "include": ["src/**/*", "../backend/src/emails/**/*"]
+  "include": ["src/**/*"]
 }

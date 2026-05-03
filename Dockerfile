@@ -13,15 +13,23 @@ RUN CGO_ENABLED=1 GOOS=linux go build -o /go/bin/mesahub-server ./cmd/server
 
 # ── Stage: build-backend ──────────────────────────────────────────────────────
 FROM node:22-alpine AS build-backend
-WORKDIR /app/backend
+WORKDIR /app
 
 RUN npm install -g pnpm
 
-COPY services/backend/package.json services/backend/pnpm-lock.yaml services/backend/pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile
+# Build the shared emails package first (backend depends on it via file:../emails)
+COPY services/emails/package.json ./emails/package.json
+RUN cd emails && pnpm install
 
-COPY services/backend/ ./
-RUN pnpm run build
+COPY services/emails/ ./emails/
+RUN cd emails && pnpm run build
+
+# Now install and build the backend
+COPY services/backend/package.json services/backend/pnpm-lock.yaml services/backend/pnpm-workspace.yaml ./backend/
+RUN cd backend && pnpm install --frozen-lockfile
+
+COPY services/backend/ ./backend/
+RUN cd backend && pnpm run build
 
 # ── Stage: build-admin ────────────────────────────────────────────────────────
 FROM node:22-alpine AS build-admin
@@ -59,7 +67,9 @@ RUN set -e; \
 
 RUN mkdir -p /usr/share/caddy
 
-# Backend runtime
+# Backend runtime (emails dist is at ../emails relative to backend, per file: dep symlink)
+COPY --from=build-backend /app/emails/dist           ./emails/dist
+COPY --from=build-backend /app/emails/package.json   ./emails/package.json
 COPY --from=build-backend /app/backend/node_modules ./backend/node_modules
 COPY --from=build-backend /app/backend/dist          ./backend/dist
 COPY services/backend/package.json                   ./backend/

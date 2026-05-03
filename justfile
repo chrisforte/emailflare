@@ -106,12 +106,18 @@ doctor:
 worker-login:
     cd services/worker && npx wrangler login
 
-# Install all dependencies (scripts + worker + admin + backend)
+# Install all dependencies (scripts + emails + worker + admin + backend)
 install:
     pnpm install --dir scripts
+    pnpm install --dir services/emails
+    cd services/emails && pnpm run build
     pnpm install --dir services/worker
     pnpm install --dir services/admin
     pnpm install --dir services/backend
+
+# Build the shared emails package (re-run after editing services/emails/src/)
+emails-build:
+    cd services/emails && pnpm run build
 
 # First-time setup: creates D1 + KV, patches wrangler.jsonc, applies migrations,
 # prompts for secrets, and deploys. Safe to re-run (idempotent).

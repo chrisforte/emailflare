@@ -4,10 +4,9 @@ import { z } from 'zod';
 import { customAlphabet } from 'nanoid';
 const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 import { db, templates } from '../db.js';
-import { LAYOUTS, renderLayout } from '../emails/render.js';
-import { THEMES } from '../emails/themes.js';
+import { LAYOUTS, renderLayout, THEMES } from '@emailflare/emails';
 import type { TemplateRow } from '../db.js';
-import type { LayoutName } from '../emails/render.js';
+import type { LayoutName } from '@emailflare/emails';
 
 const app = new Hono();
 

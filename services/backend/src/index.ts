@@ -20,8 +20,8 @@ import logsRoutes      from './routes/logs.js';
 import statsRoutes     from './routes/stats.js';
 import cloudflareRoutes from './routes/cloudflare.js';
 import sendRoutes      from './routes/send.js';
-import { LAYOUTS, renderLayout } from './emails/render.js';
-import type { LayoutName } from './emails/render.js';
+import { LAYOUTS, renderLayout } from '@emailflare/emails';
+import type { LayoutName } from '@emailflare/emails';
 
 // Allowed origins for the admin UI.
 // ADMIN_ORIGIN accepts comma-separated bare domains (no scheme needed).

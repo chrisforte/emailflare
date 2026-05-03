@@ -13,23 +13,18 @@
   "dependencies": {
     "@hono/node-server": "^1.13.7",
     "@hono/zod-validator": "^0.4.3",
-    "@react-email/components": "^0.0.36",
-    "@react-email/render": "^1.0.5",
+    "@emailflare/emails": "file:../emails",
     "@mesahub/client": "^0.5.1",
     "hono": "^4.7.5",
     "iron-session": "^8.0.3",
     "jose": "^5.10.0",
     "nanoid": "^5.1.5",
     "nodemailer": "^8.0.5",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
     "zod": "^3.24.3"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",
     "@types/nodemailer": "^8.0.0",
-    "@types/react": "^19.1.2",
-    "@types/react-dom": "^19.1.2",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3"
   }

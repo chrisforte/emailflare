@@ -8,15 +8,12 @@ importers:
 
   .:
     dependencies:
+      '@emailflare/emails':
+        specifier: file:../emails
+        version: file:../emails
       '@hono/zod-validator':
         specifier: ^0.4.3
         version: 0.4.3(hono@4.12.16)(zod@3.25.76)
-      '@react-email/components':
-        specifier: ^0.0.36
-        version: 0.0.36(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
-      '@react-email/render':
-        specifier: ^1.0.5
-        version: 1.4.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       hono:
         specifier: ^4.7.5
         version: 4.12.16
@@ -26,12 +23,6 @@ importers:
       nanoid:
         specifier: ^5.1.5
         version: 5.1.11
-      react:
-        specifier: ^19.1.0
-        version: 19.2.5
-      react-dom:
-        specifier: ^19.1.0
-        version: 19.2.5(react@19.2.5)
       zod:
         specifier: ^3.24.3
         version: 3.25.76
@@ -42,12 +33,6 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.17
-      '@types/react':
-        specifier: ^19.1.2
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19.1.2
-        version: 19.2.3(@types/react@19.2.14)
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
@@ -106,6 +91,9 @@ packages:
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
+
+  '@emailflare/emails@file:../emails':
+    resolution: {directory: ../emails, type: directory}
 
   '@emnapi/runtime@1.10.0':
     resolution: {integrity: sha512-ewvYlk86xUoGI0zQRNq/mC+16R1QeDlKQy21Ki3oSYXNgLb45GV1P6A0M+/s6nyCuNDqe5VpaY84BzXGwVbwFA==}
@@ -609,23 +597,12 @@ packages:
   '@types/node@22.19.17':
     resolution: {integrity: sha512-wGdMcf+vPYM6jikpS/qhg6WiqSV/OhG+jeeHT/KlVqxYfD40iYJf9/AE1uQxVWFvU7MipKRkRv8NSHiCGgPr8Q==}
 
-  '@types/react-dom@19.2.3':
-    resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
-    peerDependencies:
-      '@types/react': ^19.2.0
-
-  '@types/react@19.2.14':
-    resolution: {integrity: sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w==}
-
   blake3-wasm@2.1.5:
     resolution: {integrity: sha512-F1+K8EbfOZE49dtoPtmxUQrpXaBIl3ICvasLh+nJta0xkz+9kF/7uet9fLnwKqhDrmj6g+6K3Tw9yQPUg2ka5g==}
 
   cookie@1.1.1:
     resolution: {integrity: sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ==}
     engines: {node: '>=18'}
-
-  csstype@3.2.3:
-    resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
 
   deepmerge@4.3.1:
     resolution: {integrity: sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A==}
@@ -850,6 +827,13 @@ snapshots:
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
+
+  '@emailflare/emails@file:../emails':
+    dependencies:
+      '@react-email/components': 0.0.36(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      '@react-email/render': 1.4.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      react: 19.2.5
+      react-dom: 19.2.5(react@19.2.5)
 
   '@emnapi/runtime@1.10.0':
     dependencies:
@@ -1189,19 +1173,9 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
-  '@types/react-dom@19.2.3(@types/react@19.2.14)':
-    dependencies:
-      '@types/react': 19.2.14
-
-  '@types/react@19.2.14':
-    dependencies:
-      csstype: 3.2.3
-
   blake3-wasm@2.1.5: {}
 
   cookie@1.1.1: {}
-
-  csstype@3.2.3: {}
 
   deepmerge@4.3.1: {}
 

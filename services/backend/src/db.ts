@@ -3,8 +3,8 @@ import { customAlphabet } from 'nanoid';
 const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 import { env } from './env.js';
 import { parseMesahubUrl } from './lib/mesahub-url.js';
-import { LAYOUTS } from './emails/render.js';
-import type { LayoutName } from './emails/render.js';
+import { LAYOUTS } from '@emailflare/emails';
+import type { LayoutName } from '@emailflare/emails';
 
 const { apiUrl, apiKey, dbName } = parseMesahubUrl(env.MESAHUB_URL);
 const client = new MesahubClient({ apiKey, apiUrl, routePrefix: 'api' });

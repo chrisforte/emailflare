@@ -1,12 +1,12 @@
-// Re-export email rendering utilities from the shared backend source.
-// Wrangler (esbuild) bundles these cross-service imports at build time.
+// Re-export email rendering utilities from the shared @emailflare/emails package.
+// Wrangler (esbuild) bundles these at deploy time.
 // Requires the `nodejs_compat` compatibility flag for AsyncLocalStorage + React SSR.
 
 export {
   renderLayout,
   LAYOUTS,
-} from '../../backend/src/emails/render.js';
+  THEMES,
+  themeToTailwindConfig,
+} from '@emailflare/emails';
 
-export { THEMES, themeToTailwindConfig } from '../../backend/src/emails/themes.js';
-
-export type { LayoutName } from '../../backend/src/emails/render.js';
+export type { LayoutName } from '@emailflare/emails';

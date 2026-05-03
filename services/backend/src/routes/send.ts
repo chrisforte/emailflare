@@ -6,8 +6,8 @@ const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklm
 import { db, emailLogs, templates } from '../db.js';
 import { sendEmail } from '../services/cloudflare.js';
 import { sendEmailViaSmtp } from '../services/smtp.js';
-import { renderLayout } from '../emails/render.js';
-import type { LayoutName } from '../emails/render.js';
+import { renderLayout } from '@emailflare/emails';
+import type { LayoutName } from '@emailflare/emails';
 import type { ApiKeyContext } from '../middleware/apiKey.js';
 
 const app = new Hono();
