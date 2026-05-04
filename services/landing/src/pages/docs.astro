@@ -113,6 +113,7 @@ import Base from '../layouts/Base.astro';
     border-radius: var(--radius-lg);
     overflow: hidden;
     margin-bottom: 20px;
+    padding: 0;
   }
 
   .doc-section-header {
@@ -129,6 +130,7 @@ import Base from '../layouts/Base.astro';
     font-weight: 600;
     letter-spacing: -0.01em;
     flex: 1;
+    margin: 0;
   }
 
   .anchor-link {
@@ -141,6 +143,8 @@ import Base from '../layouts/Base.astro';
 
   .doc-body { padding: 24px; }
   .doc-body > p:first-child { margin-top: 0; }
+  .doc-body > *:first-child { margin-top: 0; }
+  .doc-body > *:last-child { margin-bottom: 0; }
 
   .doc-body p {
     font-size: 0.9rem;
