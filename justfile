@@ -188,3 +188,11 @@ worker-secret name:
 worker-rollout-upload:
     cd services/worker && pnpm run cf:rollout
 
+# ============================================================================
+# LANDING PAGE  (services/landing/)
+# ============================================================================
+
+# Start landing page dev server
+web:
+    cd services/landing && pnpm dev
+
