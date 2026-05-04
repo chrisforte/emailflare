@@ -125,6 +125,41 @@ emails-build:
 worker-setup:
     node scripts/setup.mjs
 
+# Tear down Worker resources (Worker + D1 + KV) using values from wrangler.jsonc.
+# Safe to re-run: missing resources are skipped.
+remove-worker:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    WORKER_NAME="$(node -e 'const fs=require("node:fs"); const src=fs.readFileSync("services/worker/wrangler.jsonc", "utf8"); const cfg=Function(`"use strict"; return (${src});`)(); process.stdout.write(cfg.name ?? "");')"
+    D1_NAME="$(node -e 'const fs=require("node:fs"); const src=fs.readFileSync("services/worker/wrangler.jsonc", "utf8"); const cfg=Function(`"use strict"; return (${src});`)(); process.stdout.write(cfg.d1_databases?.[0]?.database_name ?? "");')"
+    KV_ID="$(node -e 'const fs=require("node:fs"); const src=fs.readFileSync("services/worker/wrangler.jsonc", "utf8"); const cfg=Function(`"use strict"; return (${src});`)(); process.stdout.write(cfg.kv_namespaces?.[0]?.id ?? "");')"
+
+    echo "Removing Cloudflare Worker components..."
+
+    if [ -n "${WORKER_NAME:-}" ]; then
+        echo "- Worker: ${WORKER_NAME}"
+        npx wrangler delete "${WORKER_NAME}" --force --cwd services/worker || true
+    else
+        echo "- Worker: skipped (name not found in wrangler.jsonc)"
+    fi
+
+    if [ -n "${D1_NAME:-}" ]; then
+        echo "- D1: ${D1_NAME}"
+        npx wrangler d1 delete "${D1_NAME}" --skip-confirmation --cwd services/worker || true
+    else
+        echo "- D1: skipped (database_name not found in wrangler.jsonc)"
+    fi
+
+    if [ -n "${KV_ID:-}" ]; then
+        echo "- KV namespace id: ${KV_ID}"
+        npx wrangler kv namespace delete --namespace-id "${KV_ID}" --skip-confirmation --cwd services/worker || true
+    else
+        echo "- KV: skipped (id not found in wrangler.jsonc)"
+    fi
+
+    echo "Done."
+
 # Apply pending D1 migrations then deploy latest code (atomic update)
 worker-update:
     cd services/worker && pnpm run cf:update
@@ -132,6 +167,13 @@ worker-update:
 # Start local Worker dev server (uses local D1 + KV stubs)
 worker-dev:
     cd services/worker && pnpm dev
+
+# Start Localflare dashboard + worker sidecar for local Cloudflare bindings.
+# Defaults to port 8790 to avoid collisions with wrangler dev on 8787.
+# Usage: just localflare              # uses 8790
+#        just localflare 8787         # explicit port override
+localflare port='8790':
+    cd services/worker && npx localflare --port {{port}}
 
 # Update a Worker secret interactively.
 # Usage: just worker-secret SECRET_NAME

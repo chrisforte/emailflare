@@ -70,6 +70,16 @@
     }
   ],
 
+  // Runtime env vars (Localflare reads vars from config for manifest visibility).
+  // Production values should be set with `wrangler secret put`.
+  "vars": {
+    "ADMIN_ORIGIN": "localhost:5173",
+    "ADMIN_TOKEN": "set-via-secret",
+    "SESSION_SECRET": "set-via-secret",
+    "CF_API_TOKEN": "set-via-secret",
+    "CF_ACCOUNT_ID": "set-via-secret"
+  },
+
   // Workers Rate Limiting for API key calls (100 req / 60s per key)
   // Requires Workers Paid plan. Remove this block to disable.
   "unsafe": {

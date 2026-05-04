@@ -142,6 +142,36 @@ just worker-dev
 
 Starts a local Worker dev server with a local D1 database and KV stubs. No secrets are required for local development.
 
+## Localflare dashboard
+
+```bash
+just localflare
+```
+
+Starts Localflare against the Worker config in `services/worker/wrangler.jsonc` and opens the Localflare dashboard flow with shared local bindings.
+
+The recipe defaults to port `8790` to avoid collisions with `wrangler dev` on `8787`.
+
+Use a custom port when needed:
+
+```bash
+just localflare 8787
+```
+
+## Remove Worker resources
+
+```bash
+just remove-worker
+```
+
+Deletes all Cloudflare resources defined in `services/worker/wrangler.jsonc`:
+
+1. Worker (`name`)
+2. D1 database (`d1_databases[0].database_name`)
+3. KV namespace (`kv_namespaces[0].id`)
+
+This command is destructive and intended for teardown/cleanup. It is safe to re-run; missing resources are skipped.
+
 ## API token permissions reference
 
 | Token | Required permissions |
