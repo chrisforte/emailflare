@@ -66,6 +66,8 @@ const {
 </head>
 <body>
 
+  <div id="nav-progress" transition:persist></div>
+
   <nav>
     <div class="container">
       <div class="nav-inner">
@@ -134,6 +136,42 @@ const {
   </footer>
 
   <slot name="scripts" />
+
+  <script is:inline>
+    (function () {
+      var bar = document.getElementById('nav-progress');
+      if (!bar) return;
+
+      function startProgress() {
+        bar.style.transition = 'none';
+        bar.style.opacity = '1';
+        bar.style.width = '0';
+        requestAnimationFrame(function () {
+          bar.style.transition = 'width 1.2s cubic-bezier(0.05, 0.8, 0.3, 1)';
+          bar.style.width = '75%';
+        });
+      }
+
+      function finishProgress() {
+        bar.style.transition = 'width 0.15s ease';
+        bar.style.width = '100%';
+        setTimeout(function () {
+          bar.style.transition = 'opacity 0.25s ease';
+          bar.style.opacity = '0';
+          setTimeout(function () {
+            bar.style.transition = 'none';
+            bar.style.width = '0';
+          }, 300);
+        }, 120);
+      }
+
+      if (!window.__navProgressSetup) {
+        window.__navProgressSetup = true;
+        document.addEventListener('astro:before-preparation', startProgress);
+        document.addEventListener('astro:after-swap', finishProgress);
+      }
+    })();
+  </script>
 
 </body>
 </html>

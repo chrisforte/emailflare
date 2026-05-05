@@ -83,6 +83,32 @@ body {
   padding: 0 clamp(1rem, 3vw, 2rem);
 }
 
+/* ── VIEW TRANSITIONS ────────────────────────────────────────── */
+@keyframes vt-fade-in  { from { opacity: 0; transform: translateY(6px); } }
+@keyframes vt-fade-out { to   { opacity: 0; transform: translateY(-4px); } }
+
+::view-transition-old(root) {
+  animation: vt-fade-out 0.18s ease forwards;
+}
+::view-transition-new(root) {
+  animation: vt-fade-in 0.22s ease forwards;
+}
+
+/* ── NAV PROGRESS BAR ─────────────────────────────────────────── */
+#nav-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 2.5px;
+  background: var(--orange);
+  z-index: 9999;
+  opacity: 0;
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 0 8px color-mix(in oklch, var(--orange) 60%, transparent);
+  pointer-events: none;
+}
+
 /* ── NAV ────────────────────────────────────────────────────── */
 nav {
   position: sticky;
