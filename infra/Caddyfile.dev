@@ -9,7 +9,7 @@
     reverse_proxy backend:3000
   }
 
-  handle /mailpit/* {
+  handle /mailpit* {
     reverse_proxy mailpit:8025
   }
 

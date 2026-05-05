@@ -9,10 +9,11 @@ services:
     environment:
       - PORT=3002
       - ADMIN_TOKEN=${ADMIN_TOKEN}
-      - SESSION_SECRET=${SESSION_SECRET:-emailflair-dev-session-secret-change-in-prod-32chars}
-      - FILE_TOKEN_SIGNING_SECRET=${FILE_TOKEN_SIGNING_SECRET:-emailflair-dev-file-token-signing-secret-32chars}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - FILE_TOKEN_SIGNING_SECRET=${SESSION_SECRET}
       - DATA_PATH=/data
       - DB_NAME=emailflare
+      - ENABLE_TEST_MODE=true
     volumes:
       - mesahub-data:/data
     healthcheck:
@@ -28,7 +29,7 @@ services:
       context: ./services/backend
       dockerfile: Dockerfile
       target: dev
-    command: sh -c "npm install && tsx watch src/index.ts"
+    command: sh -c "cd /emails && npm install --prefer-offline && npm run build && cd /app && npm install && tsx watch src/index.ts"
     env_file:
       - .env.local
     environment:
@@ -48,6 +49,8 @@ services:
     extra_hosts:
       - host.docker.internal:host-gateway
     volumes:
+      - ./services/emails:/emails
+      - emails-node-modules:/emails/node_modules
       - ./services/backend/src:/app/src
       - ./services/backend/package.json:/app/package.json
       - backend-node-modules:/app/node_modules
@@ -57,6 +60,7 @@ services:
     image: axllent/mailpit:latest
     environment:
       - MP_WEBROOT=/mailpit
+      - MP_UI_AUTH=${MAILPIT_USER:-root}:${MAILPIT_PASS:-${ADMIN_TOKEN}}
     ports:
       - "2025:1025"
       - "8026:8025"
@@ -91,6 +95,7 @@ services:
 
 volumes:
   backend-node-modules:
+  emails-node-modules:
   admin-node-modules:
   mesahub-data:
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useRouter } from '@tanstack/react-router';
 import {
   LayoutDashboard, Globe, FileText, Key, ScrollText, LogOut, FlaskConical,
-  MonitorDot,
+  MonitorDot, BookOpen, Github, ExternalLink,
 } from 'lucide-react';
 import api from '../api';
 import {
@@ -111,7 +111,36 @@ function AppSidebar({ onLogout }: { onLogout: () => void }) {
 
       {/* Footer */}
       <SidebarFooter className="border-t border-sidebar-border px-3 py-3 gap-0.5">
-        <div className="flex items-center gap-2.5 px-2.5 py-2 mb-0.5">
+        {/* External links */}
+        <div className="mb-1">
+          <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-[0.1em] px-2 mb-1.5">
+            Resources
+          </p>
+          <SidebarMenu className="gap-0.5">
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                render={<a href="https://emailflare.dev/docs" target="_blank" rel="noopener noreferrer" />}
+                className="h-8 flex items-center gap-2.5 px-2.5 text-[13px] font-medium rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <BookOpen size={14} className="flex-shrink-0" />
+                <span className="flex-1">API Docs</span>
+                <ExternalLink size={11} className="text-muted-foreground/40" />
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                render={<a href="https://github.com/0xdps/emailflare" target="_blank" rel="noopener noreferrer" />}
+                className="h-8 flex items-center gap-2.5 px-2.5 text-[13px] font-medium rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <Github size={14} className="flex-shrink-0" />
+                <span className="flex-1">GitHub</span>
+                <ExternalLink size={11} className="text-muted-foreground/40" />
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </div>
+
+        <div className="border-t border-sidebar-border pt-3 flex items-center gap-2.5 px-2.5 py-2 mb-0.5">
           <div className="size-7 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center flex-shrink-0">
             <MonitorDot size={12} className="text-white" />
           </div>
@@ -132,6 +161,14 @@ function AppSidebar({ onLogout }: { onLogout: () => void }) {
           <LogOut size={14} className="flex-shrink-0" />
           Sign out
         </SidebarMenuButton>
+
+        {/* Developer credit */}
+        <p className="text-[10.5px] text-muted-foreground/40 px-2.5 pt-2 pb-0.5">
+          Built by{' '}
+          <a href="https://dps.md" target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">
+            0xdps
+          </a>
+        </p>
       </SidebarFooter>
     </Sidebar>
   );
