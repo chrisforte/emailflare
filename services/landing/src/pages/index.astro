@@ -953,21 +953,35 @@ const structuredData = {
               <span class="check">✓</span>
               <div class="line">
                 <strong>Bearer token auth</strong>
-                Scoped API keys — not your master Cloudflare token. Rotate or revoke with a click.
+                Scoped API keys — not your master Cloudflare token. Prefix <code>eflive_</code> for live sends, <code>eftest_</code> to route through SMTP instead.
               </div>
             </li>
             <li>
               <span class="check">✓</span>
               <div class="line">
-                <strong>Template + raw send</strong>
-                Reference a stored template by ID, or pass <code>subject</code> and <code>html</code> directly.
+                <strong>Template or raw send</strong>
+                Pass <code>templateSlug</code> / <code>templateId</code> with variables, or send raw <code>html</code> / <code>text</code> directly. Optional <code>fromName</code> and <code>replyTo</code> fields.
               </div>
             </li>
             <li>
               <span class="check">✓</span>
               <div class="line">
-                <strong>Rate-limit headers included</strong>
-                <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>, and <code>X-RateLimit-Reset</code> on every response.
+                <strong>Multi-recipient batch</strong>
+                <code>"to"</code> accepts a single address or an array of up to 50. Duplicates are deduplicated automatically.
+              </div>
+            </li>
+            <li>
+              <span class="check">✓</span>
+              <div class="line">
+                <strong>Idempotency-Key support</strong>
+                Pass an <code>Idempotency-Key</code> header to prevent duplicate sends on network retries — cached result returned on repeat.
+              </div>
+            </li>
+            <li>
+              <span class="check">✓</span>
+              <div class="line">
+                <strong>Rate-limit headers on every response</strong>
+                100 requests/min per key. <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>, and <code>X-RateLimit-Reset</code> included.
               </div>
             </li>
           </ul>
@@ -985,20 +999,20 @@ const structuredData = {
           </div>
           <div class="code-window-body">
             <div><span class="c-method">POST</span> <span class="c-path">/v1/send</span></div>
-            <div><span class="c-header">Authorization:</span> <span class="c-str">Bearer emailflare_xxxxxxxxxxxx</span></div>
+            <div><span class="c-header">Authorization:</span> <span class="c-str">Bearer eflive_xxxxxxxxxxxx</span></div>
             <div><span class="c-header">Content-Type:</span> <span class="c-str">application/json</span></div>
             <div style="margin-top:12px;"><span class="c-punct">&#123;</span></div>
-            <div>&nbsp;&nbsp;<span class="c-key">"to"</span><span class="c-punct">:</span>       <span class="c-str">"alex@example.com"</span><span class="c-punct">,</span></div>
-            <div>&nbsp;&nbsp;<span class="c-key">"from"</span><span class="c-punct">:</span>     <span class="c-str">"hello@yourdomain.com"</span><span class="c-punct">,</span></div>
+            <div>&nbsp;&nbsp;<span class="c-key">"to"</span><span class="c-punct">:</span>           <span class="c-str">"alex@example.com"</span><span class="c-punct">,</span></div>
+            <div>&nbsp;&nbsp;<span class="c-key">"from"</span><span class="c-punct">:</span>         <span class="c-str">"hello@yourdomain.com"</span><span class="c-punct">,</span></div>
+            <div>&nbsp;&nbsp;<span class="c-key">"fromName"</span><span class="c-punct">:</span>     <span class="c-str">"Acme"</span><span class="c-punct">,</span></div>
             <div>&nbsp;&nbsp;<span class="c-key">"templateSlug"</span><span class="c-punct">:</span> <span class="c-str">"welcome"</span><span class="c-punct">,</span></div>
-            <div>&nbsp;&nbsp;<span class="c-key">"themeId"</span><span class="c-punct">:</span> <span class="c-str">"ocean"</span><span class="c-punct">,</span></div>
-            <div>&nbsp;&nbsp;<span class="c-key">"variables"</span><span class="c-punct">:</span> <span class="c-punct">&#123;</span></div>
-            <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">"name"</span><span class="c-punct">:</span>    <span class="c-str">"Alex"</span><span class="c-punct">,</span></div>
-            <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">"appName"</span><span class="c-punct">:</span> <span class="c-str">"Acme"</span><span class="c-punct">,</span></div>
+            <div>&nbsp;&nbsp;<span class="c-key">"themeId"</span><span class="c-punct">:</span>      <span class="c-str">"ocean"</span><span class="c-punct">,</span></div>
+            <div>&nbsp;&nbsp;<span class="c-key">"variables"</span><span class="c-punct">:</span>    <span class="c-punct">&#123;</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">"name"</span><span class="c-punct">:</span>     <span class="c-str">"Alex"</span><span class="c-punct">,</span></div>
             <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">"loginUrl"</span><span class="c-punct">:</span> <span class="c-str">"https://acme.com/login"</span></div>
             <div>&nbsp;&nbsp;<span class="c-punct">&#125;</span></div>
             <div><span class="c-punct">&#125;</span></div>
-            <div style="margin-top:14px;"><span class="c-cmt">// 200 → &#123;"ok": true, "messageId": "cf_msg_..."&#125;</span></div>
+            <div style="margin-top:14px;"><span class="c-cmt">// 200 → &#123; results: [&#123; to, cfId &#125;] &#125;</span></div>
           </div>
         </div>
       </div>
@@ -1082,13 +1096,13 @@ const structuredData = {
             <span class="vs-badge vs-badge-cf">Raw</span>
           </div>
           <div class="vs-rows">
-            <div class="vs-row"><span class="vs-icon">⚠️</span><span class="vs-row-label">Complex auth &amp; manual HTTP payload to send</span></div>
+            <div class="vs-row"><span class="vs-icon">⚠</span><span class="vs-row-label">Complex auth &amp; manual HTTP payload to send</span></div>
             <div class="vs-row"><span class="vs-icon">✗</span><span class="vs-row-label">Root CF token exposed in application code</span></div>
             <div class="vs-row"><span class="vs-icon">✗</span><span class="vs-row-label">No email templates — build &amp; host yourself</span></div>
             <div class="vs-row"><span class="vs-icon">✗</span><span class="vs-row-label">No send logs or delivery visibility</span></div>
             <div class="vs-row"><span class="vs-icon">✗</span><span class="vs-row-label">No rate limiting — implement it yourself</span></div>
-            <div class="vs-row"><span class="vs-icon">✗</span><span class="vs-row-label">No playground or email preview</span></div>
-            <div class="vs-row"><span class="vs-icon">⚠️</span><span class="vs-row-label">Domain &amp; DNS management via CF dashboard only</span></div>
+            <div class="vs-row"><span class="vs-icon">✗</span><span class="vs-row-label">No idempotency — duplicate sends on retries</span></div>
+            <div class="vs-row"><span class="vs-icon">✗</span><span class="vs-row-label">Single recipient only per API call</span></div>
             <div class="vs-row"><span class="vs-icon">✗</span><span class="vs-row-label">No admin UI — API calls only</span></div>
           </div>
         </div>
@@ -1117,13 +1131,13 @@ const structuredData = {
             <span class="vs-badge vs-badge-ef">Recommended</span>
           </div>
           <div class="vs-rows">
-            <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">Simple <code>POST /v1/send</code> with Bearer token auth</span></div>
+            <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">Simple <code>POST /v1/send</code> — <code>eflive_</code> or <code>eftest_</code> prefix</span></div>
             <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">Scoped API keys — per-domain or multi-domain, SHA-256 hashed</span></div>
             <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">50 React Email layouts, 5 themes, variable interpolation</span></div>
             <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">Full send history — status, errors, message IDs</span></div>
-            <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">Per-key rate limiting with standard response headers</span></div>
-            <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">In-dashboard playground &amp; template preview</span></div>
-            <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">Dedicated domain manager with DNS record view</span></div>
+            <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">100 req/min rate limiting with <code>X-RateLimit-*</code> headers</span></div>
+            <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">Idempotency-Key header — safe retries, no duplicate sends</span></div>
+            <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">Multi-recipient batch — up to 50 addresses per call</span></div>
             <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">Full React admin UI — self-hosted, one container</span></div>
           </div>
         </div>
@@ -1199,8 +1213,8 @@ const structuredData = {
         </div>
         <div class="feature-card">
           <span class="card-icon"><Icon name="lucide:microscope" /></span>
-          <h3>Test Keys &amp; SMTP Routing</h3>
-          <p>Create a <strong>test API key</strong> and all sends route through SMTP instead of Cloudflare — no CF credentials required. Point <code>SMTP_HOST</code>/<code>SMTP_PORT</code> at any catcher (<a href="https://mailpit.axllent.org" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px;">Mailpit</a>, Mailtrap, etc.). The dev compose stack bundles Mailpit automatically.</p>
+          <h3>Test Keys &amp; Built-in Mailpit</h3>
+          <p>Create a <strong>test API key</strong> (<code>eftest_</code>) and all sends route through SMTP — no Cloudflare credentials required. Set <code>ENABLE_TEST_MODE=true</code> to start the bundled <a href="https://mailpit.axllent.org" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px;">Mailpit</a> catcher and access it at <code>/mailpit/</code>, secured with HTTP Basic Auth (defaults to <code>root</code> / <code>ADMIN_TOKEN</code>).</p>
           <span class="feature-tag">Local Dev</span>
         </div>
       </div>
@@ -1298,21 +1312,27 @@ const structuredData = {
               <div class="do-step-num">1</div>
               <div>
                 <div class="do-step-label">Configure environment</div>
-                <p class="do-step-desc">Copy the example file and fill in credentials.</p>
+                <p class="do-step-desc">Copy the example file and fill in credentials. Add <code>ENABLE_TEST_MODE=true</code> to also start the built-in Mailpit catcher.</p>
                 <div class="code-block">
                   <span><span class="cb-cmd">cp .env.example .env.local</span></span>
                   <span><span class="cb-kw">CF_API_TOKEN</span>=<span class="cb-val">your_cf_token</span></span>
                   <span><span class="cb-kw">CF_ACCOUNT_ID</span>=<span class="cb-val">your_account_id</span></span>
                   <span><span class="cb-kw">ADMIN_TOKEN</span>=<span class="cb-val">$(openssl rand -hex 32)</span></span>
+                  <span><span class="cb-kw">SESSION_SECRET</span>=<span class="cb-val">$(openssl rand -hex 32)</span></span>
+                  <span><span class="cb-cmt"># optional: enable Mailpit</span></span>
+                  <span><span class="cb-kw">ENABLE_TEST_MODE</span>=<span class="cb-val">true</span></span>
                 </div>
               </div>
             </div>
             <div class="do-step">
               <div class="do-step-num">2</div>
               <div>
-                <div class="do-step-label">Start the stack</div>
-                <p class="do-step-desc">Bring up production. Dev stack includes Mailpit — no real emails sent.</p>
+                <div class="do-step-label">Pull &amp; start</div>
+                <p class="do-step-desc">Uses the published GHCR image — no local build needed. Mailpit starts automatically when <code>ENABLE_TEST_MODE=true</code>.</p>
                 <div class="code-block">
+                  <span><span class="cb-cmt"># pull the published image</span></span>
+                  <span><span class="cb-cmd">docker pull ghcr.io/0xdps/emailflare:latest</span></span>
+                  <span>&nbsp;</span>
                   <span><span class="cb-cmt"># production</span></span>
                   <span><span class="cb-cmd">docker compose --env-file .env.local \</span></span>
                   <span><span class="cb-cmd">&nbsp;&nbsp;-f compose.yaml up -d</span></span>
@@ -1327,19 +1347,19 @@ const structuredData = {
               <div class="do-step-num">3</div>
               <div>
                 <div class="do-step-label">Open the dashboard</div>
-                <p class="do-step-desc">Health check, admin UI, and Mailpit are all on port 8090.</p>
+                <p class="do-step-desc">Admin UI on port 8090. Mailpit at <code>/mailpit/</code> when test mode is enabled — auth: <code>root</code> / <code>ADMIN_TOKEN</code>.</p>
                 <div class="code-block">
                   <span><span class="cb-cmt"># health check</span></span>
                   <span><span class="cb-cmd">curl http://localhost:8090/health</span></span>
                   <span>&nbsp;</span>
-                  <span><span class="cb-url">http://localhost:8090</span><span class="cb-cmt">&nbsp;&nbsp;# admin UI</span></span>
-                  <span><span class="cb-url">http://localhost:8090/mailpit/</span><span class="cb-cmt">&nbsp;# dev mail</span></span>
+                  <span><span class="cb-url">http://localhost:8090</span><span class="cb-cmt">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# admin UI</span></span>
+                  <span><span class="cb-url">http://localhost:8090/mailpit/</span><span class="cb-cmt">&nbsp;# if ENABLE_TEST_MODE=true</span></span>
                 </div>
               </div>
             </div>
           </div>
           <div class="do-footer do-footer-docker">
-            <span class="do-footer-note">Also works with Railway — ships with <code style="font-size:11px;">railway.json</code></span>
+            <span class="do-footer-note">Image: <code style="font-size:11px;">ghcr.io/0xdps/emailflare:latest</code></span>
             <a href="/docs">Full Docker guide →</a>
           </div>
         </div>
@@ -1367,16 +1387,14 @@ const structuredData = {
             <div class="do-step">
               <div class="do-step-num">2</div>
               <div>
-                <div class="do-step-label">Run the setup script</div>
-                <p class="do-step-desc">One command creates D1, KV, sets secrets, builds the admin UI, and deploys.</p>
+                <div class="do-step-label">Configure &amp; deploy</div>
+                <p class="do-step-desc">Copy the config template, fill in your values, then run setup — creates D1, KV, runs migrations, and deploys.</p>
                 <div class="code-block">
-                  <span><span class="cb-cmd">just worker-setup</span></span>
+                  <span><span class="cb-cmd">cp scripts/config.example.toml scripts/config.toml</span></span>
+                  <span><span class="cb-cmt"># fill in CF_API_TOKEN, CF_ACCOUNT_ID, ADMIN_TOKEN</span></span>
                   <span>&nbsp;</span>
-                  <span><span class="cb-cmt"># creates D1 database</span></span>
-                  <span><span class="cb-cmt"># creates KV namespace</span></span>
-                  <span><span class="cb-cmt"># runs migrations</span></span>
-                  <span><span class="cb-cmt"># builds admin UI</span></span>
-                  <span><span class="cb-cmt"># deploys worker</span></span>
+                  <span><span class="cb-cmd">just worker-setup</span></span>
+                  <span><span class="cb-cmt"># creates D1 + KV, runs migrations, deploys</span></span>
                 </div>
               </div>
             </div>
@@ -1405,15 +1423,23 @@ const structuredData = {
       <!-- extra links -->
       <div class="deploy-extras">
         <a href="/cloudflare-token" class="deploy-extra">
-          <span class="de-icon">🔐</span>
+          <span class="de-icon"><Icon name="lucide:key-round" /></span>
           <div>
             <div class="de-title">Cloudflare API Token guide</div>
             <div class="de-sub">Exact permissions, step-by-step — 3 minutes.</div>
           </div>
           <span class="de-arrow">→</span>
         </a>
+        <a href="https://railway.com/deploy/emailflare" target="_blank" rel="noopener" class="deploy-extra">
+          <span class="de-icon"><Icon name="lucide:train-front" /></span>
+          <div>
+            <div class="de-title">One-click Railway deploy</div>
+            <div class="de-sub">Pre-configured template — just add CF credentials.</div>
+          </div>
+          <span class="de-arrow">→</span>
+        </a>
         <a href="/mesahub" class="deploy-extra">
-          <span class="de-icon">☁️</span>
+          <span class="de-icon"><Icon name="lucide:database" /></span>
           <div>
             <div class="de-title">Skip volume management</div>
             <div class="de-sub">One-line switch to cloud-hosted SQLite via mesahub.</div>
@@ -1421,7 +1447,7 @@ const structuredData = {
           <span class="de-arrow">→</span>
         </a>
         <a href="https://mailpit.axllent.org" target="_blank" rel="noopener" class="deploy-extra">
-          <span class="de-icon">📬</span>
+          <span class="de-icon"><Icon name="lucide:mail" /></span>
           <div>
             <div class="de-title">Local email testing with Mailpit</div>
             <div class="de-sub">Included in dev stack — no real emails sent.</div>
@@ -1472,7 +1498,7 @@ const structuredData = {
             <span class="ab-check">✓</span>
             <div class="ab-text">
               <strong>Three services, one image</strong>
-              <span>The production Docker image bundles the Hono API backend, React admin UI, and embedded mesahub storage. Mailpit is a separate dev-only container in <code>compose.dev.yaml</code>.</span>
+              <span>The production Docker image bundles the Hono API backend, React admin UI, Mailpit, and embedded mesahub storage. Mailpit only starts when <code>ENABLE_TEST_MODE=true</code> — zero overhead in a standard production deploy.</span>
             </div>
           </li>
           <li>

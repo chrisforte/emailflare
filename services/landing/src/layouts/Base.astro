@@ -9,6 +9,7 @@ interface Props {
   ogType?: string;
   navType?: 'home' | 'back' | 'docs';
   keywords?: string;
+  navTitle?: string;
 }
 
 const {
@@ -19,6 +20,7 @@ const {
   ogType = 'website',
   navType = 'back',
   keywords,
+  navTitle,
 } = Astro.props;
 ---
 
@@ -71,12 +73,9 @@ const {
               <span class="logo-text">EmailFlare</span>
             </a>
             <ul class="nav-links">
-              <li class="hide-mobile"><a href="#why">Why EmailFlare</a></li>
               <li class="hide-mobile"><a href="#features">Features</a></li>
               <li class="hide-mobile"><a href="/docs">Docs</a></li>
-              <li class="hide-mobile"><a href="/cloudflare-token">CF Token</a></li>
-              <li class="hide-mobile"><a href="/mesahub">MesaHub</a></li>
-              <li class="hide-mobile"><a href="/cloudflare">Workers Deploy</a></li>
+              <li class="hide-mobile"><a href="/cloudflare">Workers</a></li>
               <li><a href="https://github.com/0xdps/emailflare" target="_blank" rel="noopener">GitHub</a></li>
               <li><a class="nav-cta" href="#deploy">Self-host →</a></li>
             </ul>
@@ -97,7 +96,7 @@ const {
               <div class="logo-icon"><img src="/favicon.svg" alt="EmailFlare" width="30" height="30" /></div>
               <span class="logo-text">EmailFlare</span>
               <span class="logo-sep hide-mobile">/</span>
-              <span class="logo-sub hide-mobile">Docs</span>
+              <span class="logo-sub hide-mobile">{navTitle ?? 'Docs'}</span>
             </a>
             <div class="nav-right">
               <a class="nav-link" href="/#why">Why EmailFlare</a>
@@ -115,11 +114,14 @@ const {
   <footer>
     <div class="container">
       <div class="footer-inner">
-        <div class="footer-copy">© 2025 EmailFlare contributors. MIT License.</div>
+        <div class="footer-copy">© 2025 EmailFlare contributors. MIT License. · <a href="https://dps.md" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">by 0xdps</a></div>
         <slot name="footer-links">
           <ul class="footer-links">
             <li><a href="https://github.com/0xdps/emailflare" target="_blank" rel="noopener">GitHub</a></li>
             <li><a href="/docs">Docs</a></li>
+            <li><a href="/cloudflare">Workers Deploy</a></li>
+            <li><a href="/cloudflare-token">CF Token Guide</a></li>
+            <li><a href="/mesahub">MesaHub</a></li>
             <li><a href="https://github.com/0xdps/emailflare/blob/trunk/SECURITY.md" target="_blank" rel="noopener">Security</a></li>
             <li><a href="https://github.com/0xdps/emailflare/blob/trunk/LICENSE" target="_blank" rel="noopener">License</a></li>
           </ul>

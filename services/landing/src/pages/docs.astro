@@ -73,7 +73,7 @@ import Base from '../layouts/Base.astro';
 
   .docs-sidebar {
     position: sticky;
-    top: 24px;
+    top: 82px;
     padding: 32px 0 32px;
     border-right: 1px solid var(--border);
     margin-right: 0;
@@ -100,6 +100,7 @@ import Base from '../layouts/Base.astro';
     transition: color 0.12s, border-color 0.12s;
   }
   .sidebar-nav li a:hover { color: var(--text); border-left-color: var(--orange); }
+  .sidebar-nav li a.active { color: var(--text); border-left-color: var(--orange); font-weight: 500; }
 
   /* ── MAIN CONTENT ─────────────────────────────────────────── */
   .docs-main { padding: 32px 0 56px 40px; }
@@ -419,7 +420,7 @@ import Base from '../layouts/Base.astro';
             <div class="key-types">
               <div class="key-type-card">
                 <div class="key-badge key-badge-test">⚗ test key</div>
-                <p>Prefix: <code>eftest_</code>. Sends go through SMTP — no Cloudflare Email Sending credentials required. Safe for local and staging.</p>
+                <p>Prefix: <code>eftest_</code>. Sends go through SMTP — no Cloudflare credentials required. Set <code>ENABLE_TEST_MODE=true</code> to start the built-in Mailpit catcher at <code>/mailpit/</code> (auth: <code>root</code> / <code>ADMIN_TOKEN</code> by default, override with <code>MAILPIT_USER</code> / <code>MAILPIT_PASS</code>).</p>
               </div>
               <div class="key-type-card">
                 <div class="key-badge key-badge-live">✓ live key</div>
@@ -686,7 +687,8 @@ import Base from '../layouts/Base.astro';
             <p><code>themeId</code> only works with layout-based (built-in) templates. For custom HTML templates the field is ignored — you control the styles directly in the HTML body.</p>
 
             <h3>Sends succeed in test mode but fail in live mode</h3>
-            <p>Test keys use SMTP and don't require Cloudflare credentials. Live keys use Cloudflare Email Sending — ensure <code>CF_API_TOKEN</code> has the correct permissions and the sender domain is verified. See the <a href="/cloudflare-token" style="color:var(--orange);text-decoration:none;">Cloudflare token guide →</a></p>
+            <p>Test keys (<code>eftest_</code>) use SMTP and don't require Cloudflare credentials. Live keys use Cloudflare Email Sending — ensure <code>CF_API_TOKEN</code> has the correct permissions and the sender domain is verified. See the <a href="/cloudflare-token" style="color:var(--orange);text-decoration:none;">Cloudflare token guide →</a></p>
+            <p style="margin-top:8px;">To test with the built-in Mailpit catcher, set <code>ENABLE_TEST_MODE=true</code> — Mailpit will be available at <code>/mailpit/</code> on the same port as the admin UI.</p>
 
             <h3>Database errors in logs</h3>
             <p>If you see <em>"This SQL statement is not allowed on /query endpoint"</em>, upgrade to the latest EmailFlare image — this was a bug fixed in the backend send route.</p>
@@ -710,3 +712,29 @@ import Base from '../layouts/Base.astro';
   </ul>
 
 </Base>
+
+<script>
+  const links = document.querySelectorAll<HTMLAnchorElement>('.sidebar-nav a[href^="#"]');
+  const sections = Array.from(links).map(l => document.querySelector(l.getAttribute('href')!)).filter(Boolean) as Element[];
+
+  const setActive = (id: string) => {
+    links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+  };
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          setActive(entry.target.id);
+          break;
+        }
+      }
+    },
+    { rootMargin: '-82px 0px -60% 0px', threshold: 0 }
+  );
+
+  sections.forEach(s => observer.observe(s));
+
+  // Highlight first section on load if none intersecting yet
+  if (sections.length) setActive(sections[0].id);
+</script>

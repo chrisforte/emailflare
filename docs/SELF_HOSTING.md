@@ -31,6 +31,11 @@ SESSION_SECRET=<openssl rand -hex 32>
 MESAHUB_URL=mh://local/emailflare
 CF_API_TOKEN=<cloudflare token>
 CF_ACCOUNT_ID=<cloudflare account id>
+
+# Optional — enable the built-in Mailpit SMTP catcher:
+# ENABLE_TEST_MODE=true
+# MAILPIT_USER=root          # defaults to root
+# MAILPIT_PASS=<secret>      # defaults to ADMIN_TOKEN
 ```
 
 Notes:
@@ -61,7 +66,7 @@ Then open:
 
 - app: `http://localhost:8090`
 
-> **Note:** The Mailpit UI is only available when running the dev stack (`compose.dev.yaml`). It is not included in the production image.
+> **Note:** Mailpit is bundled in the production image but only starts when `ENABLE_TEST_MODE=true`. When enabled it is accessible at `/mailpit/` on the same port as the admin UI, protected by HTTP Basic Auth (defaults to `root` / `ADMIN_TOKEN`). Do not enable it on a public deployment without setting a strong `MAILPIT_PASS`.
 
 ## 4. Persist data
 

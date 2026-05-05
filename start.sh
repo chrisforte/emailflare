@@ -73,27 +73,33 @@ else
   echo "[0/5] External mesahub at $_HOST (db: $_DBNAME) — skipping bundled server"
 fi
 
-echo "[1/5] Starting Mailpit (SMTP :$MAILPIT_SMTP_PORT, UI :$MAILPIT_UI_PORT)..."
-mailpit \
-  --smtp "0.0.0.0:${MAILPIT_SMTP_PORT}" \
-  --listen "0.0.0.0:${MAILPIT_UI_PORT}" \
-  --webroot /mailpit \
-  ${MP_UI_AUTH:+--ui-auth "$MP_UI_AUTH"} &
-MAILPIT_PID=$!
+if [ "${ENABLE_TEST_MODE:-false}" = "true" ]; then
+  _MP_USER="${MAILPIT_USER:-root}"
+  _MP_PASS="${MAILPIT_PASS:-${ADMIN_TOKEN}}"
+  echo "[1/5] Starting Mailpit (SMTP :$MAILPIT_SMTP_PORT, UI :$MAILPIT_UI_PORT, user: $_MP_USER)..."
+  mailpit \
+    --smtp "0.0.0.0:${MAILPIT_SMTP_PORT}" \
+    --listen "0.0.0.0:${MAILPIT_UI_PORT}" \
+    --webroot /mailpit \
+    --ui-auth "$_MP_USER:$_MP_PASS" &
+  MAILPIT_PID=$!
 
-echo "[2/5] Waiting for Mailpit to be ready..."
-max_attempts=15
-attempt=0
-until curl -sf "http://localhost:${MAILPIT_UI_PORT}/mailpit/api/v1/info" > /dev/null 2>&1; do
-  attempt=$((attempt + 1))
-  if [ $attempt -eq $max_attempts ]; then
-    echo "✗ Mailpit failed to start after ${max_attempts}s"
-    kill $MAILPIT_PID 2>/dev/null || true
-    exit 1
-  fi
-  sleep 1
-done
-echo "✓ Mailpit ready"
+  echo "[2/5] Waiting for Mailpit to be ready..."
+  max_attempts=15
+  attempt=0
+  until curl -sf "http://localhost:${MAILPIT_UI_PORT}/mailpit/api/v1/info" > /dev/null 2>&1; do
+    attempt=$((attempt + 1))
+    if [ $attempt -eq $max_attempts ]; then
+      echo "✗ Mailpit failed to start after ${max_attempts}s"
+      kill $MAILPIT_PID 2>/dev/null || true
+      exit 1
+    fi
+    sleep 1
+  done
+  echo "✓ Mailpit ready on http://localhost:${PORT}/mailpit/"
+else
+  echo "[1/5] Mailpit skipped (set ENABLE_TEST_MODE=true to enable)"
+fi
 
 echo "[3/5] Starting backend on port $BACKEND_PORT..."
 PORT=$BACKEND_PORT node /app/backend/dist/index.js &
@@ -121,6 +127,16 @@ echo "--- Assets ---"
 ls /usr/share/caddy/assets/ 2>/dev/null || echo "NO ASSETS DIR FOUND"
 echo "----------------------------------------"
 
+if [ "${ENABLE_TEST_MODE:-false}" = "true" ]; then
+  MAILPIT_CADDY_BLOCK="
+  handle /mailpit* {
+    reverse_proxy localhost:${MAILPIT_UI_PORT}
+  }
+"
+else
+  MAILPIT_CADDY_BLOCK=""
+fi
+
 cat > /tmp/Caddyfile <<EOF
 {
   auto_https off
@@ -142,10 +158,7 @@ cat > /tmp/Caddyfile <<EOF
     reverse_proxy localhost:${BACKEND_PORT}
   }
 
-  handle /mailpit/* {
-    reverse_proxy localhost:${MAILPIT_UI_PORT}
-  }
-
+${MAILPIT_CADDY_BLOCK}
   handle {
     root * /usr/share/caddy
     try_files {path} /index.html

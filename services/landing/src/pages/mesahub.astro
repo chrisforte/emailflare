@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import { Icon } from 'astro-icon/components';
 ---
 
 <Base
@@ -9,7 +10,8 @@ import Base from '../layouts/Base.astro';
   canonical="https://emailflare.dev/mesahub"
   ogUrl="https://emailflare.dev/mesahub"
   ogType="article"
-  navType="back"
+  navType="docs"
+  navTitle="MesaHub"
 >
 
 <style is:global>
@@ -141,6 +143,15 @@ import Base from '../layouts/Base.astro';
   .why-card h3 { font-size: 0.9375rem; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.01em; }
   .why-card p  { font-size: 0.875rem; color: var(--text-muted); line-height: 1.65; }
   .why-card p code { font-family: var(--font-mono); font-size: 12px; background: oklch(93% 0.006 60); padding: 1px 5px; border-radius: 4px; }
+  .why-card .card-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px;
+    background: var(--purple-light); border-radius: 10px;
+    margin-bottom: 14px; color: var(--purple);
+  }
+  .why-card .card-icon svg { width: 18px; height: 18px; }
+  .tip-icon { line-height: 0; }
+  .tip-icon svg { width: 15px; height: 15px; }
 
   /* ── COMPARISON ───────────────────────────────────────────── */
   .cmp-section { background: var(--bg-alt); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
@@ -348,26 +359,32 @@ import Base from '../layouts/Base.astro';
       </div>
       <div class="why-grid">
         <div class="why-card">
+          <span class="card-icon"><Icon name="lucide:shield-check" /></span>
           <h3>Survive restarts and redeployments</h3>
           <p>Local volumes disappear when containers are recreated. mesahub persists your database in the cloud — restart, redeploy, or migrate servers without losing anything.</p>
         </div>
         <div class="why-card">
+          <span class="card-icon"><Icon name="lucide:cloud" /></span>
           <h3>No backup configuration needed</h3>
           <p>mesahub handles backups automatically. You don't need to configure cron jobs, S3 bucket policies, or volume snapshot schedules. Your data is safe by default.</p>
         </div>
         <div class="why-card">
+          <span class="card-icon"><Icon name="lucide:link" /></span>
           <h3>One connection string change</h3>
           <p>Switch from local to cloud storage by updating a single environment variable. No schema changes, no data migration tools — just update <code>DATABASE_URL</code> in your <code>.env.local</code>.</p>
         </div>
         <div class="why-card">
+          <span class="card-icon"><Icon name="lucide:globe" /></span>
           <h3>Access your data from anywhere</h3>
           <p>With a local volume, your EmailFlare database is locked to one machine. mesahub lets you read your data from any environment — staging, production, CI pipelines.</p>
         </div>
         <div class="why-card">
+          <span class="card-icon"><Icon name="lucide:layers" /></span>
           <h3>Multi-instance friendly</h3>
           <p>Running multiple EmailFlare instances behind a load balancer? A shared mesahub database means consistent templates, keys, and domain state across all your containers.</p>
         </div>
         <div class="why-card">
+          <span class="card-icon"><Icon name="lucide:server" /></span>
           <h3>Works with Railway and Fly.io</h3>
           <p>Platform restarts on Railway and Fly ephemeral storage make local volumes impractical. mesahub is the natural persistent storage layer for these PaaS deployments.</p>
         </div>
@@ -439,7 +456,7 @@ import Base from '../layouts/Base.astro';
             <h3>Create a mesahub account</h3>
             <p>Sign up at <a class="inline-link" href="https://mesahub.app" target="_blank" rel="noopener">mesahub.app</a>. Create a new database — call it <code style="background:oklch(22% 0.01 48);color:oklch(82% 0.06 48);border:none;font-size:11.5px;">emailflare</code> or anything you like.</p>
             <div class="tip-box">
-              <span class="tip-icon">💡</span>
+              <span class="tip-icon"><Icon name="lucide:lightbulb" /></span>
               <span>mesahub is free to start. No credit card required. Create a database and you'll have a connection string ready in under a minute.</span>
             </div>
           </div>
@@ -481,7 +498,7 @@ import Base from '../layouts/Base.astro';
             </div>
             <p>Open the admin UI — your templates, domains, and keys should be intact if you migrated an existing deployment, or ready to configure if starting fresh.</p>
             <div class="tip-box">
-              <span class="tip-icon">✅</span>
+              <span class="tip-icon"><Icon name="lucide:circle-check" /></span>
               <span>That's it. Your EmailFlare database now lives in the cloud. Restarts, redeployments, and server migrations will no longer put your data at risk.</span>
             </div>
           </div>

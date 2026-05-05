@@ -9,32 +9,23 @@ import Base from '../layouts/Base.astro';
   canonical="https://emailflare.dev/cloudflare-token"
   ogUrl="https://emailflare.dev/cloudflare-token"
   ogType="article"
-  navType="back"
+  navType="docs"
+  navTitle="CF Token"
 >
 
 <style is:global>
   /* ── CLOUDFLARE TOKEN PAGE ────────────────────────────────── */
   .page-hero {
+    background: oklch(11% 0.02 230);
     padding: clamp(2.5rem, 6vw, 4rem) 0 clamp(1.5rem, 4vw, 2.5rem);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid oklch(22% 0.04 230 / 0.8);
   }
-
-  .breadcrumb {
-    display: flex; align-items: center; gap: 7px;
-    font-size: 12.5px; color: var(--text-muted);
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
-
-  .breadcrumb a { color: var(--text-muted); text-decoration: none; }
-  .breadcrumb a:hover { color: var(--text); }
-  .breadcrumb-sep { color: oklch(78% 0.004 58); }
 
   .page-badge {
     display: inline-flex; align-items: center; gap: 7px;
-    background: oklch(93% 0.05 255);
-    color: oklch(42% 0.16 255);
-    border: 1px solid oklch(78% 0.1 255);
+    background: oklch(20% 0.06 230 / 0.6);
+    color: oklch(75% 0.12 230);
+    border: 1px solid oklch(35% 0.1 230 / 0.5);
     font-size: 12px; font-weight: 500;
     padding: 4px 13px;
     border-radius: 100px;
@@ -47,14 +38,21 @@ import Base from '../layouts/Base.astro';
     font-weight: 400;
     line-height: 1.15;
     letter-spacing: -0.025em;
+    color: oklch(95% 0.008 58);
     margin-bottom: 14px;
   }
 
   .page-hero-sub {
     font-size: 1rem;
-    color: var(--text-muted);
+    color: oklch(58% 0.01 58);
     line-height: 1.7;
     max-width: 600px;
+  }
+
+  .page-hero code {
+    background: oklch(20% 0.04 230) !important;
+    color: oklch(80% 0.08 230) !important;
+    border-color: oklch(30% 0.06 230) !important;
   }
 
   /* ── GUIDE LAYOUT ─────────────────────────────────────────── */
@@ -234,13 +232,6 @@ import Base from '../layouts/Base.astro';
   <!-- HERO -->
   <div class="page-hero">
     <div class="container-narrow">
-      <nav class="breadcrumb">
-        <a href="/">EmailFlare</a>
-        <span class="breadcrumb-sep">/</span>
-        <span>Guides</span>
-        <span class="breadcrumb-sep">/</span>
-        <span>Cloudflare API Token</span>
-      </nav>
       <div class="page-badge">Cloudflare Setup</div>
       <h1>Creating your Cloudflare API token</h1>
       <p class="page-hero-sub">

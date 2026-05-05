@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import { Icon } from 'astro-icon/components';
 ---
 
 <Base
@@ -9,7 +10,8 @@ import Base from '../layouts/Base.astro';
   canonical="https://emailflare.dev/cloudflare"
   ogUrl="https://emailflare.dev/cloudflare"
   ogType="article"
-  navType="back"
+  navType="docs"
+  navTitle="Workers"
 >
 
 <style is:global>
@@ -120,6 +122,15 @@ import Base from '../layouts/Base.astro';
   .why-card h3 { font-size: 0.9375rem; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.01em; }
   .why-card p  { font-size: 0.875rem; color: var(--text-muted); line-height: 1.65; }
   .why-card p code { font-family: var(--font-mono); font-size: 12px; background: oklch(93% 0.006 60); padding: 1px 5px; border-radius: 4px; }
+  .why-card .card-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px;
+    background: var(--blue-light); border-radius: 10px;
+    margin-bottom: 14px; color: var(--blue);
+  }
+  .why-card .card-icon svg { width: 18px; height: 18px; }
+  .tip-icon { line-height: 0; }
+  .tip-icon svg { width: 15px; height: 15px; }
 
   /* ── COMPARISON ───────────────────────────────────────────── */
   .cmp-section { background: var(--bg-alt); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
@@ -328,26 +339,32 @@ import Base from '../layouts/Base.astro';
       </div>
       <div class="why-grid">
         <div class="why-card">
+          <span class="card-icon"><Icon name="lucide:zap" /></span>
           <h3>Zero cold starts, global edge</h3>
           <p>Cloudflare Workers run on V8 isolates — no containers, no boot time. Your email API responds in milliseconds from data centres in 300+ cities worldwide.</p>
         </div>
         <div class="why-card">
+          <span class="card-icon"><Icon name="lucide:database" /></span>
           <h3>D1 SQLite — no database to manage</h3>
           <p>EmailFlare stores everything in Cloudflare D1: templates, API keys, domains, send logs. D1 is fully managed SQLite at the edge — no provisioning, no backups to configure.</p>
         </div>
         <div class="why-card">
+          <span class="card-icon"><Icon name="lucide:terminal" /></span>
           <h3>One command from zero to deployed</h3>
           <p><code>just worker-setup</code> creates your D1 database, KV namespace, patches <code>wrangler.jsonc</code>, runs migrations, sets secrets, builds the admin UI, and deploys — all automatically.</p>
         </div>
         <div class="why-card">
+          <span class="card-icon"><Icon name="lucide:layout-dashboard" /></span>
           <h3>Admin panel included</h3>
           <p>The full React admin UI ships as a Worker static asset. No separate hosting needed — it's served directly from the same Worker deployment on your <code>workers.dev</code> subdomain.</p>
         </div>
         <div class="why-card">
+          <span class="card-icon"><Icon name="lucide:git-branch" /></span>
           <h3>Gradual rollout built in</h3>
           <p>Use <code>just worker-rollout-upload</code> to stage new versions with Cloudflare's gradual rollout feature. Ship confidently — roll back in seconds if something goes wrong.</p>
         </div>
         <div class="why-card">
+          <span class="card-icon"><Icon name="lucide:gift" /></span>
           <h3>Cloudflare Workers free tier</h3>
           <p>Workers free tier covers 100,000 requests per day, and D1 includes 5 GB storage and 25 million row reads daily. For most teams, the cost of running EmailFlare on Workers is zero.</p>
         </div>
@@ -424,7 +441,7 @@ import Base from '../layouts/Base.astro';
               <span class="c-cmd">just install</span>
             </div>
             <div class="tip-box">
-              <span class="tip-icon">💡</span>
+              <span class="tip-icon"><Icon name="lucide:lightbulb" /></span>
               <span>You'll need <a class="inline-link" href="https://github.com/casey/just" target="_blank" rel="noopener">just</a>, Node.js 18+, and pnpm installed. Run <code style="background:oklch(22% 0.01 48);color:oklch(82% 0.06 48);border:none;font-size:11.5px;">npm i -g pnpm</code> if pnpm isn't available yet.</span>
             </div>
           </div>
@@ -449,7 +466,7 @@ import Base from '../layouts/Base.astro';
               <span><span class="c-key">session_secret</span>        = <span class="c-val">"$(openssl rand -hex 32)"</span></span>
             </div>
             <div class="tip-box">
-              <span class="tip-icon">🔐</span>
+              <span class="tip-icon"><Icon name="lucide:key-round" /></span>
               <span>Need to create a Cloudflare API token? See the <a class="inline-link" href="/cloudflare-token">Cloudflare API Token guide</a> for the exact permissions required.</span>
             </div>
           </div>
@@ -464,7 +481,7 @@ import Base from '../layouts/Base.astro';
               <span class="c-cmd">just worker-login</span>
             </div>
             <div class="tip-box">
-              <span class="tip-icon">💡</span>
+              <span class="tip-icon"><Icon name="lucide:lightbulb" /></span>
               <span>If you prefer not to use browser auth, you can set <code style="background:oklch(22% 0.01 48);color:oklch(82% 0.06 48);border:none;font-size:11.5px;">CLOUDFLARE_API_TOKEN</code> in your environment instead. The setup script will use it automatically.</span>
             </div>
           </div>
@@ -488,7 +505,7 @@ import Base from '../layouts/Base.astro';
             </div>
             <p>After the first deploy, add <code style="background:oklch(22% 0.01 48);color:oklch(82% 0.06 48);border:none;font-size:11.5px;">ADMIN_ORIGIN</code> to <code style="background:oklch(22% 0.01 48);color:oklch(82% 0.06 48);border:none;font-size:11.5px;">scripts/config.toml</code> with your Worker URL, then run <code style="background:oklch(22% 0.01 48);color:oklch(82% 0.06 48);border:none;font-size:11.5px;">just worker-setup</code> again to push the secret.</p>
             <div class="tip-box">
-              <span class="tip-icon">✅</span>
+              <span class="tip-icon"><Icon name="lucide:circle-check" /></span>
               <span>That's it. Open your <code style="background:oklch(22% 0.01 48);color:oklch(82% 0.06 48);border:none;font-size:11.5px;">workers.dev</code> URL — the EmailFlare admin panel is live. Add a sending domain, generate an API key, and start sending email from the edge.</span>
             </div>
           </div>
