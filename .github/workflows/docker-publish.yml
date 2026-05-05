@@ -3,7 +3,7 @@ name: Build, Verify & Publish
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "v[0-9]*.[0-9]*.[0-9]*"
   workflow_dispatch:
 
 env:
@@ -85,7 +85,7 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ github.ref_type == 'tag' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
