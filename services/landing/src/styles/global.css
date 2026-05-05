@@ -30,19 +30,19 @@
   --amber:         oklch(64% 0.14 80);
   --red:           oklch(56% 0.14 24);
 
-  --bg:            oklch(98.5% 0.006 60);
-  --bg-card:       oklch(100% 0 0);
-  --bg-alt:        oklch(97% 0.008 62);
+  --bg:            oklch(97% 0.018 68);
+  --bg-card:       oklch(99% 0.012 65);
+  --bg-alt:        oklch(95.5% 0.024 66);
   --bg-dark:       oklch(14% 0.016 48);
   --bg-dark-2:     oklch(18% 0.014 48);
   --bg-dark-3:     oklch(22% 0.012 50);
 
   --text:          oklch(13% 0.018 48);
-  --text-muted:    oklch(50% 0.012 58);
-  --text-faint:    oklch(70% 0.008 58);
+  --text-muted:    oklch(48% 0.014 58);
+  --text-faint:    oklch(68% 0.010 60);
 
-  --border:        oklch(90% 0.008 58);
-  --border-strong: oklch(82% 0.012 58);
+  --border:        oklch(87% 0.022 64);
+  --border-strong: oklch(79% 0.028 62);
 
   --font-body:     'DM Sans', system-ui, sans-serif;
   --font-display:  'Instrument Serif', Georgia, serif;
@@ -132,6 +132,9 @@ nav {
 }
 
 .nav-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   text-decoration: none;
   color: var(--text-muted);
   font-size: 13.5px;
@@ -140,6 +143,8 @@ nav {
   border-radius: 6px;
   transition: color 0.15s, background 0.15s;
 }
+
+.nav-links a svg { width: 13px; height: 13px; flex-shrink: 0; }
 
 .nav-links a:hover { color: var(--text); background: var(--border); }
 
@@ -163,6 +168,9 @@ nav {
 }
 
 .nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   text-decoration: none;
   color: var(--text-muted);
   font-size: 13.5px;
@@ -171,13 +179,15 @@ nav {
   border-radius: 6px;
   transition: color 0.15s, background 0.15s;
 }
+
+.nav-link svg { width: 13px; height: 13px; flex-shrink: 0; }
 
 .nav-link:hover { color: var(--text); background: var(--border); }
 
 .nav-back {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   text-decoration: none;
   color: var(--text-muted);
   font-size: 13.5px;
@@ -186,6 +196,8 @@ nav {
   border-radius: 6px;
   transition: color 0.15s, background 0.15s;
 }
+
+.nav-back svg { width: 13px; height: 13px; flex-shrink: 0; }
 
 .nav-back:hover { color: var(--text); background: var(--border); }
 

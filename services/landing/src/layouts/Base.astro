@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { Icon } from 'astro-icon/components';
 
 interface Props {
   title: string;
@@ -73,11 +74,11 @@ const {
               <span class="logo-text">EmailFlare</span>
             </a>
             <ul class="nav-links">
-              <li class="hide-mobile"><a href="#features">Features</a></li>
-              <li class="hide-mobile"><a href="/docs">Docs</a></li>
-              <li class="hide-mobile"><a href="/cloudflare">Workers</a></li>
-              <li><a href="https://github.com/0xdps/emailflare" target="_blank" rel="noopener">GitHub</a></li>
-              <li><a class="nav-cta" href="#deploy">Self-host →</a></li>
+              <li class="hide-mobile"><a href="#features"><Icon name="lucide:sparkles" />Features</a></li>
+              <li class="hide-mobile"><a href="/docs"><Icon name="lucide:book-open" />Docs</a></li>
+              <li class="hide-mobile"><a href="/cloudflare"><Icon name="lucide:cloud" />Workers</a></li>
+              <li><a href="https://github.com/0xdps/emailflare" target="_blank" rel="noopener"><Icon name="simple-icons:github" />GitHub</a></li>
+              <li><a class="nav-cta" href="#deploy"><Icon name="lucide:server" />Self-host</a></li>
             </ul>
           </Fragment>
         )}
@@ -87,7 +88,7 @@ const {
               <div class="logo-icon"><img src="/favicon.svg" alt="EmailFlare" width="30" height="30" /></div>
               <span class="logo-text">EmailFlare</span>
             </a>
-            <a class="nav-back" href="/">← Back to home</a>
+            <a class="nav-back" href="/"><Icon name="lucide:arrow-left" />Back to home</a>
           </Fragment>
         )}
         {navType === 'docs' && (
@@ -99,9 +100,9 @@ const {
               <span class="logo-sub hide-mobile">{navTitle ?? 'Docs'}</span>
             </a>
             <div class="nav-right">
-              <a class="nav-link" href="/#why">Why EmailFlare</a>
-              <a class="nav-link" href="/#deploy">Self-host</a>
-              <a class="nav-link" href="https://github.com/0xdps/emailflare" target="_blank" rel="noopener">GitHub</a>
+              <a class="nav-link" href="/#why"><Icon name="lucide:heart" />Why EmailFlare</a>
+              <a class="nav-link" href="/#deploy"><Icon name="lucide:server" />Self-host</a>
+              <a class="nav-link" href="https://github.com/0xdps/emailflare" target="_blank" rel="noopener"><Icon name="simple-icons:github" />GitHub</a>
             </div>
           </Fragment>
         )}
