@@ -1575,7 +1575,7 @@ const structuredData = {
   </ul>
 
   <script slot="scripts" is:inline>
-    (function() {
+    function runStarCount() {
       function animateStars(target) {
         var start = 125;
         var duration = 1000;
@@ -1599,6 +1599,7 @@ const structuredData = {
         .then(function(r) { return r.json(); })
         .then(function(d) { if (d.stargazers_count) animateStars(d.stargazers_count); })
         .catch(function() {});
-    })();
+    }
+    document.addEventListener('astro:page-load', runStarCount);
   </script>
 </Base>
