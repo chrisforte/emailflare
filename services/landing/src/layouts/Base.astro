@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { Icon } from 'astro-icon/components';
+import { ClientRouter } from 'astro:transitions';
 
 interface Props {
   title: string;
@@ -60,6 +61,7 @@ const {
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet" />
 
   <slot name="head" />
+  <ClientRouter defaultPrefetch="load" />
   <script is:inline defer src="https://manage.anately.sh/script.js" data-website-id="c517f1e2-5f2c-4659-948e-659371cdeb46"></script>
 </head>
 <body>
