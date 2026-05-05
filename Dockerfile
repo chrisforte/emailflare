@@ -15,18 +15,20 @@ RUN CGO_ENABLED=1 GOOS=linux go build -o /go/bin/mesahub-server ./cmd/server
 FROM node:22-alpine AS build-backend
 WORKDIR /app
 
-RUN npm install -g pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Build the shared emails package first (backend depends on it via file:../emails)
 COPY services/emails/package.json ./emails/package.json
-RUN cd emails && pnpm install
+RUN --mount=type=cache,id=pnpm-store-backend,target=/root/.local/share/pnpm/store \
+    cd emails && pnpm install
 
 COPY services/emails/ ./emails/
 RUN cd emails && pnpm run build
 
 # Now install and build the backend
 COPY services/backend/package.json services/backend/pnpm-lock.yaml services/backend/pnpm-workspace.yaml ./backend/
-RUN cd backend && pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm-store-backend,target=/root/.local/share/pnpm/store \
+    cd backend && pnpm install --frozen-lockfile
 
 COPY services/backend/ ./backend/
 RUN cd backend && pnpm run build
@@ -35,10 +37,11 @@ RUN cd backend && pnpm run build
 FROM node:22-alpine AS build-admin
 WORKDIR /app/admin
 
-RUN npm install -g pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 COPY services/admin/package.json services/admin/pnpm-lock.yaml services/admin/pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm-store-admin,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
 
 COPY services/admin/ ./
 RUN pnpm exec vite build
