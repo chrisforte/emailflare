@@ -1,0 +1,325 @@
+import React, { useEffect, useState } from 'react';
+import { Plus, Trash2, Pencil, Loader2, Inbox, Users } from 'lucide-react';
+import {
+  getInboxes, createInbox, updateInbox, deleteInbox,
+  getInboxMembers, addInboxMember, removeInboxMember,
+  Inbox as InboxType, User, getUsers,
+} from '../../api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter,
+} from '@/components/ui/sheet';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table';
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
+export default function InboxSettings() {
+  const [inboxes, setInboxes] = useState<InboxType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<InboxType | null>(null);
+  const [email, setEmail] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [mode, setMode] = useState<'thread' | 'chat'>('thread');
+  const [saving, setSaving] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Members sheet
+  const [membersInbox, setMembersInbox] = useState<InboxType | null>(null);
+  const [members, setMembers] = useState<User[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [addUserId, setAddUserId] = useState('');
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [addingMember, setAddingMember] = useState(false);
+
+  useEffect(() => {
+    getInboxes().then(setInboxes).finally(() => setLoading(false));
+  }, []);
+
+  function openCreate() {
+    setEditing(null);
+    setEmail('');
+    setDisplayName('');
+    setMode('thread');
+    setDialogOpen(true);
+  }
+
+  function openEdit(inbox: InboxType) {
+    setEditing(inbox);
+    setEmail(inbox.email);
+    setDisplayName(inbox.display_name);
+    setMode(inbox.mode);
+    setDialogOpen(true);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      if (editing) {
+        const updated = await updateInbox(editing.id, { display_name: displayName, mode });
+        setInboxes(prev => prev.map(i => i.id === updated.id ? updated : i));
+      } else {
+        const created = await createInbox({ email, display_name: displayName, mode });
+        setInboxes(prev => [...prev, created]);
+      }
+      setDialogOpen(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteId) return;
+    setDeleting(true);
+    try {
+      await deleteInbox(deleteId);
+      setInboxes(prev => prev.filter(i => i.id !== deleteId));
+      setDeleteId(null);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  async function openMembers(inbox: InboxType) {
+    setMembersInbox(inbox);
+    setAddUserId('');
+    setLoadingMembers(true);
+    try {
+      const [m, users] = await Promise.all([getInboxMembers(inbox.id), getUsers()]);
+      setMembers(m);
+      setAllUsers(users);
+    } finally {
+      setLoadingMembers(false);
+    }
+  }
+
+  async function handleAddMember() {
+    if (!membersInbox || !addUserId) return;
+    setAddingMember(true);
+    try {
+      await addInboxMember(membersInbox.id, addUserId);
+      const updated = await getInboxMembers(membersInbox.id);
+      setMembers(updated);
+      setAddUserId('');
+    } finally {
+      setAddingMember(false);
+    }
+  }
+
+  async function handleRemoveMember(userId: string) {
+    if (!membersInbox) return;
+    await removeInboxMember(membersInbox.id, userId).catch(() => {});
+    setMembers(prev => prev.filter(m => m.id !== userId));
+  }
+
+  const nonMembers = allUsers.filter(u => !members.some(m => m.id === u.id));
+
+  return (
+    <div className="p-6 max-w-4xl">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-[18px] font-semibold text-foreground tracking-tight">Inboxes</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage receiving addresses and team members</p>
+        </div>
+        <Button size="sm" onClick={openCreate}>
+          <Plus size={14} />
+          New inbox
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-16"><Loader2 size={20} className="animate-spin text-muted-foreground" /></div>
+      ) : inboxes.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
+          <Inbox size={36} className="opacity-20" />
+          <p className="text-sm">No inboxes configured yet</p>
+          <Button size="sm" variant="outline" onClick={openCreate}>Create your first inbox</Button>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Email address</TableHead>
+                <TableHead>Display name</TableHead>
+                <TableHead>Mode</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {inboxes.map(inbox => (
+                <TableRow key={inbox.id}>
+                  <TableCell className="font-mono text-sm">{inbox.email}</TableCell>
+                  <TableCell className="text-sm">{inbox.display_name}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="capitalize text-xs">{inbox.mode}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button size="sm" variant="ghost" onClick={() => openMembers(inbox)} className="h-7 px-2 gap-1.5 text-xs">
+                        <Users size={12} />
+                        Members
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => openEdit(inbox)} className="h-7 px-2">
+                        <Pencil size={12} />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setDeleteId(inbox.id)} className="h-7 px-2 hover:text-destructive">
+                        <Trash2 size={12} />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {/* Create / Edit dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editing ? 'Edit inbox' : 'New inbox'}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-2">
+            {!editing && (
+              <div className="flex flex-col gap-1.5">
+                <Label>Email address</Label>
+                <Input
+                  placeholder="support@yourdomain.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  autoFocus
+                />
+                <p className="text-[11px] text-muted-foreground">Must match a Cloudflare Email Routing address</p>
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              <Label>Display name</Label>
+              <Input
+                placeholder="Support"
+                value={displayName}
+                onChange={e => setDisplayName(e.target.value)}
+                autoFocus={!!editing}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Mode</Label>
+              <Select value={mode} onValueChange={v => setMode(v as 'thread' | 'chat')}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="thread">Thread</SelectItem>
+                  <SelectItem value="chat">Chat</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSave} disabled={saving || (!editing && !email.trim()) || !displayName.trim()}>
+              {saving && <Loader2 size={13} className="animate-spin" />}
+              {saving ? 'Saving…' : editing ? 'Save changes' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Members Sheet */}
+      <Sheet open={!!membersInbox} onOpenChange={open => !open && setMembersInbox(null)}>
+        <SheetContent className="w-[420px] sm:max-w-[420px]">
+          <SheetHeader>
+            <SheetTitle>Members — {membersInbox?.display_name}</SheetTitle>
+          </SheetHeader>
+
+          <div className="flex flex-col gap-4 py-5">
+            {loadingMembers ? (
+              <div className="flex justify-center py-8"><Loader2 size={16} className="animate-spin text-muted-foreground" /></div>
+            ) : (
+              <>
+                {/* Current members */}
+                {members.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">No members assigned yet</p>
+                ) : (
+                  <div className="flex flex-col gap-1">
+                    {members.map(u => (
+                      <div key={u.id} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted/50">
+                        <div>
+                          <p className="text-[13px] font-medium text-foreground">{u.name}</p>
+                          <p className="text-[11.5px] text-muted-foreground">{u.email}</p>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveMember(u.id)}
+                          className="text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <Separator />
+
+                {/* Add member */}
+                <div className="flex flex-col gap-2">
+                  <Label className="text-xs">Add member</Label>
+                  {nonMembers.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">All users are already members</p>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Select value={addUserId} onValueChange={(v) => setAddUserId(v ?? '')}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Select user…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {nonMembers.map(u => (
+                            <SelectItem key={u.id} value={u.id}>{u.name} ({u.email})</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button size="sm" onClick={handleAddMember} disabled={!addUserId || addingMember}>
+                        {addingMember ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+                        Add
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Delete confirm */}
+      <Dialog open={!!deleteId} onOpenChange={open => !open && setDeleteId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete inbox?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">All associated emails and threads will be permanently deleted. This cannot be undone.</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting && <Loader2 size={13} className="animate-spin" />}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

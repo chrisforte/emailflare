@@ -106,7 +106,7 @@ doctor:
 worker-login:
     cd services/worker && npx wrangler login
 
-# Install all dependencies (scripts + emails + worker + admin + backend)
+# Install all dependencies (scripts + emails + worker + admin + backend + inbox + dashboard)
 install:
     pnpm install --dir scripts
     pnpm install --dir services/emails
@@ -114,6 +114,8 @@ install:
     pnpm install --dir services/worker
     pnpm install --dir services/admin
     pnpm install --dir services/backend
+    pnpm install --dir services/inbox
+    pnpm install --dir services/dashboard
 
 # Build the shared emails package (re-run after editing services/emails/src/)
 emails-build:
@@ -187,6 +189,51 @@ worker-secret name:
 # After this, use `wrangler versions deploy` to control traffic percentage.
 worker-rollout-upload:
     cd services/worker && pnpm run cf:rollout
+
+# ============================================================================
+# INBOX WORKER  (services/inbox/)
+# ============================================================================
+
+# First-time setup + deploy for the inbox Worker.
+# Creates D1, KV, R2, patches wrangler.jsonc, applies migrations, sets secrets,
+# builds dashboard, deploys. Safe to re-run (idempotent).
+# Optionally copy scripts/config.example.toml → scripts/config.toml first.
+deploy-inbox:
+    node scripts/deploy-inbox.mjs
+
+# Start local inbox Worker dev server.
+# Builds dashboard once if dist/ is missing (wrangler requires the assets dir to exist).
+# For live frontend editing run `just inbox-dev-ui` in a second terminal.
+inbox-dev:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ ! -d services/dashboard/dist ]; then
+        echo "dashboard/dist missing — building dashboard first…"
+        cd services/dashboard && pnpm install --frozen-lockfile && pnpm build
+        cd "$OLDPWD"
+    fi
+    cd services/inbox && npx wrangler dev
+
+# Start dashboard Vite dev server (proxies /api + /v1 to wrangler dev on :8787)
+inbox-dev-ui:
+    cd services/dashboard && pnpm dev
+
+# Apply pending inbox D1 migrations then deploy latest code
+inbox-update:
+    cd services/inbox && npx wrangler d1 migrations apply emailflare --remote
+    cd services/dashboard && pnpm build
+    cd services/inbox && npx wrangler deploy
+
+# Build dashboard only (without deploying)
+inbox-build-dashboard:
+    cd services/dashboard && pnpm install --frozen-lockfile && pnpm build
+
+# Update an inbox Worker secret interactively.
+# Usage: just inbox-secret SESSION_SECRET
+inbox-secret name:
+    #!/usr/bin/env sh
+    printf '{{name}}: '; stty -echo; read val; stty echo; echo
+    echo "$val" | npx wrangler secret put {{name}} --cwd services/inbox
 
 # ============================================================================
 # LANDING PAGE  (services/landing/)

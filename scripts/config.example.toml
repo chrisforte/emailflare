@@ -29,3 +29,14 @@ cf_account_id = ""
 # You'll know this after the first deploy — re-run setup to set it.
 # e.g. https://emailflare-worker.YOUR-ACCOUNT.workers.dev
 admin_origin = ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Inbox Worker  (deploy-inbox.mjs / just deploy-inbox)
+# Reuses [deploy].database_name, [secrets].session_secret, cf_api_token,
+# and cf_account_id — only VAPID keys are inbox-specific.
+# ─────────────────────────────────────────────────────────────────────────────
+[inbox]
+# VAPID keys for Web Push notifications.
+# Generate: npx web-push generate-vapid-keys
+vapid_public_key  = ""
+vapid_private_key = ""

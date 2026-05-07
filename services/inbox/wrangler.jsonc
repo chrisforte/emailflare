@@ -1,0 +1,120 @@
+{
+  // ── Cloudflare Workers config for emailflare-inbox ────────────────────────
+  //
+  // ★ FIRST-TIME SETUP:
+  //   1. Create D1:   wrangler d1 create emailflare-inbox   → fill in database_id
+  //   2. Create KV:   wrangler kv namespace create emailflare-inbox-rate-limit   → fill in id
+  //   3. Create R2:   wrangler r2 bucket create emailflare-inbox-attachments
+  //   4. Apply migrations:  pnpm migrations:apply:local
+  //   5. Set secrets:
+  //        wrangler secret put SESSION_SECRET     (min 32 chars, random)
+  //        wrangler secret put CF_API_TOKEN       (CF token: Email Send + Zone + DNS)
+  //        wrangler secret put CF_ACCOUNT_ID      (your CF account ID)
+  //        wrangler secret put VAPID_PRIVATE_KEY  (VAPID private key for web push)
+  //   6. Build dashboard: pnpm build:dashboard
+  //   7. Deploy: wrangler deploy
+
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "emailflare-inbox",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-05-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": false,
+
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+
+  "upload_source_maps": true,
+
+  // Dashboard SPA — build with: cd services/dashboard && pnpm build
+  "assets": {
+    "directory": "../dashboard/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+
+  // D1 SQLite database
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "emailflare",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // KV for login rate limiting
+  "kv_namespaces": [
+    {
+      "binding": "RATE_LIMIT_KV",
+      "id": "REPLACE_WITH_KV_NAMESPACE_ID"
+    }
+  ],
+
+  // R2 for email attachments
+  "r2_buckets": [
+    {
+      "binding": "ATTACHMENTS",
+      "bucket_name": "emailflare-inbox-attachments"
+    }
+  ],
+
+  // Durable Object for real-time push notifications
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "NOTIFICATIONS",
+        "class_name": "NotificationsHub"
+      }
+    ]
+  },
+
+  // Queue for sequence email delivery
+  "queues": {
+    "producers": [
+      {
+        "binding": "EMAIL_QUEUE",
+        "queue": "emailflare-inbox-sequences"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "emailflare-inbox-sequences",
+        "max_batch_size": 10,
+        "max_batch_timeout": 30
+      }
+    ]
+  },
+
+  // Runtime env vars — set production values via `wrangler secret put`
+  "vars": {
+    "SESSION_SECRET": "set-via-secret",
+    "CF_API_TOKEN": "set-via-secret",
+    "CF_ACCOUNT_ID": "set-via-secret",
+    "VAPID_PUBLIC_KEY": "set-via-secret",
+    "VAPID_PRIVATE_KEY": "set-via-secret"
+  },
+
+  // Workers Rate Limiting for API key calls (100 req / 60s per key)
+  "unsafe": {
+    "bindings": [
+      {
+        "name": "RATE_LIMITER",
+        "type": "ratelimit",
+        "namespace_id": "1002",
+        "simple": {
+          "limit": 100,
+          "period": 60
+        }
+      }
+    ]
+  },
+
+  // Cron trigger for sequence processing (every 5 minutes)
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  }
+}
