@@ -4,7 +4,7 @@ EmailFlare is a minimal self-hosted email sending platform built around Cloudfla
 
 Storage is powered by mesahub core, which acts as the embedded storage engine in the minimum-infra setup:
 
-- https://github.com/0xdps/mesahub-core
+- https://github.com/mesahub-db/mesahub-core
 
 It is designed for teams that want:
 
@@ -110,4 +110,4 @@ That enables embedded SQLite-backed storage inside the app deployment.
 
 Under the hood, the embedded storage path uses mesahub core:
 
-- https://github.com/0xdps/mesahub-core
+- https://github.com/mesahub-db/mesahub-core
