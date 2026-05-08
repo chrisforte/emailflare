@@ -7,7 +7,7 @@ FROM golang:1.24-alpine AS build-core
 RUN apk add --no-cache gcc musl-dev sqlite-dev git
 ARG MESAHUB_CORE_VERSION=trunk
 RUN git clone --depth 1 --branch ${MESAHUB_CORE_VERSION} \
-    https://github.com/0xdps/mesahub-core.git /mesahub-core
+    https://github.com/mesahub-db/mesahub-core.git /mesahub-core
 WORKDIR /mesahub-core/server
 RUN CGO_ENABLED=1 GOOS=linux go build -o /go/bin/mesahub-server ./cmd/server
 
