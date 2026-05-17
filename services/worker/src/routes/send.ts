@@ -111,6 +111,16 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
   let successCount = 0;
 
   for (const recipient of toList) {
+    // ── Suppression check ──────────────────────────────────────────────────
+    const suppressed = await db.query<{ reason: string }>(
+      `SELECT reason FROM suppressions WHERE email = ? LIMIT 1`,
+      [recipient.toLowerCase()],
+    );
+    if (suppressed.rows.length > 0) {
+      results.push({ to: recipient, error: `Suppressed: ${suppressed.rows[0].reason}` });
+      continue;
+    }
+
     try {
       const cfResult = await sendEmail(
         {

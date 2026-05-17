@@ -57,7 +57,7 @@ export interface EmailLogRow {
   to_address: string;
   from_address: string;
   subject: string;
-  status: 'pending' | 'sent' | 'failed';
+  status: 'pending' | 'sent' | 'failed' | 'bounced' | 'complained';
   cf_message_id: string | null;
   domain_id: string | null;
   template_id: string | null;
@@ -66,6 +66,17 @@ export interface EmailLogRow {
   error: string | null;
   is_test: number; // 0 | 1
   sent_at: string;
+  bounced_at?: string | null;
+}
+
+export interface SuppressionRow {
+  [key: string]: unknown;
+  id: string;
+  email: string;
+  reason: 'hard_bounce' | 'soft_bounce' | 'complaint' | 'manual';
+  domain_id: string | null;
+  email_log_id: string | null;
+  created_at: string;
 }
 
 // ── D1Table — typed query wrapper ────────────────────────────────────────────
@@ -225,6 +236,7 @@ export function makeDb(d1: D1Database) {
     apiKeys:       db.table<ApiKeyRow>('api_keys'),
     apiKeyDomains: db.table<ApiKeyDomainRow>('api_key_domains'),
     emailLogs:     db.table<EmailLogRow>('email_logs'),
+    suppressions:  db.table<SuppressionRow>('suppressions'),
   };
 }
 

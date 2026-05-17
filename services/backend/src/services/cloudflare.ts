@@ -252,3 +252,158 @@ export async function getCloudflareTokenStatus(): Promise<CFTokenStatus> {
     message,
   };
 }
+
+// ── Bounce Forwarder Worker ───────────────────────────────────────────────────
+//
+// A tiny ES-module Worker deployed to the user's CF account.
+// CF Email Routing calls its `email` handler when a bounce/complaint arrives
+// at the return-path address; it forwards the raw RFC 5322 message to the
+// backend's webhook endpoint.
+
+const BOUNCE_FORWARDER_SCRIPT = `
+export default {
+  async email(message, env) {
+    const raw = await new Response(message.raw).arrayBuffer();
+    const response = await fetch(env.BACKEND_URL + '/api/webhooks/bounce', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'message/rfc822',
+        'Authorization': 'Bearer ' + env.WEBHOOK_SECRET,
+      },
+      body: raw,
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('[bounce-forwarder] webhook failed:', response.status, text);
+    }
+  }
+};
+`.trim();
+
+export interface BounceWorkerInfo {
+  deployed: boolean;
+  modifiedOn: string | null;
+  workerName: string;
+}
+
+/** Check if the bounce forwarder Worker is deployed on this CF account. */
+export async function getBounceWorkerInfo(workerName: string): Promise<BounceWorkerInfo> {
+  try {
+    const result = await cfFetch<{ id: string; modified_on: string }>(
+      `/accounts/${env.CF_ACCOUNT_ID}/workers/scripts/${workerName}`,
+    );
+    return { deployed: true, modifiedOn: result.modified_on, workerName };
+  } catch (err) {
+    if (err instanceof CloudflareApiError && err.status === 404) {
+      return { deployed: false, modifiedOn: null, workerName };
+    }
+    throw err;
+  }
+}
+
+/**
+ * Deploy (or redeploy) the bounce forwarder Worker.
+ * Uses multipart/form-data as required by the CF Workers Upload API.
+ */
+export async function deployBounceForwarder(workerName: string): Promise<void> {
+  const metadata = JSON.stringify({
+    main_module: 'index.js',
+    compatibility_date: '2025-01-01',
+    bindings: [],
+  });
+
+  const boundary = 'EmailFlareBoundaryCF';
+  const CRLF = '\r\n';
+  const body = [
+    `--${boundary}`,
+    'Content-Disposition: form-data; name="metadata"',
+    'Content-Type: application/json',
+    '',
+    metadata,
+    `--${boundary}`,
+    'Content-Disposition: form-data; name="index.js"; filename="index.js"',
+    'Content-Type: application/javascript+module',
+    '',
+    BOUNCE_FORWARDER_SCRIPT,
+    `--${boundary}--`,
+  ].join(CRLF);
+
+  const res = await fetch(
+    `${CF_BASE}/accounts/${env.CF_ACCOUNT_ID}/workers/scripts/${workerName}`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${env.CF_API_TOKEN}`,
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+      },
+      body,
+    },
+  );
+
+  const json = (await res.json()) as CFResponse<unknown>;
+  if (!json.success) {
+    const first = json.errors?.[0];
+    throw new CloudflareApiError(`CF API error: ${first?.message ?? 'deploy failed'}`, {
+      code: first?.code ?? null,
+      path: `/accounts/.../workers/scripts/${workerName}`,
+      status: res.status,
+    });
+  }
+}
+
+/** Create or update a secret on a Worker script. */
+export async function setWorkerSecret(
+  workerName: string,
+  name: string,
+  value: string,
+): Promise<void> {
+  await cfFetch(
+    `/accounts/${env.CF_ACCOUNT_ID}/workers/scripts/${workerName}/secrets`,
+    {
+      method: 'PUT',
+      body: JSON.stringify({ name, text: value, type: 'secret_text' }),
+    },
+  );
+}
+
+// ── Email Routing ─────────────────────────────────────────────────────────────
+
+export interface CFEmailRoutingCatchAll {
+  enabled: boolean;
+  tag: string | null;
+  matchers: Array<{ type: string }>;
+  actions: Array<{ type: string; value: string[] }>;
+}
+
+/** Enable Email Routing on a zone (idempotent — safe to call if already on). */
+export async function enableEmailRouting(zoneId: string): Promise<void> {
+  try {
+    await cfFetch(`/zones/${zoneId}/email/routing/enable`, { method: 'POST' });
+  } catch (err) {
+    // Already enabled → CF returns 400 with code 10007; treat as success.
+    if (err instanceof CloudflareApiError && (err.status === 400 || err.status === 409)) return;
+    throw err;
+  }
+}
+
+/** Read the current catch-all routing rule for a zone. */
+export async function getCatchAllRule(zoneId: string): Promise<CFEmailRoutingCatchAll> {
+  return cfFetch<CFEmailRoutingCatchAll>(`/zones/${zoneId}/email/routing/rules/catch_all`);
+}
+
+/**
+ * Set the catch-all routing rule for a zone to forward all inbound mail to
+ * the named Worker.  This is the mechanism used to receive CF bounce DSNs,
+ * which arrive at the return-path subdomain and have a random local-part.
+ */
+export async function setCatchAllToWorker(zoneId: string, workerName: string): Promise<void> {
+  await cfFetch(`/zones/${zoneId}/email/routing/rules/catch_all`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      enabled: true,
+      name: 'Bounce forwarding (emailflare)',
+      matchers: [{ type: 'all' }],
+      actions: [{ type: 'worker', value: [workerName] }],
+    }),
+  });
+}

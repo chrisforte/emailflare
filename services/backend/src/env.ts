@@ -37,4 +37,16 @@ export const env = {
   SMTP_PORT: parseInt(process.env.SMTP_PORT ?? '1025', 10),
   SMTP_USER: process.env.SMTP_USER ?? '',
   SMTP_PASS: process.env.SMTP_PASS ?? '',
+  // Secret that must appear as Bearer token on POST /api/webhooks/bounce.
+  // Leave unset to disable the webhook endpoint entirely.
+  WEBHOOK_SECRET: process.env.WEBHOOK_SECRET ?? '',
+  // Name of the CF Worker deployed as the bounce email forwarder.
+  BOUNCE_WORKER_NAME: process.env.BOUNCE_WORKER_NAME ?? 'emailflare-bounce',
+  // Publicly reachable URL of this backend (e.g. https://app.railway.app).
+  // Used to pre-fill the Bounce Forwarding setup form in the admin UI.
+  // Railway sets RAILWAY_PUBLIC_DOMAIN automatically; use that as fallback.
+  PUBLIC_URL: process.env.PUBLIC_URL ??
+    (process.env.RAILWAY_PUBLIC_DOMAIN
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+      : ''),
 } as const;

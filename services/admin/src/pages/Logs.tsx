@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { CheckCircle2, XCircle, ChevronLeft, ChevronRight, Search, X, Mail, Hash, Clock, AlertTriangle, Server } from 'lucide-react';
+import { CheckCircle2, XCircle, ChevronLeft, ChevronRight, Search, X, Mail, Hash, Clock, AlertTriangle, Server, MailX, MessageSquareWarning } from 'lucide-react';
 import api from '../api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,18 +10,21 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
+type LogStatus = 'sent' | 'failed' | 'bounced' | 'complained' | 'pending';
+
 interface LogRow {
   id: string;
   to_address: string;
   from_address: string;
   subject: string;
-  status: 'sent' | 'failed';
+  status: LogStatus;
   cf_message_id: string | null;
   domain_id: string | null;
   template_id: string | null;
   error: string | null;
   is_test: number;
   sent_at: string;
+  bounced_at: string | null;
 }
 
 interface PagedLogs {
@@ -33,27 +36,53 @@ interface PagedLogs {
 }
 
 const STATUS_OPTS = [
-  { label: 'All', value: '' },
-  { label: 'Sent', value: 'sent' },
-  { label: 'Failed', value: 'failed' },
+  { label: 'All',       value: '' },
+  { label: 'Sent',      value: 'sent' },
+  { label: 'Failed',    value: 'failed' },
+  { label: 'Bounced',   value: 'bounced' },
+  { label: 'Complaint', value: 'complained' },
 ];
+
+function StatusIcon({ status }: { status: LogStatus }) {
+  switch (status) {
+    case 'sent':      return <CheckCircle2 size={13} className="text-emerald-500 flex-shrink-0" />;
+    case 'failed':    return <XCircle size={13} className="text-destructive flex-shrink-0" />;
+    case 'bounced':   return <MailX size={13} className="text-amber-500 flex-shrink-0" />;
+    case 'complained':return <MessageSquareWarning size={13} className="text-orange-500 flex-shrink-0" />;
+    default:          return <Clock size={13} className="text-muted-foreground flex-shrink-0" />;
+  }
+}
+
+const STATUS_COLOR: Record<LogStatus, string> = {
+  sent:       'text-emerald-600',
+  failed:     'text-destructive',
+  bounced:    'text-amber-600',
+  complained: 'text-orange-600',
+  pending:    'text-muted-foreground',
+};
+
+const STATUS_LABEL: Record<LogStatus, string> = {
+  sent:       'Delivered',
+  failed:     'Failed',
+  bounced:    'Bounced',
+  complained: 'Complaint',
+  pending:    'Pending',
+};
 
 // ─── Right panel ────────────────────────────────────────────────────────────
 
 function DetailPanel({ log }: { log: LogRow }) {
-  const sentAt = new Date(log.sent_at);
-  const isSent = log.status === 'sent';
+  const sentAt    = new Date(log.sent_at);
+  const bouncedAt = log.bounced_at ? new Date(log.bounced_at) : null;
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-6 py-4 border-b border-border flex-shrink-0">
         <div className="flex items-center gap-2 mb-1">
-          {isSent
-            ? <CheckCircle2 size={13} className="text-emerald-500 flex-shrink-0" />
-            : <XCircle size={13} className="text-destructive flex-shrink-0" />}
-          <span className={`text-xs font-semibold ${isSent ? 'text-emerald-600' : 'text-destructive'}`}>
-            {isSent ? 'Delivered' : 'Failed'}
+          <StatusIcon status={log.status} />
+          <span className={`text-xs font-semibold ${STATUS_COLOR[log.status]}`}>
+            {STATUS_LABEL[log.status]}
           </span>
           <span className="text-muted-foreground/30 text-xs">·</span>
           <span className="text-xs text-muted-foreground">{sentAt.toLocaleString()}</span>
@@ -94,13 +123,28 @@ function DetailPanel({ log }: { log: LogRow }) {
 
               {/* Body area */}
               <div className="px-5 py-5 flex flex-col items-center gap-3 text-center min-h-[140px] justify-center">
-                <div className={`size-10 rounded-full flex items-center justify-center ${isSent ? 'bg-emerald-500/10' : 'bg-destructive/10'}`}>
-                  <Mail size={18} className={isSent ? 'text-emerald-400' : 'text-destructive'} />
+                <div className={`size-10 rounded-full flex items-center justify-center ${
+                  log.status === 'sent'      ? 'bg-emerald-500/10' :
+                  log.status === 'bounced'   ? 'bg-amber-500/10' :
+                  log.status === 'complained'? 'bg-orange-500/10' :
+                  'bg-destructive/10'
+                }`}>
+                  {log.status === 'bounced'
+                    ? <MailX size={18} className="text-amber-500" />
+                    : log.status === 'complained'
+                    ? <MessageSquareWarning size={18} className="text-orange-500" />
+                    : <Mail size={18} className={log.status === 'sent' ? 'text-emerald-400' : 'text-destructive'} />
+                  }
                 </div>
                 <div>
                   <p className="text-sm font-medium">
-                    {isSent ? 'Email delivered successfully' : 'Email delivery failed'}
+                    {STATUS_LABEL[log.status]}
                   </p>
+                  {bouncedAt && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Notification received {bouncedAt.toLocaleString()}
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground mt-1">
                     Message body is not stored — emails are sent directly via Cloudflare Email API.
                   </p>
@@ -124,10 +168,11 @@ function DetailPanel({ log }: { log: LogRow }) {
             {[
               { label: 'Log ID', value: log.id, icon: Hash },
               { label: 'CF Message ID', value: log.cf_message_id ?? '—', icon: Server },
-              { label: 'Domain ID', value: log.domain_id ?? '—', icon: Server },
-              { label: 'Template ID', value: log.template_id ?? '—', icon: Server },
-              { label: 'Sent at', value: sentAt.toISOString(), icon: Clock },
-              { label: 'Status', value: log.status, icon: isSent ? CheckCircle2 : XCircle },
+              { label: 'Domain ID',    value: log.domain_id ?? '—',    icon: Server },
+              { label: 'Template ID',  value: log.template_id ?? '—',  icon: Server },
+              { label: 'Sent at',      value: sentAt.toISOString(),     icon: Clock },
+              ...(bouncedAt ? [{ label: 'Bounced at', value: bouncedAt.toISOString(), icon: Clock }] : []),
+              { label: 'Status',       value: STATUS_LABEL[log.status] ?? log.status, icon: Clock },
             ].map(({ label, value, icon: Icon }) => (
               <div key={label} className="bg-card border border-border rounded-lg px-4 py-3">
                 <div className="flex items-center gap-1.5 mb-1">
@@ -136,7 +181,7 @@ function DetailPanel({ log }: { log: LogRow }) {
                 </div>
                 <span className={cn(
                   'text-xs font-mono break-all',
-                  label === 'Status' ? (isSent ? 'text-emerald-600' : 'text-destructive') : 'text-foreground'
+                  label === 'Status' ? STATUS_COLOR[log.status as LogStatus] ?? 'text-foreground' : 'text-foreground'
                 )}>{value}</span>
               </div>
             ))}
@@ -282,9 +327,7 @@ export default function LogsPage() {
                     )}
                   >
                     <div className="mt-0.5 flex-shrink-0">
-                      {log.status === 'sent'
-                        ? <CheckCircle2 size={13} className="text-emerald-500" />
-                        : <XCircle size={13} className="text-destructive" />}
+                      <StatusIcon status={log.status} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
@@ -346,20 +389,6 @@ export default function LogsPage() {
   );
 }
 
-
-interface LogRow {
-  id: string;
-  to_address: string;
-  from_address: string;
-  subject: string;
-  status: 'sent' | 'failed';
-  cf_message_id: string | null;
-  domain_id: string | null;
-  template_id: string | null;
-  error: string | null;
-  is_test: number;
-  sent_at: string;
-}
 
 interface PagedLogs {
   data: LogRow[];

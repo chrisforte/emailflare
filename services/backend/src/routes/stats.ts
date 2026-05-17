@@ -44,12 +44,15 @@ app.get('/', async (c) => {
          d.name AS domain_name,
          d.verified,
          COALESCE(SUM(CASE WHEN el.status = 'sent'   AND el.sent_at >= ? THEN 1 ELSE 0 END), 0) AS sent,
-         COALESCE(SUM(CASE WHEN el.status = 'failed' AND el.sent_at >= ? THEN 1 ELSE 0 END), 0) AS failed
+         COALESCE(SUM(CASE WHEN el.status = 'failed' AND el.sent_at >= ? THEN 1 ELSE 0 END), 0) AS failed,
+         COUNT(DISTINCT CASE WHEN s.reason IN ('hard_bounce','soft_bounce') AND s.created_at >= ? THEN s.id END) AS bounces,
+         COUNT(DISTINCT CASE WHEN s.reason = 'complaint'                     AND s.created_at >= ? THEN s.id END) AS complaints
        FROM domains d
        LEFT JOIN email_logs el ON el.domain_id = d.id
+       LEFT JOIN suppressions s ON s.domain_id = d.id
        GROUP BY d.id, d.name, d.verified
        ORDER BY sent DESC, d.name ASC`,
-      [fromIso, fromIso],
+      [fromIso, fromIso, fromIso, fromIso],
     ),
     // Daily buckets for sparkline (date, sent, failed)
     db.query(
@@ -75,11 +78,13 @@ app.get('/', async (c) => {
     sentToday,
     failedToday,
     cfDailyLimit: CF_DAILY_LIMIT,
-    domainBreakdown: (domainBreakdownResult.rows as Array<{ domain_name: string; verified: number; sent: number; failed: number }>).map(r => ({
+    domainBreakdown: (domainBreakdownResult.rows as Array<{ domain_name: string; verified: number; sent: number; failed: number; bounces: number; complaints: number }>).map(r => ({
       name: r.domain_name,
       verified: r.verified === 1,
       sent: Number(r.sent),
       failed: Number(r.failed),
+      bounces: Number(r.bounces),
+      complaints: Number(r.complaints),
     })),
     daily: (dailyResult.rows as Array<{ date: string; sent: number; failed: number }>).map(r => ({
       date: r.date,

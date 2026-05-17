@@ -65,7 +65,7 @@ export interface EmailLogRow {
   to_address: string;
   from_address: string;
   subject: string;
-  status: 'pending' | 'sent' | 'failed';
+  status: 'pending' | 'sent' | 'failed' | 'bounced' | 'complained';
   cf_message_id: string | null;
   domain_id: string | null;
   template_id: string | null;
@@ -74,13 +74,25 @@ export interface EmailLogRow {
   error: string | null;
   is_test: number; // 0 | 1
   sent_at: string;
+  bounced_at?: string | null;
 }
 
-export const domains    = db.table<DomainRow>('domains');
-export const templates  = db.table<TemplateRow>('templates');
-export const apiKeys    = db.table<ApiKeyRow>('api_keys');
+export interface SuppressionRow {
+  [key: string]: unknown;
+  id: string;
+  email: string;
+  reason: 'hard_bounce' | 'soft_bounce' | 'complaint' | 'manual';
+  domain_id: string | null;
+  email_log_id: string | null;
+  created_at: string;
+}
+
+export const domains       = db.table<DomainRow>('domains');
+export const templates     = db.table<TemplateRow>('templates');
+export const apiKeys       = db.table<ApiKeyRow>('api_keys');
 export const apiKeyDomains = db.table<ApiKeyDomainRow>('api_key_domains');
-export const emailLogs  = db.table<EmailLogRow>('email_logs');
+export const emailLogs     = db.table<EmailLogRow>('email_logs');
+export const suppressions  = db.table<SuppressionRow>('suppressions');
 
 /** Delete a domain and cascade-remove its api_key_domains associations. */
 export async function deleteDomainCascade(domainId: string): Promise<void> {
@@ -168,6 +180,23 @@ export async function bootstrapSchema(): Promise<void> {
   try { await db.exec(`CREATE INDEX IF NOT EXISTS idx_logs_api_key   ON email_logs(api_key_id)`); } catch { /* ignore */ }
   try { await db.exec(`CREATE INDEX IF NOT EXISTS idx_logs_domain    ON email_logs(domain_id)`); } catch { /* ignore */ }
   try { await db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_logs_idempotency ON email_logs(idempotency_key) WHERE idempotency_key IS NOT NULL`); } catch { /* ignore */ }
+
+  // Bounce tracking column (added in v2 — safe to run on existing DBs)
+  try { await db.exec(`ALTER TABLE email_logs ADD COLUMN bounced_at TEXT`); } catch { /* already exists */ }
+
+  // Suppression list
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS suppressions (
+      id           TEXT PRIMARY KEY,
+      email        TEXT NOT NULL,
+      reason       TEXT NOT NULL DEFAULT 'hard_bounce',
+      domain_id    TEXT,
+      email_log_id TEXT,
+      created_at   TEXT NOT NULL
+    )
+  `);
+  try { await db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_suppressions_email  ON suppressions(email)`); } catch { /* ignore */ }
+  try { await db.exec(`CREATE INDEX        IF NOT EXISTS idx_suppressions_domain ON suppressions(domain_id)`); } catch { /* ignore */ }
 
   if (process.env.NODE_ENV !== 'production') console.log('[db] schema bootstrapped');
 }

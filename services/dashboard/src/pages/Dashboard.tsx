@@ -17,6 +17,8 @@ interface DomainBreakdown {
   verified: boolean;
   sent: number;
   failed: number;
+  bounces: number;
+  complaints: number;
 }
 
 interface DailyBucket {
@@ -64,6 +66,20 @@ const RANGES = ['1d', '7d', '30d'] as const;
 type Range = (typeof RANGES)[number];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function domainHealth(sent: number, bounces: number, complaints: number): {
+  label: string;
+  color: string;
+  bg: string;
+} {
+  if (sent === 0) return { label: 'No data', color: '#6b7280', bg: 'rgba(107,114,128,0.1)' };
+  const br = bounces / sent;
+  const cr = complaints / sent;
+  if (br < 0.02 && cr < 0.001) return { label: 'Excellent', color: '#10b981', bg: 'rgba(16,185,129,0.1)' };
+  if (br < 0.05 && cr < 0.003) return { label: 'Good',      color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' };
+  if (br < 0.10 && cr < 0.010) return { label: 'Fair',      color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' };
+  return                        { label: 'Poor',      color: '#ef4444', bg: 'rgba(239,68,68,0.1)' };
+}
 
 function fmt(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -482,22 +498,35 @@ export default function Dashboard() {
               {stats.domainBreakdown.map(d => {
                 const total = d.sent + d.failed;
                 const rate = total > 0 ? Math.round((d.sent / total) * 100) : null;
-                const share = stats.cfDailyLimit > 0 ? Math.min(100, Math.round((d.sent / stats.cfDailyLimit) * 100)) : 0;
-                const shareColor = share >= 50 ? '#ef4444' : share >= 25 ? '#f59e0b' : '#10b981';
+                const health = domainHealth(d.sent, d.bounces, d.complaints);
                 return (
                   <div key={d.name} className="px-5 py-3.5 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className={`size-1.5 rounded-full flex-shrink-0 ${d.verified ? 'bg-emerald-500' : 'bg-amber-500/60'}`} />
                         <span className="text-[13px] text-foreground font-mono truncate">{d.name}</span>
                       </div>
-                      <div className="flex items-center gap-4 text-xs flex-shrink-0 ml-3">
+                      <div className="flex items-center gap-3 text-xs flex-shrink-0">
+                        {/* health rating badge */}
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+                          style={{ color: health.color, backgroundColor: health.bg }}>
+                          {health.label}
+                        </span>
                         {total === 0 ? (
                           <span className="text-muted-foreground tabular-nums">No emails yet</span>
                         ) : (
                           <>
                             <span className="text-muted-foreground tabular-nums">{d.sent.toLocaleString()} sent</span>
-                            {d.failed > 0 && <span className="text-destructive tabular-nums">{d.failed} failed</span>}
+                            {d.bounces > 0 && (
+                              <span className="text-amber-600 tabular-nums">
+                                {d.bounces} bounce{d.bounces !== 1 ? 's' : ''}
+                              </span>
+                            )}
+                            {d.complaints > 0 && (
+                              <span className="text-red-500 tabular-nums">
+                                {d.complaints} complaint{d.complaints !== 1 ? 's' : ''}
+                              </span>
+                            )}
                             {rate !== null && (
                               <span className="font-medium tabular-nums" style={{ color: rate >= 95 ? '#10b981' : '#f59e0b' }}>
                                 {rate}%
@@ -507,15 +536,6 @@ export default function Dashboard() {
                         )}
                       </div>
                     </div>
-                    {/* {total > 0 && (
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-0.5 bg-border rounded-full overflow-hidden">
-                          <div className="h-full rounded-full transition-all duration-700"
-                            style={{ width: `${share}%`, backgroundColor: shareColor }} />
-                        </div>
-                        <span className="text-[10px] text-muted-foreground/50 tabular-nums w-8 text-right">{share}%</span>
-                      </div>
-                    )} */}
                   </div>
                 );
               })}

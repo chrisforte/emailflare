@@ -294,6 +294,11 @@ import Base from '../layouts/Base.astro';
                   <td><span class="perm-access">Edit</span></td>
                 </tr>
                 <tr>
+                  <td><code>Workers Scripts</code></td>
+                  <td>Account</td>
+                  <td><span class="perm-access">Edit</span></td>
+                </tr>
+                <tr>
                   <td><code>Access: Users</code></td>
                   <td>Account</td>
                   <td><span class="perm-access">Read</span></td>
@@ -323,7 +328,14 @@ import Base from '../layouts/Base.astro';
 
             <div class="info-box info-tip">
               <span class="info-box-icon">💡</span>
-              <span>You only need DNS Edit if EmailFlare is managing your MX records automatically. If you handle DNS manually, you can set DNS to Read instead.</span>
+              <span>
+                <strong>Workers Scripts (Account · Edit)</strong> and <strong>Email Routing Rules (Zone · Edit)</strong>
+                are required for the <em>Bounce Forwarding</em> feature — they let EmailFlare deploy the forwarder Worker
+                and configure catch-all routing rules automatically from the Settings page. If you don't plan to use
+                bounce forwarding you can omit those two.<br><br>
+                <strong>DNS Edit</strong> is only needed if EmailFlare is managing your MX records automatically.
+                If you handle DNS manually, DNS Read is sufficient.
+              </span>
             </div>
           </div>
         </div>

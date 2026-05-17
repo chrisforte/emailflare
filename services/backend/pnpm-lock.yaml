@@ -35,6 +35,9 @@ importers:
       nodemailer:
         specifier: ^8.0.5
         version: 8.0.5
+      postal-mime:
+        specifier: ^2.7.4
+        version: 2.7.4
       zod:
         specifier: ^3.24.3
         version: 3.25.76
@@ -513,6 +516,9 @@ packages:
   peberminta@0.9.0:
     resolution: {integrity: sha512-XIxfHpEuSJbITd1H3EeQwpcZbTLHc+VVr8ANI9t5sit565tsI4/xK3KWTUFE2e6QiangUkh3B0jihzmGnNrRsQ==}
 
+  postal-mime@2.7.4:
+    resolution: {integrity: sha512-0WdnFQYUrPGGTFu1uOqD2s7omwua8xaeYGdO6rb88oD5yJ/4pPHDA4sdWqfD8wQVfCny563n/HQS7zTFft+f/g==}
+
   prettier@3.8.3:
     resolution: {integrity: sha512-7igPTM53cGHMW8xWuVTydi2KO233VFiTNyF5hLJqpilHfmn8C8gPf+PS7dUT64YcXFbiMGZxS9pCSxL/Dxm/Jw==}
     engines: {node: '>=14'}
@@ -918,6 +924,8 @@ snapshots:
       peberminta: 0.9.0
 
   peberminta@0.9.0: {}
+
+  postal-mime@2.7.4: {}
 
   prettier@3.8.3: {}
 

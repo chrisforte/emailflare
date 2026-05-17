@@ -21,14 +21,16 @@ import { seedSystemTemplates } from './seed.ts';
 import type { LayoutName } from './emails.ts';
 import type { Env, HonoEnv } from './env.ts';
 
-import authRoutes      from './routes/auth.ts';
-import domainsRoutes   from './routes/domains.ts';
-import templatesRoutes from './routes/templates.ts';
-import keysRoutes      from './routes/keys.ts';
-import logsRoutes      from './routes/logs.ts';
-import statsRoutes     from './routes/stats.ts';
-import cloudflareRoutes from './routes/cloudflare.ts';
-import sendRoutes      from './routes/send.ts';
+import authRoutes         from './routes/auth.ts';
+import domainsRoutes      from './routes/domains.ts';
+import templatesRoutes    from './routes/templates.ts';
+import keysRoutes         from './routes/keys.ts';
+import logsRoutes         from './routes/logs.ts';
+import statsRoutes        from './routes/stats.ts';
+import cloudflareRoutes   from './routes/cloudflare.ts';
+import sendRoutes         from './routes/send.ts';
+import suppressionsRoutes from './routes/suppressions.ts';
+import { handleInboundEmail } from './email-handler.ts';
 
 // ── CORS helpers ──────────────────────────────────────────────────────────────
 
@@ -102,12 +104,13 @@ admin.post('/layouts/:id/preview', async (c) => {
   return c.json({ html });
 });
 
-admin.route('/domains',    domainsRoutes);
-admin.route('/templates',  templatesRoutes);
-admin.route('/keys',       keysRoutes);
-admin.route('/logs',       logsRoutes);
-admin.route('/stats',      statsRoutes);
-admin.route('/cloudflare', cloudflareRoutes);
+admin.route('/domains',      domainsRoutes);
+admin.route('/templates',    templatesRoutes);
+admin.route('/keys',         keysRoutes);
+admin.route('/logs',         logsRoutes);
+admin.route('/stats',        statsRoutes);
+admin.route('/cloudflare',   cloudflareRoutes);
+admin.route('/suppressions', suppressionsRoutes);
 
 app.route('/api', admin);
 
@@ -131,4 +134,12 @@ app.post('/api/_seed', requireAdminToken, async (c) => {
 // ── Workers export ────────────────────────────────────────────────────────────
 export default {
   fetch: app.fetch,
+
+  // Handles inbound emails routed via Cloudflare Email Routing.
+  // Wire up by adding an Email Routing rule that delivers mail to
+  // the return-path address (e.g. bounces@return-path.yourdomain.com)
+  // to this Worker.
+  async email(message: ForwardableEmailMessage, env: Env, _ctx: ExecutionContext) {
+    await handleInboundEmail(message, env);
+  },
 } satisfies ExportedHandler<Env>;

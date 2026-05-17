@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useRouter } from '@tanstack/react-router';
 import {
   LayoutDashboard, Globe, FileText, Key, ScrollText, LogOut, FlaskConical,
-  MonitorDot, BookOpen, Github, ExternalLink,
+  MonitorDot, BookOpen, Github, ExternalLink, ShieldOff, Settings2,
 } from 'lucide-react';
 import api from '../api';
 import {
@@ -38,12 +38,15 @@ function AppLogo({ size = 32 }: { size?: number }) {
 
 // ─── Navigation definition ────────────────────────────────────────────────────
 
+const IS_CLOUDFLARE = import.meta.env.VITE_DEPLOYMENT_MODE === 'cloudflare';
+
 const navSections = [
   {
     label: 'Monitor',
     items: [
-      { to: '/',     label: 'Dashboard', icon: LayoutDashboard },
-      { to: '/logs', label: 'Logs',      icon: ScrollText },
+      { to: '/',             label: 'Dashboard',    icon: LayoutDashboard },
+      { to: '/logs',         label: 'Logs',         icon: ScrollText },
+      { to: '/suppressions', label: 'Suppressions', icon: ShieldOff },
     ],
   },
   {
@@ -56,8 +59,11 @@ const navSections = [
   {
     label: 'Configure',
     items: [
-      { to: '/domains', label: 'Domains',  icon: Globe },
-      { to: '/keys',    label: 'API Keys', icon: Key },
+      { to: '/domains',  label: 'Domains',  icon: Globe },
+      { to: '/keys',     label: 'API Keys', icon: Key },
+      // Settings page is only relevant for standalone (Railway) deployments.
+      // The CF Worker handles bounces natively so the bounce-forwarder setup is hidden.
+      ...(!IS_CLOUDFLARE ? [{ to: '/settings', label: 'Settings', icon: Settings2 }] : []),
     ],
   },
 ];

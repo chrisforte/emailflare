@@ -6,6 +6,8 @@ const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklm
 import { domains, deleteDomainCascade } from '../db.js';
 import { CloudflareApiError } from '../services/cloudflare.js';
 import { createSendingSubdomain, listSendingSubdomains, getSubdomainDnsRecords, getSendingSubdomain, getZoneByHostname } from '../services/cloudflare.js';
+import { getBounceWorkerInfo, enableEmailRouting, setCatchAllToWorker } from '../services/cloudflare.js';
+import { env } from '../env.js';
 
 const app = new Hono();
 
@@ -74,6 +76,18 @@ app.post('/', zValidator('json', createSchema), async (c) => {
     verified: cfResult.enabled ? 1 : 0,
     created_at: new Date().toISOString(),
   });
+
+  // Auto-configure bounce routing if the forwarder Worker is already deployed.
+  // Runs fire-and-forget so it never blocks the response.
+  if (zoneId) {
+    getBounceWorkerInfo(env.BOUNCE_WORKER_NAME).then(async (info) => {
+      if (!info.deployed) return;
+      await enableEmailRouting(zoneId);
+      await setCatchAllToWorker(zoneId, env.BOUNCE_WORKER_NAME);
+    }).catch((err) => {
+      console.warn(`[bounce] auto-setup failed for ${name}:`, err instanceof Error ? err.message : err);
+    });
+  }
 
   return c.json(row, 201);
 });

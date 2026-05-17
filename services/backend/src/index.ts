@@ -12,14 +12,16 @@ import { requireAdminToken } from './middleware/auth.js';
 import { requireApiKey } from './middleware/apiKey.js';
 import { checkRateLimit } from './middleware/rateLimit.js';
 
-import authRoutes      from './routes/auth.js';
-import domainsRoutes   from './routes/domains.js';
-import templatesRoutes from './routes/templates.js';
-import keysRoutes      from './routes/keys.js';
-import logsRoutes      from './routes/logs.js';
-import statsRoutes     from './routes/stats.js';
-import cloudflareRoutes from './routes/cloudflare.js';
-import sendRoutes      from './routes/send.js';
+import authRoutes          from './routes/auth.js';
+import domainsRoutes       from './routes/domains.js';
+import templatesRoutes     from './routes/templates.js';
+import keysRoutes          from './routes/keys.js';
+import logsRoutes          from './routes/logs.js';
+import statsRoutes         from './routes/stats.js';
+import cloudflareRoutes    from './routes/cloudflare.js';
+import sendRoutes          from './routes/send.js';
+import { suppressionsRoutes } from './routes/suppressions.js';
+import { webhooksRoutes }     from './routes/webhooks.js';
 import { LAYOUTS, renderLayout } from '@emailflare/emails';
 import type { LayoutName } from '@emailflare/emails';
 
@@ -108,14 +110,19 @@ admin.post('/layouts/:id/preview', async (c) => {
   const html = await renderLayout(id, variables);
   return c.json({ html });
 });
-admin.route('/domains',   domainsRoutes);
-admin.route('/templates', templatesRoutes);
-admin.route('/keys',      keysRoutes);
-admin.route('/logs',      logsRoutes);
-admin.route('/stats',     statsRoutes);
-admin.route('/cloudflare', cloudflareRoutes);
+admin.route('/domains',      domainsRoutes);
+admin.route('/templates',    templatesRoutes);
+admin.route('/keys',         keysRoutes);
+admin.route('/logs',         logsRoutes);
+admin.route('/stats',        statsRoutes);
+admin.route('/cloudflare',   cloudflareRoutes);
+admin.route('/suppressions', suppressionsRoutes);
 
 app.route('/api', admin);
+
+// ── Bounce/complaint webhook (protected by WEBHOOK_SECRET bearer token) ────────
+// Public endpoint — auth is handled inside webhooksRoutes middleware.
+app.route('/api/webhooks', webhooksRoutes);
 
 // ── Error handler ─────────────────────────────────────────────────────────────
 app.onError((err, c) => {
