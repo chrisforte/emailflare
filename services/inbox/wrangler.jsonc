@@ -72,6 +72,14 @@
     ]
   },
 
+  // DO class migrations — required so Cloudflare tracks the class on first deploy
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_classes": ["NotificationsHub"]
+    }
+  ],
+
   // Queue for sequence email delivery
   "queues": {
     "producers": [

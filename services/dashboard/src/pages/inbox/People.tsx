@@ -1,13 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Loader2, Search, Send, MailOpen, User } from 'lucide-react';
+import { Loader2, Search, Send, MailOpen, ChevronDown, ChevronRight } from 'lucide-react';
 import {
-  getPeople, getThread, markRead, composeSend, replyTo,
+  getPeople, getThread, markRead, replyTo,
   Person, Thread, InboxEmail, SentEmail,
 } from '../../api';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -29,42 +25,60 @@ function relativeTime(dateStr: string) {
   return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-// ── Person row ────────────────────────────────────────────────────────────────
+// ── Contact row ───────────────────────────────────────────────────────────────
 
-function PersonRow({ person, selected, onClick }: {
+function ContactRow({ person, selected, onClick }: {
   person: Person;
   selected: boolean;
   onClick: () => void;
 }) {
+  const hasUnread = person.unread_count > 0;
   return (
     <button
       onClick={onClick}
       className={cn(
-        'w-full text-left px-3 py-2.5 rounded-lg flex items-start gap-3 transition-colors',
-        selected ? 'bg-sidebar-accent' : 'hover:bg-muted',
+        'w-full text-left px-4 py-3 flex items-start gap-3 border-b border-border transition-colors relative',
+        selected
+          ? 'bg-zinc-100'
+          : 'hover:bg-zinc-50',
       )}
     >
-      <div className="size-8 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center shrink-0 mt-0.5">
-        <span className="text-[11px] font-bold text-white">
+      {/* Selected indicator */}
+      {selected && (
+        <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full bg-orange-500" />
+      )}
+
+      {/* Avatar */}
+      <div className="size-8 rounded-full bg-zinc-200 flex items-center justify-center shrink-0 mt-0.5">
+        <span className="text-[11px] font-semibold text-zinc-600">
           {initials(person.name, person.email)}
         </span>
       </div>
+
+      {/* Info */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
-          <p className={cn('text-[13px] truncate', person.unread_count > 0 ? 'font-semibold text-foreground' : 'font-medium text-foreground/80')}>
+        <div className="flex items-baseline justify-between gap-2">
+          <p className={cn(
+            'text-[13px] truncate',
+            hasUnread ? 'font-semibold text-zinc-900' : 'font-medium text-zinc-700',
+          )}>
             {person.name ?? person.email}
           </p>
-          {person.last_email_at && (
-            <span className="text-[10.5px] text-muted-foreground shrink-0">{relativeTime(person.last_email_at)}</span>
-          )}
+          <span className="text-[11px] text-zinc-400 shrink-0 tabular-nums">
+            {person.last_email_at ? relativeTime(person.last_email_at) : ''}
+          </span>
         </div>
         {person.name && (
-          <p className="text-[11.5px] text-muted-foreground truncate mt-0.5">{person.email}</p>
+          <p className="text-[11.5px] text-zinc-400 truncate mt-0.5">{person.email}</p>
         )}
-        <div className="flex items-center gap-1.5 mt-1">
-          <span className="text-[11px] text-muted-foreground">{person.total_count} email{person.total_count !== 1 ? 's' : ''}</span>
-          {person.unread_count > 0 && (
-            <Badge className="h-4 px-1.5 text-[9px]">{person.unread_count}</Badge>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-[11px] text-zinc-400">
+            {person.total_count} msg{person.total_count !== 1 ? 's' : ''}
+          </span>
+          {hasUnread && (
+            <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-orange-500 text-white text-[9.5px] font-semibold tabular-nums">
+              {person.unread_count}
+            </span>
           )}
         </div>
       </div>
@@ -72,31 +86,78 @@ function PersonRow({ person, selected, onClick }: {
   );
 }
 
-// ── Message bubble ────────────────────────────────────────────────────────────
+// ── Email card ────────────────────────────────────────────────────────────────
 
-function MessageBubble({ item }: { item: InboxEmail | SentEmail }) {
+function EmailCard({ item, defaultOpen = false }: {
+  item: InboxEmail | SentEmail;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   const isSent = item.type === 'sent';
   const date = isSent
     ? new Date((item as SentEmail).sent_at)
     : new Date((item as InboxEmail).received_at);
+  const subject = isSent
+    ? (item as SentEmail).subject
+    : (item as InboxEmail).subject;
+  const body = 'body_text' in item ? item.body_text : undefined;
+  const preview = body?.replace(/\s+/g, ' ').trim().slice(0, 120);
 
   return (
-    <div className={cn('flex flex-col gap-1', isSent ? 'items-end' : 'items-start')}>
-      <div className={cn(
-        'max-w-[75%] rounded-xl px-4 py-3 text-sm',
-        isSent
-          ? 'bg-primary text-primary-foreground rounded-br-sm'
-          : 'bg-muted text-foreground rounded-bl-sm',
-      )}>
-        <p className="text-[11px] font-semibold mb-1 opacity-70">{item.subject}</p>
-        {'body_text' in item && item.body_text
-          ? <p className="whitespace-pre-wrap leading-relaxed">{item.body_text}</p>
-          : <p className="leading-relaxed opacity-60 italic">No preview available</p>
-        }
-      </div>
-      <span className="text-[10.5px] text-muted-foreground px-1">
-        {date.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-      </span>
+    <div className={cn(
+      'rounded-lg border overflow-hidden transition-shadow',
+      open ? 'border-zinc-200 shadow-sm' : 'border-zinc-100 hover:border-zinc-200',
+    )}>
+      <button
+        className="w-full flex items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-zinc-50/60"
+        onClick={() => setOpen(v => !v)}
+      >
+        {/* Sender avatar */}
+        <div className={cn(
+          'size-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-semibold',
+          isSent ? 'bg-orange-100 text-orange-700' : 'bg-zinc-200 text-zinc-600',
+        )}>
+          {isSent ? 'Me' : subject?.[0]?.toUpperCase() ?? '?'}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-[12.5px] font-semibold text-zinc-800 truncate">
+              {isSent ? 'You' : subject || '(no subject)'}
+            </p>
+            <span className="text-[11px] text-zinc-400 shrink-0 tabular-nums">
+              {date.toLocaleString(undefined, {
+                month: 'short', day: 'numeric',
+                hour: 'numeric', minute: '2-digit',
+              })}
+            </span>
+          </div>
+          {!open && preview && (
+            <p className="text-[12px] text-zinc-400 truncate mt-0.5">{preview}</p>
+          )}
+          {isSent && (
+            <span className="mt-1 inline-block text-[10.5px] text-orange-600 bg-orange-50 border border-orange-100 rounded px-1.5 py-0.5 font-medium">
+              Sent
+            </span>
+          )}
+        </div>
+
+        {/* Chevron */}
+        <ChevronDown
+          size={13}
+          className={cn('text-zinc-300 shrink-0 mt-0.5 transition-transform', open && 'rotate-180')}
+        />
+      </button>
+
+      {open && (
+        <div className="px-4 pb-4 pt-1 border-t border-zinc-100">
+          {body
+            ? <p className="text-[13px] text-zinc-700 leading-relaxed whitespace-pre-wrap">{body}</p>
+            : <p className="text-[13px] text-zinc-400 italic">No plain-text content</p>
+          }
+        </div>
+      )}
     </div>
   );
 }
@@ -117,7 +178,7 @@ function ThreadPanel({ person, thread, onReply }: {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [thread.emails.length]);
 
-  const lastReceivedEmail = [...thread.emails]
+  const lastReceived = [...thread.emails]
     .reverse()
     .find(e => e.type === 'received') as InboxEmail | undefined;
 
@@ -127,7 +188,7 @@ function ThreadPanel({ person, thread, onReply }: {
     try {
       await onReply({
         text: replyText.trim(),
-        subject: subject.trim() || `Re: ${lastReceivedEmail?.subject ?? '(no subject)'}`,
+        subject: subject.trim() || `Re: ${lastReceived?.subject ?? '(no subject)'}`,
       });
       setReplyText('');
       setSubject('');
@@ -138,56 +199,87 @@ function ThreadPanel({ person, thread, onReply }: {
 
   return (
     <div className="flex flex-col h-full">
+
       {/* Header */}
-      <div className="border-b border-border px-6 py-4 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="size-9 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center">
-            <span className="text-[12px] font-bold text-white">{initials(person.name, person.email)}</span>
-          </div>
-          <div>
-            <p className="text-[14px] font-semibold text-foreground">{person.name ?? person.email}</p>
-            {person.name && <p className="text-[12px] text-muted-foreground">{person.email}</p>}
-          </div>
+      <div className="h-14 border-b border-border px-6 flex items-center gap-3 shrink-0 bg-background">
+        <div className="size-8 rounded-full bg-zinc-200 flex items-center justify-center shrink-0">
+          <span className="text-[11px] font-semibold text-zinc-600">
+            {initials(person.name, person.email)}
+          </span>
         </div>
+        <div className="flex-1 min-w-0 leading-none">
+          <p className="text-[13.5px] font-semibold text-zinc-900">{person.name ?? person.email}</p>
+          {person.name && (
+            <p className="text-[11.5px] text-zinc-400 mt-[3px]">{person.email}</p>
+          )}
+        </div>
+        <span className="text-[11.5px] text-zinc-400 shrink-0">
+          {thread.emails.length} message{thread.emails.length !== 1 ? 's' : ''}
+        </span>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-4">
-        {thread.emails.map(item => (
-          <MessageBubble key={item.id} item={item} />
+      {/* Email cards */}
+      <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-2">
+        {thread.emails.map((item, i) => (
+          <EmailCard
+            key={item.id}
+            item={item}
+            defaultOpen={i === thread.emails.length - 1}
+          />
         ))}
         <div ref={bottomRef} />
       </div>
 
-      {/* Reply box */}
-      <div className="border-t border-border px-6 py-4 shrink-0 flex flex-col gap-2">
-        <Input
-          placeholder="Subject (optional)"
-          value={subject}
-          onChange={e => setSubject(e.target.value)}
-          className="text-sm"
-        />
-        <div className="flex gap-2 items-end">
-          <Textarea
-            placeholder="Write a reply…"
+      {/* Compose reply */}
+      <div className="border-t border-border p-4 shrink-0">
+        <div className="rounded-lg border border-zinc-200 bg-white overflow-hidden">
+          <input
+            value={subject}
+            onChange={e => setSubject(e.target.value)}
+            placeholder={`Re: ${lastReceived?.subject ?? '(no subject)'}`}
+            className="w-full px-4 py-2.5 text-[12.5px] text-zinc-700 border-b border-zinc-100
+              bg-transparent outline-none placeholder:text-zinc-400"
+          />
+          <textarea
             value={replyText}
             onChange={e => setReplyText(e.target.value)}
-            className="resize-none text-sm min-h-[80px]"
+            placeholder="Write a reply…"
+            rows={3}
+            className="w-full px-4 py-3 text-[13px] text-zinc-800 bg-transparent outline-none
+              resize-none placeholder:text-zinc-400"
             onKeyDown={e => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSend();
             }}
           />
-          <Button
-            size="sm"
-            onClick={handleSend}
-            disabled={sending || !replyText.trim()}
-            className="shrink-0 self-end"
-          >
-            {sending ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
-          </Button>
+          <div className="flex items-center justify-between px-4 py-2.5 bg-zinc-50 border-t border-zinc-100">
+            <span className="text-[11px] text-zinc-400">⌘ Enter to send</span>
+            <button
+              onClick={handleSend}
+              disabled={sending || !replyText.trim()}
+              className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md bg-orange-500 text-white
+                text-[12px] font-medium hover:bg-orange-600
+                disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {sending
+                ? <Loader2 size={11} className="animate-spin" />
+                : <Send size={11} />
+              }
+              Send
+            </button>
+          </div>
         </div>
-        <p className="text-[10.5px] text-muted-foreground">⌘+Enter to send</p>
       </div>
+    </div>
+  );
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="h-full flex flex-col items-center justify-center gap-3 select-none">
+      <MailOpen size={36} strokeWidth={1.25} className="text-zinc-300" />
+      <p className="text-[13px] text-zinc-400">{message}</p>
     </div>
   );
 }
@@ -226,7 +318,9 @@ export default function People() {
 
   async function handleReply({ text, subject }: { text: string; subject: string }) {
     if (!selectedId || !thread) return;
-    const lastReceived = [...thread.emails].reverse().find(e => e.type === 'received') as InboxEmail | undefined;
+    const lastReceived = [...thread.emails]
+      .reverse()
+      .find(e => e.type === 'received') as InboxEmail | undefined;
     await replyTo({
       personId: selectedId,
       from: fromAddress,
@@ -239,73 +333,83 @@ export default function People() {
   }
 
   const filtered = people.filter(p => filter === 'unread' ? p.unread_count > 0 : true);
-  const selected = people.find(p => p.id === selectedId);
+  const selected = people.find(p => p.id === selectedId) ?? null;
 
   return (
     <div className="flex h-full">
-      {/* Left panel */}
-      <div className="w-[320px] shrink-0 border-r border-border flex flex-col h-full">
-        {/* Search */}
-        <div className="px-3 pt-4 pb-2 shrink-0">
-          <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search people…"
+
+      {/* ── Left: contact list ── */}
+      <div className="w-[272px] shrink-0 flex flex-col border-r border-border h-full">
+
+        {/* Search + filter bar */}
+        <div className="h-14 border-b border-border flex items-center gap-2 px-3 shrink-0">
+          <div className="relative flex-1">
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+            <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="pl-8 h-8 text-sm"
+              placeholder="Search…"
+              className="w-full h-8 pl-7 pr-3 rounded-md bg-zinc-100 text-[12.5px] text-zinc-800
+                placeholder:text-zinc-400 outline-none border border-transparent
+                focus:bg-white focus:border-orange-300 transition-colors"
             />
+          </div>
+          <div className="flex rounded-md border border-border overflow-hidden shrink-0">
+            {(['all', 'unread'] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={cn(
+                  'h-8 px-2.5 text-[11.5px] font-medium capitalize transition-colors',
+                  filter === f
+                    ? 'bg-zinc-900 text-white'
+                    : 'text-zinc-500 hover:text-zinc-800 bg-white hover:bg-zinc-50',
+                )}
+              >
+                {f}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex gap-1 px-3 pb-2 shrink-0">
-          {(['all', 'unread'] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={cn(
-                'px-3 py-1 rounded text-[12px] font-medium transition-colors capitalize',
-                filter === f ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-
-        {/* People list */}
-        <div className="flex-1 overflow-y-auto px-2 pb-4">
+        {/* List */}
+        <div className="flex-1 overflow-y-auto">
           {loadingPeople ? (
-            <div className="flex justify-center pt-8"><Loader2 size={16} className="animate-spin text-muted-foreground" /></div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center pt-12 gap-2 text-muted-foreground">
-              <MailOpen size={24} className="opacity-30" />
-              <p className="text-sm">{search ? 'No results' : filter === 'unread' ? 'All caught up!' : 'No emails yet'}</p>
+            <div className="flex items-center justify-center h-32">
+              <Loader2 size={16} className="animate-spin text-zinc-300" />
             </div>
+          ) : filtered.length === 0 ? (
+            <EmptyState message={search ? 'No results' : filter === 'unread' ? 'All caught up' : 'No contacts yet'} />
           ) : (
             filtered.map(p => (
-              <PersonRow key={p.id} person={p} selected={p.id === selectedId} onClick={() => selectPerson(p.id)} />
+              <ContactRow
+                key={p.id}
+                person={p}
+                selected={p.id === selectedId}
+                onClick={() => selectPerson(p.id)}
+              />
             ))
           )}
         </div>
       </div>
 
-      {/* Right panel */}
+      {/* ── Right: thread ── */}
       <div className="flex-1 min-w-0 h-full overflow-hidden">
-        {selectedId && thread && selected ? (
-          <ThreadPanel person={selected} thread={thread} onReply={handleReply} />
-        ) : loadingThread ? (
-          <div className="flex justify-center items-center h-full">
-            <Loader2 size={20} className="animate-spin text-muted-foreground" />
+        {loadingThread ? (
+          <div className="h-full flex items-center justify-center">
+            <Loader2 size={18} className="animate-spin text-zinc-300" />
           </div>
+        ) : selected && thread ? (
+          <ThreadPanel
+            person={selected}
+            thread={thread}
+            onReply={handleReply}
+          />
         ) : (
-          <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-            <User size={40} className="opacity-20" />
-            <p className="text-sm">Select a person to view their thread</p>
-          </div>
+          <EmptyState message="Select a contact to view their thread" />
         )}
       </div>
+
     </div>
   );
 }

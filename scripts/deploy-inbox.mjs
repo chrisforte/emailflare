@@ -5,9 +5,10 @@
  * What this does:
  *   1.  Checks wrangler is authenticated
  *   2.  Resolves the Cloudflare account ID
- *   3.  Creates D1 database (emailflare-inbox)
+ *   3.  Creates D1 database (emailflare)
  *   4.  Creates KV namespace (emailflare-inbox-rate-limit)
  *   5.  Creates R2 bucket (emailflare-inbox-attachments)
+ *   5b. Creates Queue (emailflare-inbox-sequences)
  *   6.  Patches services/inbox/wrangler.jsonc with the real resource IDs
  *   7.  Applies D1 migrations (schema + inbox tables)
  *   8.  Prompts for secrets and sets them via `wrangler secret put`
@@ -231,6 +232,26 @@ if (r2Out.includes('Created bucket') || r2Create.status === 0) {
   warn(`R2 bucket "${R2_NAME}" already exists — skipping.`);
 } else {
   warn(`R2 bucket creation returned unexpected output (may still be OK):\n${r2Out.trim()}`);
+}
+
+// ─── step 5b: create Queue ───────────────────────────────────────────────────
+
+const QUEUE_NAME = 'emailflare-inbox-sequences';
+log(`Creating Queue "${QUEUE_NAME}" (skips if already exists)…`);
+
+const qCreate = spawnSync(`npx wrangler queues create ${QUEUE_NAME}`, {
+  cwd: INBOX_DIR, encoding: 'utf8', shell: true,
+  env: { ...process.env }, stdio: ['pipe', 'pipe', 'pipe'],
+});
+const qOut = (qCreate.stdout ?? '') + (qCreate.stderr ?? '');
+
+if (qCreate.status === 0 || qOut.toLowerCase().includes('created queue')) {
+  ok(`Queue "${QUEUE_NAME}" created.`);
+} else if (qOut.toLowerCase().includes('already exists') || qOut.includes('409')) {
+  warn(`Queue "${QUEUE_NAME}" already exists — skipping.`);
+} else {
+  // Queues errors are non-fatal — the Worker can still deploy if queue exists from a prior run
+  warn(`Queue creation returned unexpected output:\n${qOut.trim()}`);
 }
 
 // ─── step 6: patch wrangler.jsonc ────────────────────────────────────────────
