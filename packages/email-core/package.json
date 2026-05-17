@@ -1,0 +1,14 @@
+{
+  "name": "@emailflare/email-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared types, Zod schemas, and pure helpers for email-worker (CF) and email-server (Node.js)",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "zod": "^3.24.3"
+  }
+}

@@ -117,7 +117,7 @@ To roll out a new version to a percentage of traffic:
 
 ```bash
 # Upload a new version (applies migrations, does not shift traffic)
-cd services/worker && pnpm run cf:rollout
+cd services/email-worker && pnpm run cf:rollout
 
 # Send 10% of traffic to the new version
 npx wrangler versions deploy --version-percentage <VERSION_ID>=10
@@ -148,7 +148,7 @@ Starts a local Worker dev server with a local D1 database and KV stubs. No secre
 just localflare
 ```
 
-Starts Localflare against the Worker config in `services/worker/wrangler.jsonc` and opens the Localflare dashboard flow with shared local bindings.
+Starts Localflare against the Worker config in `services/email-worker/wrangler.jsonc` and opens the Localflare dashboard flow with shared local bindings.
 
 The recipe defaults to port `8790` to avoid collisions with `wrangler dev` on `8787`.
 
@@ -164,7 +164,7 @@ just localflare 8787
 just remove-worker
 ```
 
-Deletes all Cloudflare resources defined in `services/worker/wrangler.jsonc`:
+Deletes all Cloudflare resources defined in `services/email-worker/wrangler.jsonc`:
 
 1. Worker (`name`)
 2. D1 database (`d1_databases[0].database_name`)

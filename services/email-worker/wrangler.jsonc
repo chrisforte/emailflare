@@ -45,9 +45,9 @@
 
   // Static assets: the built admin SPA is served from the Worker itself.
   // All unmatched routes fall through to index.html (SPA mode).
-  // Build admin first: cd services/admin && pnpm build
+  // Build email-ui first: cd services/email-ui && pnpm build
   "assets": {
-    "directory": "../admin/dist",
+    "directory": "../email-ui/dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application"
   },

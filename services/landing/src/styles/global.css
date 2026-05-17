@@ -356,3 +356,46 @@ footer {
 @media (max-width: 640px) {
   .hide-mobile { display: none; }
 }
+
+/* ── PRODUCT SUB-NAV ─────────────────────────────────────────── */
+.product-subnav {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky;
+  top: 58px;
+  z-index: 40;
+}
+
+.psn-inner {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.psn-inner::-webkit-scrollbar { display: none; }
+
+.psn-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 11px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.psn-link:hover { color: var(--text); }
+.psn-link.active { color: var(--text); }
+.email-product-subnav .psn-link.active {
+  border-bottom-color: var(--orange);
+  color: var(--orange-hover);
+}
+.inbox-product-subnav .psn-link.active {
+  border-bottom-color: var(--green);
+  color: var(--green);
+}
+

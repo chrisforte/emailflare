@@ -1,5 +1,5 @@
 // API-key rate limiting using Redis (ioredis).
-// Replaces the CF Workers Rate Limiting binding in services/inbox/src/middleware/rateLimit.ts.
+// Replaces the CF Workers Rate Limiting binding in services/inbox-worker/src/middleware/rateLimit.ts.
 // 100 requests per 60 seconds per key (sliding window via INCR+EXPIRE).
 
 import { Redis } from 'ioredis';

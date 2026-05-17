@@ -1,5 +1,5 @@
 // Cloudflare API service — thin re-export for inbox-server.
-// The logic is identical to services/inbox/src/services/cloudflare.ts.
+// The logic is identical to services/inbox-worker/src/services/cloudflare.ts.
 // Env values are injected per-call (no module-level globals).
 
 const CF_BASE = 'https://api.cloudflare.com/client/v4';

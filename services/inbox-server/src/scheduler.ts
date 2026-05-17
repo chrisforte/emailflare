@@ -1,6 +1,6 @@
 // BullMQ-based sequence scheduler + worker.
 // Replaces the CF cron trigger (processDueSequenceSteps) and Queue consumer
-// (handleSequenceQueueMessage) from services/inbox/src/sequence-processor.ts.
+// (handleSequenceQueueMessage) from services/inbox-worker/src/sequence-processor.ts.
 //
 // node-cron fires every 5 minutes → enqueues BullMQ jobs.
 // BullMQ Worker processes jobs → sends email via CF Email API.

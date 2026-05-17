@@ -359,80 +359,31 @@ import { Icon } from 'astro-icon/components';
   .ix-deploy-section .section-title   { color: oklch(95% 0.006 58); }
   .ix-deploy-section .section-sub     { color: oklch(56% 0.01 58); }
 
-  .ix-deploy-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: clamp(2rem, 5vw, 4rem);
-    align-items: start;
-    margin-top: 44px;
-  }
-
-  @media (max-width: 740px) { .ix-deploy-grid { grid-template-columns: 1fr; } }
-
-  .ix-step-list { display: flex; flex-direction: column; gap: 20px; }
-
-  .ix-step {
-    display: flex;
-    gap: 16px;
-    align-items: flex-start;
-  }
-
-  .ix-step-num {
-    width: 30px; height: 30px; border-radius: 50%;
-    background: oklch(20% 0.08 150 / 0.6);
-    border: 1.5px solid oklch(38% 0.1 150 / 0.5);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 700;
-    color: oklch(72% 0.14 150);
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  .ix-step-body h4 { font-size: 0.9375rem; font-weight: 600; color: oklch(90% 0.006 58); margin-bottom: 5px; }
-  .ix-step-body p  { font-size: 0.875rem; color: oklch(56% 0.01 58); line-height: 1.65; margin: 0; }
-  .ix-step-body code {
-    font-family: var(--font-mono); font-size: 11.5px;
-    background: oklch(20% 0.04 150 / 0.5);
-    border: 1px solid oklch(32% 0.06 150 / 0.4);
-    color: oklch(72% 0.1 150);
-    padding: 1px 5px; border-radius: 4px;
-  }
-
-  /* ── TERMINAL CARD ────────────────────────────────────────── */
-  .ix-term {
-    background: oklch(15% 0.02 150);
-    border: 1px solid oklch(28% 0.05 150 / 0.6);
+  .ix-deploy-option {
+    background: oklch(14% 0.03 150 / 0.8);
+    border: 1px solid oklch(28% 0.08 150 / 0.7);
     border-radius: var(--radius-lg);
-    overflow: hidden;
+    display: flex; flex-direction: column; overflow: hidden;
+    margin-top: 48px;
   }
-
-  .ix-term-bar {
-    background: oklch(19% 0.016 150);
-    border-bottom: 1px solid oklch(26% 0.03 150 / 0.5);
-    padding: 10px 16px;
-    display: flex; align-items: center; gap: 7px;
-  }
-
-  .ixt-dot { width: 10px; height: 10px; border-radius: 50%; }
-  .ixt-r { background: oklch(52% 0.14 24 / 0.6); }
-  .ixt-y { background: oklch(68% 0.14 80 / 0.6); }
-  .ixt-g { background: oklch(56% 0.14 150 / 0.6); }
-  .ixt-title { margin-left: 6px; font-size: 11px; color: oklch(42% 0.01 58); font-family: var(--font-mono); }
-
-  .ix-term-body {
-    padding: 18px 20px 22px;
-    font-family: var(--font-mono);
-    font-size: 12.5px;
-    line-height: 1.9;
-  }
-
-  .tt-cmt    { color: oklch(40% 0.01 58); font-style: italic; }
-  .tt-prompt { color: var(--green); }
-  .tt-cmd    { color: oklch(80% 0.06 58); }
-  .tt-str    { color: oklch(74% 0.12 140); }
-  .tt-ok     { color: var(--green); font-weight: 600; }
-  .tt-warn   { color: oklch(68% 0.14 80); }
-  .tt-step   { color: oklch(66% 0.06 58); }
+  .ix-do-header { padding: 24px 28px 20px; border-bottom: 1px solid oklch(22% 0.05 150 / 0.6); }
+  .ix-do-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 10px; border-radius: 99px; margin-bottom: 14px; background: oklch(20% 0.08 150 / 0.5); color: var(--green); border: 1px solid oklch(36% 0.1 150 / 0.5); }
+  .ix-do-title { font-size: 1.15rem; font-weight: 700; color: oklch(93% 0.01 58); margin-bottom: 8px; }
+  .ix-do-sub { font-size: 0.875rem; color: oklch(56% 0.01 58); line-height: 1.6; }
+  .ix-do-steps { padding: 20px 28px; flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 16px 32px; }
+  @media (max-width: 740px) { .ix-do-steps { grid-template-columns: 1fr; } }
+  .ix-do-step { display: flex; gap: 14px; align-items: flex-start; }
+  .ix-do-step-num { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; border: 1px solid oklch(36% 0.1 150 / 0.6); font-size: 11px; font-weight: 700; color: var(--green); display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+  .ix-do-step-label { font-size: 13px; font-weight: 600; color: oklch(84% 0.01 58); margin-bottom: 6px; }
+  .ix-do-step-desc { font-size: 12.5px; color: oklch(52% 0.01 58); line-height: 1.55; margin-bottom: 8px; }
+  .ix-do-step-label code, .ix-do-step-desc code { font-family: var(--font-mono); font-size: 11px; background: oklch(20% 0.04 150 / 0.5); border: 1px solid oklch(32% 0.06 150 / 0.4); color: oklch(72% 0.1 150); padding: 1px 5px; border-radius: 4px; }
+  .ix-do-footer { padding: 16px 28px; border-top: 1px solid oklch(22% 0.05 150 / 0.6); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .ix-do-footer-note { font-size: 12px; color: oklch(44% 0.01 58); }
+  .ix-do-footer a { font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; color: var(--green); }
+  .ix-code-block { background: oklch(10% 0.02 150); border: 1px solid oklch(22% 0.05 150 / 0.6); border-radius: 8px; padding: 12px 14px; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.75; overflow-x: auto; display: flex; flex-direction: column; gap: 0; }
+  .ix-cb-cmd { color: oklch(76% 0.1 150); }
+  .ix-cb-cmt { color: oklch(42% 0.01 58); font-style: italic; }
+  .ix-cb-url { color: var(--green); }
 
   /* ── DOCS ─────────────────────────────────────────────────── */
   .docs-hero {
@@ -697,10 +648,21 @@ import { Icon } from 'astro-icon/components';
   .btn-ghost:hover { background: var(--bg-alt); color: var(--text); border-color: var(--border-strong); }
 </style>
 
+<!-- PRODUCT SUB-NAV -->
+<nav class="product-subnav inbox-product-subnav">
+  <div class="container">
+    <div class="psn-inner">
+      <a href="#overview" class="psn-link active">Overview</a>
+      <a href="#features" class="psn-link">Features</a>
+      <a href="#deploy" class="psn-link">Deploy</a>
+    </div>
+  </div>
+</nav>
+
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <!--  HERO                                                                   -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<div class="ix-hero">
+<div id="overview" class="ix-hero">
   <div class="container">
     <div class="ix-hero-inner">
       <!-- LEFT -->
@@ -934,91 +896,67 @@ import { Icon } from 'astro-icon/components';
   <div class="container">
     <div class="section-header" style="margin-bottom:0">
       <div class="section-eyebrow">Deploy</div>
-      <h2 class="section-title" style="color:oklch(95% 0.006 58)">One command to <em>production</em>.</h2>
-      <p class="section-sub" style="color:oklch(56% 0.01 58)">
+      <h2 class="section-title">One command to <em>production</em>.</h2>
+      <p class="section-sub">
         The deploy script creates every Cloudflare resource, applies migrations, sets secrets, builds the dashboard, and deploys. Safe to re-run — idempotent throughout.
       </p>
     </div>
 
-    <div class="ix-deploy-grid">
-      <!-- Steps -->
-      <div class="ix-step-list">
-        <div class="ix-step">
-          <div class="ix-step-num">1</div>
-          <div class="ix-step-body">
-            <h4>Copy the config template</h4>
-            <p>Run <code>cp scripts/config.example.toml scripts/config.toml</code> and fill in your Cloudflare API token, account ID, and VAPID keys. Or leave everything blank to be prompted interactively.</p>
+    <div class="ix-deploy-option">
+      <div class="ix-do-header">
+        <div class="ix-do-badge"><Icon name="lucide:zap" size={11} /> Serverless</div>
+        <div class="ix-do-title">Cloudflare Workers</div>
+        <p class="ix-do-sub">No servers, no containers. D1 database + KV + R2 + Queue — all on the edge. One script from clone to live.</p>
+      </div>
+      <div class="ix-do-steps">
+        <div class="ix-do-step">
+          <div class="ix-do-step-num">1</div>
+          <div>
+            <div class="ix-do-step-label">Copy the config template</div>
+            <p class="ix-do-step-desc">Fill in your Cloudflare API token, account ID, and VAPID keys. Or leave everything blank to be prompted interactively.</p>
+            <div class="ix-code-block">
+              <span><span class="ix-cb-cmd">cp scripts/config.example.toml scripts/config.toml</span></span>
+            </div>
           </div>
         </div>
-        <div class="ix-step">
-          <div class="ix-step-num">2</div>
-          <div class="ix-step-body">
-            <h4>Generate VAPID keys</h4>
-            <p>Inbox uses Web Push for real-time browser notifications. Generate a VAPID key pair with <code>npx web-push generate-vapid-keys</code> and paste both keys into your config.</p>
+        <div class="ix-do-step">
+          <div class="ix-do-step-num">2</div>
+          <div>
+            <div class="ix-do-step-label">Generate VAPID keys</div>
+            <p class="ix-do-step-desc">Inbox uses Web Push for real-time browser notifications. Generate a key pair and paste both keys into your config.</p>
+            <div class="ix-code-block">
+              <span><span class="ix-cb-cmd">npx web-push generate-vapid-keys</span></span>
+              <span><span class="ix-cb-cmt"># paste PUBLIC_KEY and PRIVATE_KEY into config.toml</span></span>
+            </div>
           </div>
         </div>
-        <div class="ix-step">
-          <div class="ix-step-num">3</div>
-          <div class="ix-step-body">
-            <h4>Run the deploy command</h4>
-            <p>From the repo root, run <code>just deploy-inbox</code>. It creates D1, KV, R2, a Queue, applies all migrations, sets Worker secrets, builds the dashboard, and deploys.</p>
+        <div class="ix-do-step">
+          <div class="ix-do-step-num">3</div>
+          <div>
+            <div class="ix-do-step-label">Run the deploy command</div>
+            <p class="ix-do-step-desc">Creates D1, KV, R2, a Queue, applies all migrations, sets Worker secrets, builds the dashboard, and deploys.</p>
+            <div class="ix-code-block">
+              <span><span class="ix-cb-cmd">just deploy-inbox</span></span>
+            </div>
           </div>
         </div>
-        <div class="ix-step">
-          <div class="ix-step-num">4</div>
-          <div class="ix-step-body">
-            <h4>Open <code>/setup</code> and create your admin</h4>
-            <p>Visit your Worker URL at <code>/setup</code> to create the first admin account. Then add your inboxes, invite teammates, and configure Cloudflare Email Routing to forward mail to your Worker.</p>
+        <div class="ix-do-step">
+          <div class="ix-do-step-num">4</div>
+          <div>
+            <div class="ix-do-step-label">Open <code>/setup</code> and create your admin</div>
+            <p class="ix-do-step-desc">Visit your Worker URL at <code>/setup</code> to create the first admin account. Then add inboxes, invite teammates, and configure Cloudflare Email Routing.</p>
+            <div class="ix-code-block">
+              <span><span class="ix-cb-url">https://your-inbox.workers.dev/setup</span></span>
+            </div>
           </div>
         </div>
       </div>
-
-      <!-- Terminal -->
-      <div class="ix-term">
-        <div class="ix-term-bar">
-          <span class="ixt-dot ixt-r"></span>
-          <span class="ixt-dot ixt-y"></span>
-          <span class="ixt-dot ixt-g"></span>
-          <span class="ixt-title">zsh — emailflare</span>
-        </div>
-        <div class="ix-term-body">
-<span class="tt-cmt"># 1. Install dependencies</span>
-<span class="tt-prompt">$</span> <span class="tt-cmd">just install</span>
-
-<span class="tt-cmt"># 2. Configure (or answer prompts inline)</span>
-<span class="tt-prompt">$</span> <span class="tt-cmd">cp scripts/config.example.toml scripts/config.toml</span>
-<span class="tt-prompt">$</span> <span class="tt-cmd">npx web-push generate-vapid-keys</span>
-<span class="tt-cmt">#  → paste keys into config.toml [inbox] section</span>
-
-<span class="tt-cmt"># 3. Deploy everything</span>
-<span class="tt-prompt">$</span> <span class="tt-cmd">just deploy-inbox</span>
-
-<span class="tt-step">▶ Checking wrangler authentication…</span>
-<span class="tt-ok">✓ Authenticated with Cloudflare.</span>
-<span class="tt-step">▶ Creating D1 database "emailflare"…</span>
-<span class="tt-ok">✓ D1 created: a1b2c3d4-…</span>
-<span class="tt-step">▶ Creating KV namespace…</span>
-<span class="tt-ok">✓ KV created: abc123…</span>
-<span class="tt-step">▶ Creating R2 bucket…</span>
-<span class="tt-ok">✓ R2 bucket created.</span>
-<span class="tt-step">▶ Creating Queue "emailflare-inbox-sequences"…</span>
-<span class="tt-ok">✓ Queue created.</span>
-<span class="tt-step">▶ Applying D1 migrations…</span>
-<span class="tt-ok">✓ Migrations applied.</span>
-<span class="tt-step">▶ Setting Worker secrets…</span>
-<span class="tt-ok">✓ All secrets set.</span>
-<span class="tt-step">▶ Building services/dashboard…</span>
-<span class="tt-ok">✓ Dashboard built.</span>
-<span class="tt-step">▶ Deploying emailflare-inbox Worker…</span>
-<span class="tt-ok">✓ Inbox Worker deployed!</span>
-
-<span class="tt-ok">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
-<span class="tt-ok"> emailflare-inbox is live!</span>
-<span class="tt-ok"> Visit /setup to create your admin.</span>
-<span class="tt-ok">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
-        </div>
+      <div class="ix-do-footer">
+        <span class="ix-do-footer-note">D1 + KV + R2 + Queue — zero external services</span>
+        <a href="#docs">Full setup guide ↓</a>
       </div>
     </div>
+
   </div>
 </div>
 
@@ -1041,7 +979,7 @@ import { Icon } from 'astro-icon/components';
       </p>
       <div class="docs-hero-actions">
         <a class="btn btn-primary" href="#prerequisites">Get started →</a>
-        <a class="btn btn-ghost" href="https://github.com/0xdps/emailflare/tree/trunk/services/inbox" target="_blank" rel="noopener">
+        <a class="btn btn-ghost" href="https://github.com/0xdps/emailflare/tree/trunk/services/inbox-worker" target="_blank" rel="noopener">
           <Icon name="simple-icons:github" size={13} />Source
         </a>
       </div>
@@ -1286,7 +1224,7 @@ import { Icon } from 'astro-icon/components';
 <span class="cb-cmd">just inbox-secret SESSION_SECRET</span>
 
 <span class="cb-cmt"># Or directly with wrangler</span>
-<span class="cb-cmd">cd services/inbox</span>
+<span class="cb-cmd">cd services/inbox-worker</span>
 <span class="cb-cmd">echo "new-value" | npx wrangler secret put SESSION_SECRET</span></div>
         </div>
       </section>
@@ -1446,8 +1384,8 @@ import { Icon } from 'astro-icon/components';
           <h3>What <code>just inbox-update</code> does</h3>
           <ul>
             <li>Runs <code>wrangler d1 migrations apply emailflare --remote</code> — applies any pending SQL migrations to the live database.</li>
-            <li>Rebuilds the dashboard SPA (<code>pnpm build</code> in <code>services/dashboard</code>).</li>
-            <li>Runs <code>wrangler deploy</code> from <code>services/inbox</code> — uploads new Worker code with the rebuilt assets.</li>
+            <li>Rebuilds the inbox UI SPA (<code>pnpm build</code> in <code>services/inbox-ui</code>).</li>
+            <li>Runs <code>wrangler deploy</code> from <code>services/inbox-worker</code> — uploads new Worker code with the rebuilt assets.</li>
           </ul>
 
           <div class="callout callout-green">
@@ -1460,7 +1398,7 @@ import { Icon } from 'astro-icon/components';
 <span class="cb-cmd">just inbox-build-dashboard</span>
 
 <span class="cb-cmt"># Deploy without rebuilding dashboard (code-only change)</span>
-<span class="cb-cmd">cd services/inbox && npx wrangler deploy</span>
+<span class="cb-cmd">cd services/inbox-worker && npx wrangler deploy</span>
 
 <span class="cb-cmt"># Update a single secret</span>
 <span class="cb-cmd">just inbox-secret VAPID_PRIVATE_KEY</span></div>
@@ -1496,6 +1434,27 @@ import { Icon } from 'astro-icon/components';
 
     window.addEventListener('scroll', update, { passive: true });
     update();
+  })();
+</script>
+
+<script>
+  (() => {
+    const links = document.querySelectorAll('.inbox-product-subnav .psn-link');
+    const sectionIds = ['overview', 'features', 'deploy'];
+    const sections = sectionIds.map(id => document.getElementById(id)).filter(Boolean);
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          links.forEach(l => {
+            l.classList.toggle('active', l.getAttribute('href') === '#' + id);
+          });
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+
+    sections.forEach(s => observer.observe(s));
   })();
 </script>
 

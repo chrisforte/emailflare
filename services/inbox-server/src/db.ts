@@ -1,6 +1,6 @@
 // MesaHub-backed database helpers for inbox-server.
 //
-// Mirrors the D1Table / D1Db API from services/inbox/src/db.ts so that
+// Mirrors the D1Table / D1Db API from services/inbox-worker/src/db.ts so that
 // ported route files need minimal changes. The key differences:
 //   • makeDb() takes no arguments — uses the module-level mesaDb singleton
 //   • rawDb.first / rawDb.all / rawDb.run / rawDb.batch replace D1 prepare/bind calls

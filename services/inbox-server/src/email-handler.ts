@@ -1,5 +1,5 @@
 // Inbound email handler for inbox-server.
-// Node.js port of services/inbox/src/email-handler.ts.
+// Node.js port of services/inbox-worker/src/email-handler.ts.
 //
 // Instead of receiving a ForwardableEmailMessage from the CF email() export,
 // this handler receives a validated JSON payload from the /webhook/email endpoint

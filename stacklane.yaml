@@ -5,7 +5,7 @@ project:
 services:
   backend:
     enabled: true
-    buildContext: ./services/backend
+    buildContext: ./services/email-server
     dockerfile: Dockerfile
     devTarget: dev
     prodTarget: prod
@@ -14,7 +14,7 @@ services:
 
   admin:
     enabled: true
-    buildContext: ./services/admin
+    buildContext: ./services/email-ui
     dockerfile: Dockerfile
     routePrefix: /
     internalPort: 80

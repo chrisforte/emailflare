@@ -26,8 +26,8 @@ import { parse as parseToml } from 'smol-toml';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const ROOT        = resolve(__dirname, '..');
-const WORKER_DIR  = resolve(ROOT, 'services/worker');
-const ADMIN_DIR   = resolve(ROOT, 'services/admin');
+const WORKER_DIR  = resolve(ROOT, 'services/email-worker');
+const ADMIN_DIR   = resolve(ROOT, 'services/email-ui');
 const WRANGLER_JSONC = resolve(WORKER_DIR, 'wrangler.jsonc');
 const CONFIG_FILE    = resolve(__dirname, 'config.toml');
 
@@ -330,7 +330,7 @@ for (const { name, label, cfgVal } of SECRETS) {
   });
 
   if (result.status !== 0) {
-    warn(`Failed to set secret ${name}. Set it manually:\n  cd services/worker && echo "value" | npx wrangler secret put ${name}`);
+    warn(`Failed to set secret ${name}. Set it manually:\n  cd services/email-worker && echo "value" | npx wrangler secret put ${name}`);
   } else {
     ok(`Secret ${name} set.`);
   }
@@ -338,13 +338,13 @@ for (const { name, label, cfgVal } of SECRETS) {
 
 // ─── step 7: build admin ─────────────────────────────────────────────────────
 
-log('Building admin panel…');
+log('Building email-ui panel…');
 try {
   run('pnpm install --frozen-lockfile', { cwd: ADMIN_DIR });
   run('pnpm build', { cwd: ADMIN_DIR });
-  ok('Admin panel built.');
+  ok('Email UI panel built.');
 } catch (err) {
-  die(`Admin build failed: ${err.message}`);
+  die(`Email UI build failed: ${err.message}`);
 }
 
 // ─── step 8: deploy ──────────────────────────────────────────────────────────
@@ -367,6 +367,6 @@ process.stdout.write(`
    • Run  just worker-update  to deploy future changes
 
  To update secrets later:
-   cd services/worker && echo "new-value" | npx wrangler secret put SECRET_NAME
+   cd services/email-worker && echo "new-value" | npx wrangler secret put SECRET_NAME
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m
 `);

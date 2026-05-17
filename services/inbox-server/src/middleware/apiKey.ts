@@ -1,5 +1,5 @@
 // API key validation middleware — sha256(rawKey) lookup in DB.
-// Node.js port of services/inbox/src/middleware/apiKey.ts.
+// Node.js port of services/inbox-worker/src/middleware/apiKey.ts.
 // Uses Web Crypto — available natively in Node.js 18+.
 
 import { createMiddleware } from 'hono/factory';

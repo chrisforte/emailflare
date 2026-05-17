@@ -1,5 +1,5 @@
 // IP-based login rate limiting using Redis (ioredis).
-// Replaces the CF KV implementation in services/inbox/src/middleware/loginRateLimit.ts.
+// Replaces the CF KV implementation in services/inbox-worker/src/middleware/loginRateLimit.ts.
 // Uses atomic INCR + EXPIRE (sliding 60-second window, 10 attempts max).
 
 import { Redis } from 'ioredis';

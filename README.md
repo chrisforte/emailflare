@@ -15,10 +15,10 @@ It is designed for teams that want:
 
 ## What ships in this repo
 
-- `services/backend`: Hono API for admin, keys, templates, stats, and email send operations
-- `services/admin`: React admin panel (Vite + React + TanStack Router)
-- `services/emails`: shared email layouts and rendering package used by both backend and worker
-- `services/worker`: Cloudflare Worker — bundles the API and admin SPA for edge deployment, backed by D1 and KV
+- `services/email-server`: Hono API for admin, keys, templates, stats, and email send operations
+- `services/email-ui`: React admin panel (Vite + React + TanStack Router)
+- `services/emails`: shared email layouts and rendering package used by both email-server and email-worker
+- `services/email-worker`: Cloudflare Worker — bundles the API and email-ui SPA for edge deployment, backed by D1 and KV
 - `services/landing`: landing and docs pages
 - `scripts/`: setup tooling for the Cloudflare Worker deployment (`setup.mjs`, `config.example.toml`)
 - `Dockerfile`: production image that bundles backend, admin, and embedded mesahub

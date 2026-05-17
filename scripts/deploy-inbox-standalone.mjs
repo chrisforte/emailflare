@@ -8,7 +8,7 @@
  *   3.  Creates the inbox-bridge CF Worker (email forwarder)
  *   4.  Sets inbox-bridge secrets (INBOX_SERVER_URL, WEBHOOK_SECRET)
  *   5.  Builds services/inbox-server (tsc)
- *   6.  Builds services/dashboard (vite)
+ *   6.  Builds services/inbox-ui (vite)
  *   7.  Prints Railway / Docker deployment instructions
  *
  * Usage:
@@ -29,7 +29,7 @@ const __dirname    = fileURLToPath(new URL('.', import.meta.url));
 const ROOT         = resolve(__dirname, '..');
 const BRIDGE_DIR   = resolve(ROOT, 'services/inbox-bridge');
 const SERVER_DIR   = resolve(ROOT, 'services/inbox-server');
-const DASH_DIR     = resolve(ROOT, 'services/dashboard');
+const DASH_DIR     = resolve(ROOT, 'services/inbox-ui');
 const CONFIG_FILE  = resolve(__dirname, 'config.toml');
 
 // ─── load config.toml (optional) ────────────────────────────────────────────
@@ -228,7 +228,7 @@ log('Step 7: Building dashboard SPA…');
 try {
   run('pnpm install --frozen-lockfile', { cwd: DASH_DIR });
   run('pnpm run build', { cwd: DASH_DIR });
-  ok('Dashboard built → services/dashboard/dist/');
+  ok('Inbox UI built → services/inbox-ui/dist/');
 } catch (e) {
   die(`Failed to build dashboard: ${e.message}`);
 }

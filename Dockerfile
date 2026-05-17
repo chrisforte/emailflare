@@ -25,25 +25,25 @@ RUN --mount=type=cache,id=pnpm-store-backend,target=/root/.local/share/pnpm/stor
 COPY services/emails/ ./emails/
 RUN cd emails && pnpm run build
 
-# Now install and build the backend
-COPY services/backend/package.json services/backend/pnpm-lock.yaml services/backend/pnpm-workspace.yaml ./backend/
+# Now install and build the email-server
+COPY services/email-server/package.json services/email-server/pnpm-lock.yaml services/email-server/pnpm-workspace.yaml ./backend/
 RUN --mount=type=cache,id=pnpm-store-backend,target=/root/.local/share/pnpm/store \
     cd backend && pnpm install --frozen-lockfile
 
-COPY services/backend/ ./backend/
+COPY services/email-server/ ./backend/
 RUN cd backend && pnpm run build
 
-# ── Stage: build-admin ────────────────────────────────────────────────────────
-FROM node:22-alpine AS build-admin
-WORKDIR /app/admin
+# ── Stage: build-email-ui ────────────────────────────────────────────────────
+FROM node:22-alpine AS build-email-ui
+WORKDIR /app/email-ui
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-COPY services/admin/package.json services/admin/pnpm-lock.yaml services/admin/pnpm-workspace.yaml ./
+COPY services/email-ui/package.json services/email-ui/pnpm-lock.yaml services/email-ui/pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm-store-admin,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
-COPY services/admin/ ./
+COPY services/email-ui/ ./
 RUN pnpm exec vite build
 
 # ── Stage: prod (Caddy + Node + Mailpit) ─────────────────────────────────────
@@ -75,10 +75,10 @@ COPY --from=build-backend /app/emails/dist           ./emails/dist
 COPY --from=build-backend /app/emails/package.json   ./emails/package.json
 COPY --from=build-backend /app/backend/node_modules ./backend/node_modules
 COPY --from=build-backend /app/backend/dist          ./backend/dist
-COPY services/backend/package.json                   ./backend/
+COPY services/email-server/package.json                   ./backend/
 
-# Admin static files
-COPY --from=build-admin /app/admin/dist /usr/share/caddy
+# Email UI static files
+COPY --from=build-email-ui /app/email-ui/dist /usr/share/caddy
 
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh

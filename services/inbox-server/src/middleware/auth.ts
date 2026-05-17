@@ -1,5 +1,5 @@
 // Cookie-based session middleware for inbox-server.
-// Node.js port of services/inbox/src/middleware/auth.ts.
+// Node.js port of services/inbox-worker/src/middleware/auth.ts.
 // SESSION_SECRET is loaded from env module (not CF binding).
 
 import { SignJWT, jwtVerify } from 'jose';

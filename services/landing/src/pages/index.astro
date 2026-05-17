@@ -7,7 +7,7 @@ const structuredData = {
   "@type": "SoftwareApplication",
   "name": "EmailFlare",
   "url": "https://emailflare.dev",
-  "description": "Self-hosted email sending platform built on Cloudflare Email Sending. Clean REST API, domain management, scoped API keys, 50 React Email templates with themes, and an admin UI — all in one Docker container.",
+  "description": "EmailFlare ships two open-source products: a REST email sending API on Cloudflare Email Sending (Docker or Workers), and a hosted team inbox built on Cloudflare Email Routing with D1, R2, and Durable Objects.",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Docker",
   "license": "https://github.com/0xdps/emailflare/blob/trunk/LICENSE",
@@ -17,9 +17,9 @@ const structuredData = {
 ---
 
 <Base
-  title="EmailFlare — Self-hosted email sending for Cloudflare"
-  description="EmailFlare is a self-hosted email sending platform built on Cloudflare Email Sending. Clean REST API, domain management, scoped API keys, 50 React Email templates with themes, and an admin UI — all in one Docker container."
-  keywords="emailflare, self-hosted email, cloudflare email sending, transactional email, open source email api, docker email server, react email templates"
+  title="EmailFlare — Email API and Inbox for Cloudflare"
+  description="EmailFlare ships two open-source products: a REST email sending API on Cloudflare Email Sending (Docker or Workers), and a hosted team inbox built on Cloudflare Email Routing with D1, R2, and Durable Objects."
+  keywords="emailflare, self-hosted email, cloudflare email sending, transactional email, open source email api, cloudflare inbox, team inbox cloudflare, email routing inbox, react email templates"
   canonical="https://emailflare.dev/"
   ogUrl="https://emailflare.dev/"
   ogType="website"
@@ -792,6 +792,284 @@ const structuredData = {
   @media (max-width: 640px) {
     .why-grid { grid-template-columns: 1fr; }
   }
+
+  /* ── PRODUCTS SPLIT ──────────────────────────────────────── */
+  .products-section {
+    background: var(--bg-alt);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .products-section .section-eyebrow { color: var(--orange); }
+
+  .products-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 760px) { .products-split { grid-template-columns: 1fr; } }
+
+  .product-card {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-card);
+    transition: border-color 0.15s;
+  }
+  .product-card-email:hover { border-color: var(--orange-mid); }
+  .product-card-inbox:hover { border-color: oklch(70% 0.12 150 / 0.5); }
+
+  .product-card-head { padding: 26px 26px 20px; flex: 1; }
+
+  .product-eyebrow {
+    display: inline-block;
+    font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 3px 10px; border-radius: 100px;
+    margin-bottom: 14px;
+  }
+  .product-eyebrow-email { background: var(--orange-light); color: var(--orange-hover); border: 1px solid var(--orange-mid); }
+  .product-eyebrow-inbox { background: oklch(95% 0.04 150); color: oklch(34% 0.12 150); border: 1px solid oklch(82% 0.09 150 / 0.5); }
+
+  .product-card-head h3 {
+    font-family: var(--font-display);
+    font-size: 1.25rem; font-weight: 400;
+    letter-spacing: -0.02em; line-height: 1.2;
+    margin-bottom: 10px;
+  }
+  .product-card-head p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.65; }
+
+  .product-feat-list {
+    list-style: none; padding: 0 26px;
+    margin: 0 0 4px;
+    display: flex; flex-direction: column; gap: 9px;
+  }
+  .product-feat-list li {
+    display: flex; align-items: baseline; gap: 9px;
+    font-size: 0.875rem; color: var(--text-muted);
+  }
+  .pf-check { font-weight: 700; font-size: 12px; flex-shrink: 0; }
+  .pf-check-email { color: var(--orange); }
+  .pf-check-inbox { color: var(--green); }
+
+  .product-card-foot {
+    padding: 18px 26px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center;
+    justify-content: space-between;
+    gap: 14px; flex-wrap: wrap;
+  }
+  .product-deploy-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  .product-deploy-label { font-size: 11.5px; color: var(--text-faint); }
+  .product-badge {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 2px 9px; border-radius: 99px;
+  }
+  .product-badge-docker { background: oklch(93% 0.02 230); color: oklch(40% 0.12 230); border: 1px solid oklch(80% 0.1 230 / 0.4); }
+  .product-badge-worker { background: var(--orange-light); color: var(--orange-hover); border: 1px solid var(--orange-mid); }
+  .product-badge-inbox-worker { background: oklch(95% 0.04 150); color: oklch(34% 0.12 150); border: 1px solid oklch(82% 0.09 150 / 0.5); }
+  .product-badge-node { background: oklch(94% 0.03 80); color: oklch(38% 0.12 80); border: 1px solid oklch(80% 0.1 80 / 0.4); }
+  .product-sep { font-size: 11px; color: var(--text-faint); }
+
+  .btn-orange-sm {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--orange); color: #fff;
+    border: 1.5px solid var(--orange);
+    border-radius: 7px; padding: 7px 16px;
+    font-size: 13px; font-weight: 500;
+    text-decoration: none; white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .btn-orange-sm:hover { background: var(--orange-hover); border-color: var(--orange-hover); }
+
+  .btn-green-sm {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--green); color: oklch(12% 0.02 150);
+    border: 1.5px solid var(--green);
+    border-radius: 7px; padding: 7px 16px;
+    font-size: 13px; font-weight: 500;
+    text-decoration: none; white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .btn-green-sm:hover { background: oklch(48% 0.18 150); border-color: oklch(48% 0.18 150); }
+
+  /* ── INBOX PREVIEW ───────────────────────────────────────── */
+  .inbox-preview-section {
+    background: oklch(11% 0.025 150);
+    border-top: 1px solid oklch(20% 0.03 150 / 0.6);
+  }
+  .inbox-preview-section .section-eyebrow { color: oklch(68% 0.14 150); }
+  .inbox-preview-section .section-title   { color: oklch(95% 0.008 58); }
+  .inbox-preview-section .section-title em { color: var(--green); font-style: italic; }
+  .inbox-preview-section .section-sub     { color: oklch(56% 0.01 58); }
+
+  .inbox-preview-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(2.5rem, 5vw, 4rem);
+    align-items: center;
+  }
+  @media (max-width: 820px) { .inbox-preview-split { grid-template-columns: 1fr; } }
+
+  .inbox-feat-list {
+    list-style: none;
+    display: flex; flex-direction: column; gap: 14px;
+    margin: 24px 0 32px;
+  }
+  .inbox-feat-list li { display: flex; gap: 12px; align-items: flex-start; }
+  .inbox-feat-list .ifl-check { color: var(--green); font-weight: 700; font-size: 14px; flex-shrink: 0; margin-top: 2px; }
+  .inbox-feat-list li .ifl-text strong { display: block; color: oklch(88% 0.01 58); font-weight: 500; font-size: 0.9375rem; margin-bottom: 2px; }
+  .inbox-feat-list li .ifl-text span { font-size: 0.875rem; color: oklch(54% 0.01 58); line-height: 1.6; }
+
+  .btn-green-outline {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: transparent;
+    color: oklch(70% 0.14 150);
+    border: 1.5px solid oklch(38% 0.12 150 / 0.5);
+    border-radius: 7px; padding: 8px 18px;
+    font-size: 13.5px; font-weight: 500;
+    text-decoration: none; white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .btn-green-outline:hover {
+    background: oklch(20% 0.06 150 / 0.4);
+    border-color: oklch(56% 0.14 150 / 0.6);
+    color: var(--green);
+  }
+
+  /* ── INBOX UI CARD (preview on index page) ───────────────── */
+  .ix-ui-card {
+    background: oklch(16% 0.02 150);
+    border: 1px solid oklch(28% 0.06 150 / 0.5);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 24px 60px oklch(0% 0 0 / 0.3), 0 0 0 1px oklch(100% 0 0 / 0.04);
+  }
+  .ix-ui-bar {
+    background: oklch(20% 0.018 150);
+    border-bottom: 1px solid oklch(28% 0.04 150 / 0.5);
+    padding: 10px 16px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .ix-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .ixd-r { background: oklch(52% 0.14 24 / 0.6); }
+  .ixd-y { background: oklch(68% 0.14 80 / 0.6); }
+  .ixd-g { background: oklch(56% 0.14 150 / 0.6); }
+  .ix-bar-title { margin-left: 6px; font-size: 11px; color: oklch(44% 0.01 58); font-family: var(--font-mono); }
+  .ix-ui-body { display: flex; }
+  .ix-ui-list { width: 44%; border-right: 1px solid oklch(22% 0.02 150 / 0.7); padding: 8px 0; }
+  .ix-contact-row { padding: 10px 14px; border-bottom: 1px solid oklch(20% 0.01 150 / 0.5); cursor: default; position: relative; }
+  .ix-contact-row.ix-active { background: oklch(22% 0.06 150 / 0.4); }
+  .ix-contact-row.ix-active::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: var(--green); }
+  .ix-row-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .ix-avatar { width: 24px; height: 24px; border-radius: 50%; background: oklch(28% 0.06 150 / 0.6); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; color: oklch(70% 0.1 150); flex-shrink: 0; }
+  .ix-avatar.ix-unread { background: oklch(32% 0.1 150 / 0.7); }
+  .ix-name { font-size: 11px; font-weight: 600; color: oklch(84% 0.01 58); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ix-time { font-size: 9.5px; color: oklch(44% 0.01 58); font-family: var(--font-mono); }
+  .ix-preview { font-size: 10px; color: oklch(48% 0.01 58); line-height: 1.5; padding-left: 32px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ix-unread-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .ix-ui-thread { flex: 1; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .ix-thread-header { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid oklch(22% 0.02 150 / 0.7); margin-bottom: 4px; }
+  .ix-thread-avatar { width: 30px; height: 30px; border-radius: 50%; background: oklch(30% 0.08 150 / 0.6); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: oklch(72% 0.12 150); flex-shrink: 0; }
+  .ix-thread-name { font-size: 12.5px; font-weight: 600; color: oklch(88% 0.01 58); }
+  .ix-thread-sub  { font-size: 10px; color: oklch(48% 0.01 58); }
+  .ix-thread-badge { margin-left: auto; font-size: 9.5px; font-weight: 600; background: oklch(26% 0.08 150 / 0.5); color: oklch(68% 0.1 150); border: 1px solid oklch(38% 0.1 150 / 0.4); padding: 1px 7px; border-radius: 100px; }
+  .ix-email-card { background: oklch(18% 0.016 150 / 0.8); border: 1px solid oklch(24% 0.03 150 / 0.5); border-radius: 7px; padding: 10px 12px; }
+  .ix-email-card.ix-sent { background: oklch(22% 0.06 150 / 0.3); border-color: oklch(32% 0.08 150 / 0.4); }
+  .ix-email-header { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+  .ix-email-from-badge { font-size: 9.5px; font-weight: 600; padding: 1px 6px; border-radius: 100px; background: oklch(24% 0.05 150 / 0.5); color: oklch(62% 0.08 150); border: 1px solid oklch(32% 0.06 150 / 0.4); }
+  .ix-email-card.ix-sent .ix-email-from-badge { background: oklch(28% 0.1 150 / 0.4); color: oklch(72% 0.12 150); border-color: oklch(42% 0.1 150 / 0.4); }
+  .ix-email-subj { font-size: 10px; font-weight: 600; color: oklch(80% 0.01 58); flex: 1; }
+  .ix-email-ts   { font-size: 9px; color: oklch(42% 0.01 58); font-family: var(--font-mono); margin-left: auto; }
+  .ix-email-body { font-size: 9.5px; color: oklch(55% 0.01 58); line-height: 1.6; }
+  .ix-reply-bar { background: oklch(18% 0.018 150); border: 1px solid oklch(28% 0.05 150 / 0.4); border-radius: 7px; padding: 8px 12px; margin-top: 4px; display: flex; align-items: center; gap: 8px; font-size: 10px; color: oklch(38% 0.01 58); }
+  .ix-reply-btn { margin-left: auto; background: var(--green); color: oklch(12% 0.02 150); font-size: 9.5px; font-weight: 600; padding: 3px 10px; border-radius: 5px; white-space: nowrap; }
+
+  /* ── DEPLOY PRODUCT GROUPS ───────────────────────────────── */
+  .deploy-product-group-label {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 20px;
+  }
+  .deploy-product-group-label-badge {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 4px 14px; border-radius: 99px;
+    white-space: nowrap;
+  }
+  .deploy-product-group-label-badge-email { background: oklch(22% 0.06 48 / 0.5); color: var(--orange); border: 1px solid oklch(34% 0.10 48 / 0.5); }
+  .deploy-product-group-label-badge-inbox { background: oklch(20% 0.06 150 / 0.4); color: oklch(68% 0.14 150); border: 1px solid oklch(32% 0.1 150 / 0.4); }
+  .deploy-product-divider { flex: 1; height: 1px; background: oklch(24% 0.012 48); }
+
+  .do-badge-inbox-worker { background: oklch(20% 0.06 150 / 0.5); color: oklch(68% 0.12 150); border: 1px solid oklch(32% 0.1 150 / 0.4); }
+  .do-badge-node { background: oklch(22% 0.04 80 / 0.5); color: oklch(70% 0.12 80); border: 1px solid oklch(36% 0.10 80 / 0.4); }
+  .do-footer-inbox-worker a { color: oklch(62% 0.14 150); }
+  .do-footer-node a { color: oklch(70% 0.12 80); }
+
+  /* ── PRODUCT TAB SWITCHER ───────────────────────────────── */
+  .psw-wrap {
+    background: oklch(10% 0.012 48);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    padding: 0;
+  }
+  .psw-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 clamp(1.25rem, 5vw, 3rem);
+    display: flex;
+    gap: 0;
+  }
+  .psw-btn {
+    padding: 14px 28px 12px;
+    border: none;
+    border-bottom: 2.5px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    transition: opacity 0.15s;
+    opacity: 0.45;
+  }
+  .psw-btn:hover { opacity: 0.75; }
+  .psw-btn.psw-active { opacity: 1; }
+  .psw-email.psw-active { border-bottom-color: var(--orange); }
+  .psw-inbox.psw-active { border-bottom-color: var(--green); }
+  .psw-label {
+    font-size: 13.5px; font-weight: 600;
+    color: oklch(88% 0.01 58);
+    letter-spacing: -0.01em;
+    font-family: var(--font-display);
+  }
+  .psw-sub { font-size: 10px; color: var(--text-faint); }
+  /* ── LAYOUTS TEASER ─────────────────────────────────────── */
+  .layouts-teaser-section { background: var(--bg-alt); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+
+  /* ── DEPLOY CTA ──────────────────────────────────────────── */
+  .deploy-cta-section { background: var(--bg-dark); border-top: 1px solid var(--border); }
+  .deploy-cta-section .section-eyebrow { color: var(--orange); }
+  .deploy-cta-section .section-title { color: oklch(95% 0.008 58); }
+  .deploy-cta-section .section-sub { color: oklch(60% 0.01 58); }
+  .deploy-cta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 680px) { .deploy-cta-grid { grid-template-columns: 1fr; } }
+  .deploy-cta-card {
+    background: var(--bg-dark-2); border-radius: var(--radius-lg); padding: 28px 32px;
+    text-decoration: none; display: flex; flex-direction: column; gap: 8px; transition: border-color 0.15s;
+  }
+  .deploy-cta-email { border: 1px solid oklch(30% 0.08 48 / 0.5); }
+  .deploy-cta-email:hover { border-color: var(--orange); }
+  .deploy-cta-inbox { border: 1px solid oklch(28% 0.08 150 / 0.4); }
+  .deploy-cta-inbox:hover { border-color: var(--green); }
+  .dcc-eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--orange); }
+  .dcc-title { font-size: 1.1rem; font-weight: 700; color: oklch(93% 0.01 58); font-family: var(--font-display); letter-spacing: -0.01em; }
+  .dcc-sub { font-size: 0.875rem; color: oklch(56% 0.01 58); line-height: 1.6; }
+  .dcc-sub code { background: oklch(18% 0.02 48); border: 1px solid oklch(28% 0.02 48); color: oklch(72% 0.1 80); padding: 1px 5px; border-radius: 4px; font-size: 11.5px; }
+  .dcc-cta { margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--orange); }
 </style>
 
   <!-- HERO -->
@@ -807,20 +1085,20 @@ const structuredData = {
           </div>
 
           <h1>
-            The <em>email sending layer</em><br />
-            your Cloudflare stack was missing.
+            <em>Email API</em> and <em style="color:var(--green)">inbox</em><br />
+            for your Cloudflare stack.
           </h1>
 
           <p class="hero-sub">
-            EmailFlare wraps Cloudflare Email Sending with a clean REST API, scoped API keys,
-            React Email templates, domain management, and a React admin UI —
-            deploy as a Docker container <em>or</em> to Cloudflare Workers.
+            Two open-source products in one repo — a REST email sending API with React Email
+            templates, and a full team inbox built on Cloudflare Email Routing.
+            Both deploy as a Cloudflare Worker or self-hosted Docker container.
           </p>
 
           <div class="hero-actions">
-            <a class="btn btn-primary" href="#deploy">Deploy in minutes →</a>
-            <a class="btn btn-secondary" href="/cloudflare">⚡ Deploy to Workers</a>
-            <a class="btn btn-secondary" href="/docs">Read the docs</a>
+            <a class="btn btn-primary" href="/email-api">Email API →</a>
+            <a class="btn btn-secondary" href="/inbox">Inbox →</a>
+            <a class="btn btn-secondary" href="#deploy">Self-host</a>
             <a class="btn btn-secondary" href="https://github.com/0xdps/emailflare" target="_blank" rel="noopener">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
               View on GitHub
@@ -937,299 +1215,72 @@ const structuredData = {
     </div>
   </section>
 
-  <!-- API SNIPPET -->
-  <section class="api-section">
+  <!-- PRODUCTS -->
+  <section id="products">
     <div class="container">
-      <div class="api-wrap">
-        <div>
-          <div class="section-eyebrow">Simple by design</div>
-          <h2 class="section-title">One endpoint.<br />Infinite flexibility.</h2>
-          <p class="section-sub">
-            Send an email with a single HTTP request. Reference a stored template, pass
-            variables, and EmailFlare handles rendering, delivery, and logging.
-          </p>
-          <ul class="api-features">
-            <li>
-              <span class="check">✓</span>
-              <div class="line">
-                <strong>Bearer token auth</strong>
-                Scoped API keys — not your master Cloudflare token. Prefix <code>eflive_</code> for live sends, <code>eftest_</code> to route through SMTP instead.
-              </div>
-            </li>
-            <li>
-              <span class="check">✓</span>
-              <div class="line">
-                <strong>Template or raw send</strong>
-                Pass <code>templateSlug</code> / <code>templateId</code> with variables, or send raw <code>html</code> / <code>text</code> directly. Optional <code>fromName</code> and <code>replyTo</code> fields.
-              </div>
-            </li>
-            <li>
-              <span class="check">✓</span>
-              <div class="line">
-                <strong>Multi-recipient batch</strong>
-                <code>"to"</code> accepts a single address or an array of up to 50. Duplicates are deduplicated automatically.
-              </div>
-            </li>
-            <li>
-              <span class="check">✓</span>
-              <div class="line">
-                <strong>Idempotency-Key support</strong>
-                Pass an <code>Idempotency-Key</code> header to prevent duplicate sends on network retries — cached result returned on repeat.
-              </div>
-            </li>
-            <li>
-              <span class="check">✓</span>
-              <div class="line">
-                <strong>Rate-limit headers on every response</strong>
-                100 requests/min per key. <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>, and <code>X-RateLimit-Reset</code> included.
-              </div>
-            </li>
+      <div class="section-head">
+        <div class="section-eyebrow">Two products, one repo</div>
+        <h2 class="section-title">Pick what you need.<br />Or run both.</h2>
+        <p class="section-sub">EmailFlare ships two independent products that share the same Cloudflare infrastructure. Use one, the other, or both together.</p>
+      </div>
+      <div class="products-split">
+        <!-- Email API card -->
+        <div class="product-card product-card-email">
+          <div class="product-card-head">
+            <span class="product-eyebrow product-eyebrow-email">Email API</span>
+            <h3>Transactional email<br />on Cloudflare.</h3>
+            <p>A REST email sending API with scoped keys, React Email templates, domain management, send history, and a full admin UI — one Docker image, zero external services.</p>
+          </div>
+          <ul class="product-feat-list">
+            <li><span class="pf-check pf-check-email">✓</span>POST /v1/send — one endpoint, any language</li>
+            <li><span class="pf-check pf-check-email">✓</span>50 React Email layouts · 5 built-in themes</li>
+            <li><span class="pf-check pf-check-email">✓</span>Scoped API keys, rate limiting, idempotency</li>
+            <li><span class="pf-check pf-check-email">✓</span>Full send log with per-message CF delivery IDs</li>
           </ul>
-          <div style="margin-top:18px;">
-            <a class="btn btn-secondary" href="/docs#api-send">See full API reference →</a>
-          </div>
-        </div>
-
-        <div class="code-window">
-          <div class="code-window-bar">
-            <div class="t-dot t-red"></div>
-            <div class="t-dot t-yellow"></div>
-            <div class="t-dot t-green"></div>
-            <span class="terminal-title">POST /v1/send</span>
-          </div>
-          <div class="code-window-body">
-            <div><span class="c-method">POST</span> <span class="c-path">/v1/send</span></div>
-            <div><span class="c-header">Authorization:</span> <span class="c-str">Bearer eflive_xxxxxxxxxxxx</span></div>
-            <div><span class="c-header">Content-Type:</span> <span class="c-str">application/json</span></div>
-            <div style="margin-top:12px;"><span class="c-punct">&#123;</span></div>
-            <div>&nbsp;&nbsp;<span class="c-key">"to"</span><span class="c-punct">:</span>           <span class="c-str">"alex@example.com"</span><span class="c-punct">,</span></div>
-            <div>&nbsp;&nbsp;<span class="c-key">"from"</span><span class="c-punct">:</span>         <span class="c-str">"hello@yourdomain.com"</span><span class="c-punct">,</span></div>
-            <div>&nbsp;&nbsp;<span class="c-key">"fromName"</span><span class="c-punct">:</span>     <span class="c-str">"Acme"</span><span class="c-punct">,</span></div>
-            <div>&nbsp;&nbsp;<span class="c-key">"templateSlug"</span><span class="c-punct">:</span> <span class="c-str">"welcome"</span><span class="c-punct">,</span></div>
-            <div>&nbsp;&nbsp;<span class="c-key">"themeId"</span><span class="c-punct">:</span>      <span class="c-str">"ocean"</span><span class="c-punct">,</span></div>
-            <div>&nbsp;&nbsp;<span class="c-key">"variables"</span><span class="c-punct">:</span>    <span class="c-punct">&#123;</span></div>
-            <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">"name"</span><span class="c-punct">:</span>     <span class="c-str">"Alex"</span><span class="c-punct">,</span></div>
-            <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">"loginUrl"</span><span class="c-punct">:</span> <span class="c-str">"https://acme.com/login"</span></div>
-            <div>&nbsp;&nbsp;<span class="c-punct">&#125;</span></div>
-            <div><span class="c-punct">&#125;</span></div>
-            <div style="margin-top:14px;"><span class="c-cmt">// 200 → &#123; results: [&#123; to, cfId &#125;] &#125;</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- WHY EMAILFLARE -->
-  <section id="why">
-    <div class="container">
-      <div class="section-head">
-        <div class="section-eyebrow">Why EmailFlare</div>
-        <h2 class="section-title">Everything Cloudflare Email Sending<br />should have shipped with.</h2>
-        <p class="section-sub">
-          Cloudflare Email Sending is powerful infrastructure. EmailFlare gives it the API layer,
-          UI, and tooling that makes it ready for production teams.
-        </p>
-      </div>
-      <div class="why-grid">
-        <div class="why-card">
-          <span class="card-icon"><Icon name="lucide:key-round" /></span>
-          <h3>Scoped keys, not root credentials</h3>
-          <p>Generate per-domain or multi-domain API keys from the dashboard. Your Cloudflare API token never leaves the server — application code only ever sees an EmailFlare key.</p>
-        </div>
-        <div class="why-card">
-          <span class="card-icon"><Icon name="lucide:file-text" /></span>
-          <h3>Templates you manage, not code you maintain</h3>
-          <p>Store reusable HTML templates with <code style="font-size:12px;background:oklch(93% 0.006 60);padding:1px 5px;border-radius:4px;">{"{{variable}}"}</code> interpolation, plain-text versions, and named React Email layouts. Send by template ID — not inline HTML strings.</p>
-        </div>
-        <div class="why-card">
-          <span class="card-icon"><Icon name="lucide:search" /></span>
-          <h3>Full send history, zero blind spots</h3>
-          <p>Every send is logged — recipient, sender, template used, API key, Cloudflare message ID, status, and error detail. Debug delivery without guessing which email was sent when.</p>
-        </div>
-        <div class="why-card">
-          <span class="card-icon"><Icon name="lucide:globe" /></span>
-          <h3>Domain management without the CLI</h3>
-          <p>Provision Cloudflare sending subdomains, inspect DKIM and return-path DNS records, and verify domain status — all from the admin dashboard instead of juggling API calls.</p>
-        </div>
-        <div class="why-card">
-          <span class="card-icon"><Icon name="lucide:shield-check" /></span>
-          <h3>Rate limiting you didn't have to write</h3>
-          <p>Per-key rate limiting is enforced at the API middleware layer. Rogue callers can't flood your Cloudflare quota. Limits and reset times are returned on every response.</p>
-        </div>
-        <div class="why-card">
-          <span class="card-icon"><Icon name="lucide:package" /></span>
-          <h3>One container, not an ops project</h3>
-          <p>Backend, admin UI, and embedded SQLite storage are bundled in one Docker image. No Postgres, no Redis, no separate services to run. Mount one volume and deploy.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- VS SECTION -->
-  <section id="vs" class="vs-section">
-    <div class="container">
-      <div class="section-head">
-        <div class="section-eyebrow">Comparison</div>
-        <h2 class="section-title">EmailFlare vs. raw Cloudflare API</h2>
-        <p class="section-sub">
-          Cloudflare Email Sending is solid infrastructure — but a low-level API.
-          EmailFlare is the application layer on top.
-        </p>
-      </div>
-
-      <div class="vs-split">
-
-        <!-- Cloudflare raw -->
-        <div class="vs-card vs-card-cf">
-          <div class="vs-card-header">
-            <div class="vs-header-brand">
-              <!-- Cloudflare logo -->
-              <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
-                <path d="M63.3 62.5c.4-1.4.2-2.7-.5-3.7-.7-.9-1.8-1.4-3.1-1.5l-25.1-.3c-.2 0-.4-.1-.5-.2-.1-.2-.1-.4 0-.6.2-.4.7-.7 1.2-.7l25.3-.3c3 .1 6.2-2.6 7.4-5.5l1.4-3.8c.1-.1.1-.3 0-.4C67.2 37.9 60 33 51.6 33c-7.7 0-14.4 4.2-17.9 10.4-1.6-1.2-3.7-1.8-5.9-1.6-4.2.4-7.5 3.9-7.8 8.1-.1.7 0 1.4.1 2.1C16.5 52.5 13 56.4 13 61.1c0 .4 0 .9.1 1.3.1.3.3.5.6.5h49c.3 0 .6-.2.6-.4z" fill="#F38020"/>
-                <path d="M70.9 45.4c-.3 0-.7 0-1 .1-.2 0-.4.2-.5.4l-1.4 4.8c-.4 1.4-.2 2.7.5 3.7.7.9 1.8 1.4 3.1 1.5l5.4.3c.2 0 .4.1.5.2.1.2.1.4 0 .6-.2.4-.7.7-1.2.7l-5.6.3c-3 .1-6.2 2.6-7.4 5.5l-.4 1c-.1.2 0 .4.2.4h18.7c.3 0 .5-.2.6-.5.3-1 .5-2 .5-3.1-.1-8.3-6.7-15-15-15" fill="#FAAE40"/>
-              </svg>
-              <div>
-                <div class="vs-title">Cloudflare Email Sending</div>
-                <div class="vs-subtitle">Raw API — no application layer</div>
-              </div>
+          <div class="product-card-foot">
+            <div class="product-deploy-row">
+              <span class="product-deploy-label">Deploy via</span>
+              <span class="product-badge product-badge-docker">Docker</span>
+              <span class="product-sep">·</span>
+              <span class="product-badge product-badge-worker">Workers</span>
             </div>
-            <span class="vs-badge vs-badge-cf">Raw</span>
-          </div>
-          <div class="vs-rows">
-            <div class="vs-row"><span class="vs-icon">⚠</span><span class="vs-row-label">Complex auth &amp; manual HTTP payload to send</span></div>
-            <div class="vs-row"><span class="vs-icon">✗</span><span class="vs-row-label">Root CF token exposed in application code</span></div>
-            <div class="vs-row"><span class="vs-icon">✗</span><span class="vs-row-label">No email templates — build &amp; host yourself</span></div>
-            <div class="vs-row"><span class="vs-icon">✗</span><span class="vs-row-label">No send logs or delivery visibility</span></div>
-            <div class="vs-row"><span class="vs-icon">✗</span><span class="vs-row-label">No rate limiting — implement it yourself</span></div>
-            <div class="vs-row"><span class="vs-icon">✗</span><span class="vs-row-label">No idempotency — duplicate sends on retries</span></div>
-            <div class="vs-row"><span class="vs-icon">✗</span><span class="vs-row-label">Single recipient only per API call</span></div>
-            <div class="vs-row"><span class="vs-icon">✗</span><span class="vs-row-label">No admin UI — API calls only</span></div>
+            <a href="/email-api" class="btn-orange-sm">Learn more →</a>
           </div>
         </div>
-
-        <!-- EmailFlare -->
-        <div class="vs-card vs-card-ef">
-          <div class="vs-card-header">
-            <div class="vs-header-brand">
-              <!-- EmailFlare logo (two triangles) -->
-              <svg width="28" height="28" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
-                <rect width="44" height="44" rx="9" fill="url(#ef-vs-bg)"/>
-                <defs>
-                  <linearGradient id="ef-vs-bg" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stop-color="oklch(64% 0.19 44)"/>
-                    <stop offset="100%" stop-color="oklch(50% 0.18 35)"/>
-                  </linearGradient>
-                </defs>
-                <path d="M10 32 L22 12 L28 22 Z" fill="white" opacity="0.95"/>
-                <path d="M24 32 L34 14 L34 32 Z" fill="white" opacity="0.7"/>
-              </svg>
-              <div>
-                <div class="vs-title">EmailFlare</div>
-                <div class="vs-subtitle">Application layer built on Cloudflare</div>
-              </div>
+        <!-- Inbox card -->
+        <div class="product-card product-card-inbox">
+          <div class="product-card-head">
+            <span class="product-eyebrow product-eyebrow-inbox">Inbox</span>
+            <h3>Team email inbox<br />on Cloudflare Routing.</h3>
+            <p>A multi-user inbox powered by Cloudflare Email Routing. Receive, reply, assign threads, and build auto-reply sequences — without managing a mail server.</p>
+          </div>
+          <ul class="product-feat-list">
+            <li><span class="pf-check pf-check-inbox">✓</span>Receive email via Cloudflare Email Routing</li>
+            <li><span class="pf-check pf-check-inbox">✓</span>Shared team inbox · thread assignment</li>
+            <li><span class="pf-check pf-check-inbox">✓</span>Auto-reply sequences with delivery tracking</li>
+            <li><span class="pf-check pf-check-inbox">✓</span>Workers + Node.js deploy — zero mail server</li>
+          </ul>
+          <div class="product-card-foot">
+            <div class="product-deploy-row">
+              <span class="product-deploy-label">Deploy via</span>
+              <span class="product-badge product-badge-inbox-worker">Workers</span>
+              <span class="product-sep">·</span>
+              <span class="product-badge product-badge-node">Node.js</span>
             </div>
-            <span class="vs-badge vs-badge-ef">Recommended</span>
+            <a href="/inbox" class="btn-green-sm">Learn more →</a>
           </div>
-          <div class="vs-rows">
-            <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">Simple <code>POST /v1/send</code> — <code>eflive_</code> or <code>eftest_</code> prefix</span></div>
-            <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">Scoped API keys — per-domain or multi-domain, SHA-256 hashed</span></div>
-            <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">50 React Email layouts, 5 themes, variable interpolation</span></div>
-            <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">Full send history — status, errors, message IDs</span></div>
-            <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">100 req/min rate limiting with <code>X-RateLimit-*</code> headers</span></div>
-            <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">Idempotency-Key header — safe retries, no duplicate sends</span></div>
-            <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">Multi-recipient batch — up to 50 addresses per call</span></div>
-            <div class="vs-row"><span class="vs-icon">✓</span><span class="vs-row-label">Full React admin UI — self-hosted, one container</span></div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- FEATURES GRID -->
-  <section id="features">
-    <div class="container-wide">
-      <div class="section-head">
-        <div class="section-eyebrow">Features</div>
-        <h2 class="section-title">Every primitive you need<br />for production email.</h2>
-        <p class="section-sub">
-          EmailFlare ships with the full stack of tools for reliable transactional email — not just a thin delivery wrapper.
-        </p>
-      </div>
-      <div class="features-grid">
-        <div class="feature-card">
-          <span class="card-icon"><Icon name="lucide:globe" /></span>
-          <h3>Domain Management</h3>
-          <p>Add sending domains, provision Cloudflare subdomains, view DKIM and return-path DNS records, and track verification status — no CLI required.</p>
-          <span class="feature-tag">Admin UI</span>
-        </div>
-        <div class="feature-card">
-          <span class="card-icon"><Icon name="lucide:key-round" /></span>
-          <h3>Scoped API Keys</h3>
-          <p>Create keys with <code>global</code>, per-domain, or <code>multi</code> scope. SHA-256 hashed at rest. Only the prefix is shown after creation — the full key is never stored.</p>
-          <span class="feature-tag">Security</span>
-        </div>
-        <div class="feature-card">
-          <span class="card-icon"><Icon name="lucide:layout-template" /></span>
-          <h3>Email Templates</h3>
-          <p>Store HTML templates with <code>{"{{var}}"}</code> interpolation, optional plain-text fallbacks, and an optional named layout. Send by template ID — skip the inline HTML.</p>
-          <span class="feature-tag">Templates</span>
-        </div>
-        <div class="feature-card">
-          <span class="card-icon"><Icon name="lucide:paintbrush" /></span>
-          <h3>React Email Layouts</h3>
-          <p>50 production-ready React Email layouts ship out of the box — from Welcome and Magic Link to Invoice, Billing Receipt, Support Ticket Reply, and Incident Update. Switch between 5 built-in color themes per send.</p>
-          <span class="feature-tag">React Email</span>
-        </div>
-        <div class="feature-card">
-          <span class="card-icon"><Icon name="lucide:bar-chart-2" /></span>
-          <h3>Send Logs &amp; Stats</h3>
-          <p>Every delivery is logged with recipient, sender, template, API key, Cloudflare message ID, status, and error detail. Dashboard stats give you a live summary.</p>
-          <span class="feature-tag">Observability</span>
-        </div>
-        <div class="feature-card">
-          <span class="card-icon"><Icon name="lucide:shield-check" /></span>
-          <h3>Built-in Rate Limiting</h3>
-          <p>Per API-key rate limiting enforced at the middleware layer. Standard <code>X-RateLimit-*</code> response headers on every send request — no extra config.</p>
-          <span class="feature-tag">Reliability</span>
-        </div>
-        <div class="feature-card">
-          <span class="card-icon"><Icon name="lucide:flask-conical" /></span>
-          <h3>Playground &amp; Preview</h3>
-          <p>Test email sends and preview rendered templates right from the admin UI before they hit a real recipient. Catch rendering issues without burning send quota.</p>
-          <span class="feature-tag">Developer UX</span>
-        </div>
-        <div class="feature-card">
-          <span class="card-icon"><Icon name="lucide:database" /></span>
-          <h3>Embedded SQLite Storage</h3>
-          <p>Powered by mesahub-core — embedded SQLite runs inside the container, no external database. Mount a volume at <code>/data</code> and persistence is handled.</p>
-          <span class="feature-tag">Zero Ops</span>
-        </div>
-        <div class="feature-card">
-          <span class="card-icon"><Icon name="lucide:zap" /></span>
-          <h3>Railway &amp; Docker Ready</h3>
-          <p>Ships with a root <code>railway.json</code> for GitHub-connected Railway deploys, and a published image at <code>ghcr.io/0xdps/emailflare:latest</code> for image-based deploys.</p>
-          <span class="feature-tag">Deploy</span>
-        </div>
-        <div class="feature-card">
-          <span class="card-icon"><Icon name="lucide:microscope" /></span>
-          <h3>Test Keys &amp; Built-in Mailpit</h3>
-          <p>Create a <strong>test API key</strong> (<code>eftest_</code>) and all sends route through SMTP — no Cloudflare credentials required. Set <code>ENABLE_TEST_MODE=true</code> to start the bundled <a href="https://mailpit.axllent.org" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px;">Mailpit</a> catcher and access it at <code>/mailpit/</code>, secured with HTTP Basic Auth (defaults to <code>root</code> / <code>ADMIN_TOKEN</code>).</p>
-          <span class="feature-tag">Local Dev</span>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- EMAIL LAYOUTS SHOWCASE -->
-  <section class="layouts-section">
+  <!-- TEMPLATES TEASER -->
+  <section class="layouts-teaser-section">
     <div class="container">
       <div class="section-head">
         <div class="section-eyebrow">React Email Layouts</div>
-        <h2 class="section-title">50 layouts. 5 themes. Ready to send.</h2>
-        <p class="section-sub">
-          Every layout is a React Email component with documented variables. Use them as-is or as a starting point for your own templates. Switch between built-in color themes per send — no CSS edits needed.
-        </p>
+        <h2 class="section-title">50 email layouts.<br />Ready on day one.</h2>
+        <p class="section-sub">EmailFlare ships with 50 production-ready React Email layouts — from Welcome and Magic Link to Invoice, Incident Update, and more. Switch between 5 built-in themes per send.</p>
       </div>
       <div class="layouts-scroll">
         <span class="layout-chip">Welcome</span>
@@ -1237,222 +1288,48 @@ const structuredData = {
         <span class="layout-chip">OTP Code</span>
         <span class="layout-chip">Email Verify</span>
         <span class="layout-chip">Password Reset</span>
-        <span class="layout-chip">Password Changed</span>
-        <span class="layout-chip">New Login Alert</span>
-        <span class="layout-chip">Notification</span>
         <span class="layout-chip">Order Confirmation</span>
         <span class="layout-chip">Invoice</span>
         <span class="layout-chip">Subscription Started</span>
-        <span class="layout-chip">Subscription Cancelled</span>
         <span class="layout-chip">Trial Ending</span>
+        <span class="layout-chip">Payment Failed</span>
         <span class="layout-chip">Team Invite</span>
         <span class="layout-chip">Alert</span>
-        <span class="layout-chip">Digest</span>
-        <span class="layout-chip">Announcement</span>
-        <span class="layout-chip">Feedback Request</span>
-        <span class="layout-chip">Account Deleted</span>
-        <span class="layout-chip">Plain Message</span>
-        <span class="layout-chip">Verification Success</span>
-        <span class="layout-chip">Subscription Confirmation</span>
-        <span class="layout-chip">Payment Failed</span>
-        <span class="layout-chip">Renewal Upcoming</span>
-        <span class="layout-chip">Subscription Resumed</span>
-        <span class="layout-chip">Refund Approved</span>
-        <span class="layout-chip">Plan Upgraded</span>
-        <span class="layout-chip">Plan Downgraded</span>
-        <span class="layout-chip">OAuth Linked</span>
-        <span class="layout-chip">Database Created</span>
-        <span class="layout-chip">Database Deleted</span>
-        <span class="layout-chip">Usage Threshold</span>
-        <span class="layout-chip">API Key Created</span>
-        <span class="layout-chip">API Key Revoked</span>
-        <span class="layout-chip">Plan Limit Reached</span>
-        <span class="layout-chip">Email Change Requested</span>
-        <span class="layout-chip">Email Change Confirmed</span>
-        <span class="layout-chip">Phone Verify</span>
-        <span class="layout-chip">Account Locked</span>
-        <span class="layout-chip">Account Unlocked</span>
-        <span class="layout-chip">Backup Ready</span>
-        <span class="layout-chip">Export Ready</span>
-        <span class="layout-chip">Import Completed</span>
-        <span class="layout-chip">Maintenance Scheduled</span>
-        <span class="layout-chip">Incident Update</span>
-        <span class="layout-chip">Feature Access Granted</span>
-        <span class="layout-chip">Feature Access Revoked</span>
         <span class="layout-chip">Billing Receipt</span>
-        <span class="layout-chip">Payment Method Expiring</span>
+        <span class="layout-chip">Incident Update</span>
         <span class="layout-chip">Support Ticket Reply</span>
+        <span class="layout-chip">New Login Alert</span>
+        <span class="layout-chip">Account Locked</span>
+        <span class="layout-chip">Announcement</span>
+        <span class="layout-chip">Digest</span>
+        <span class="layout-chip">Feedback Request</span>
+      </div>
+      <div style="margin-top:24px;">
+        <a class="btn btn-secondary" href="/email-api#templates">See all 50 layouts →</a>
       </div>
     </div>
   </section>
 
-  <!-- SELF-DEPLOY -->
-  <section id="deploy" class="deploy-section">
-    <div class="container-wide">
+  <!-- DEPLOY -->
+  <section id="deploy" class="deploy-cta-section">
+    <div class="container">
       <div class="section-head">
         <div class="section-eyebrow">Self-hosting</div>
-        <h2 class="section-title">Two ways to deploy.</h2>
-        <p class="section-sub">
-          Docker for full control on any server. Cloudflare Workers for zero-ops edge hosting.
-          Both ship in the same repo — pick what fits your stack.
-        </p>
+        <h2 class="section-title">Deploy in minutes.</h2>
+        <p class="section-sub">Both products ship with Docker and Cloudflare Workers support. Pick a deploy path — both are in the same repo.</p>
       </div>
-
-      <div class="deploy-options">
-
-        <!-- ── Docker ── -->
-        <div class="deploy-option">
-          <div class="do-header">
-            <div class="do-badge do-badge-docker"><Icon name="simple-icons:docker" /> Container</div>
-            <div class="do-title">Docker Compose</div>
-            <p class="do-sub">Self-host on any VPS, server, or cloud VM. One image, one volume, full control. Published to GHCR — no local build needed.</p>
-          </div>
-          <div class="do-steps">
-            <div class="do-step">
-              <div class="do-step-num">1</div>
-              <div>
-                <div class="do-step-label">Configure environment</div>
-                <p class="do-step-desc">Copy the example file and fill in credentials. Add <code>ENABLE_TEST_MODE=true</code> to also start the built-in Mailpit catcher.</p>
-                <div class="code-block">
-                  <span><span class="cb-cmd">cp .env.example .env.local</span></span>
-                  <span><span class="cb-kw">CF_API_TOKEN</span>=<span class="cb-val">your_cf_token</span></span>
-                  <span><span class="cb-kw">CF_ACCOUNT_ID</span>=<span class="cb-val">your_account_id</span></span>
-                  <span><span class="cb-kw">ADMIN_TOKEN</span>=<span class="cb-val">$(openssl rand -hex 32)</span></span>
-                  <span><span class="cb-kw">SESSION_SECRET</span>=<span class="cb-val">$(openssl rand -hex 32)</span></span>
-                  <span><span class="cb-cmt"># optional: enable Mailpit</span></span>
-                  <span><span class="cb-kw">ENABLE_TEST_MODE</span>=<span class="cb-val">true</span></span>
-                </div>
-              </div>
-            </div>
-            <div class="do-step">
-              <div class="do-step-num">2</div>
-              <div>
-                <div class="do-step-label">Pull &amp; start</div>
-                <p class="do-step-desc">Uses the published GHCR image — no local build needed. Mailpit starts automatically when <code>ENABLE_TEST_MODE=true</code>.</p>
-                <div class="code-block">
-                  <span><span class="cb-cmt"># pull the published image</span></span>
-                  <span><span class="cb-cmd">docker pull ghcr.io/0xdps/emailflare:latest</span></span>
-                  <span>&nbsp;</span>
-                  <span><span class="cb-cmt"># production</span></span>
-                  <span><span class="cb-cmd">docker compose --env-file .env.local \</span></span>
-                  <span><span class="cb-cmd">&nbsp;&nbsp;-f compose.yaml up -d</span></span>
-                  <span>&nbsp;</span>
-                  <span><span class="cb-cmt"># local dev + mailpit</span></span>
-                  <span><span class="cb-cmd">docker compose --env-file .env.local \</span></span>
-                  <span><span class="cb-cmd">&nbsp;&nbsp;-f compose.dev.yaml up</span></span>
-                </div>
-              </div>
-            </div>
-            <div class="do-step">
-              <div class="do-step-num">3</div>
-              <div>
-                <div class="do-step-label">Open the dashboard</div>
-                <p class="do-step-desc">Admin UI on port 8090. Mailpit at <code>/mailpit/</code> when test mode is enabled — auth: <code>root</code> / <code>ADMIN_TOKEN</code>.</p>
-                <div class="code-block">
-                  <span><span class="cb-cmt"># health check</span></span>
-                  <span><span class="cb-cmd">curl http://localhost:8090/health</span></span>
-                  <span>&nbsp;</span>
-                  <span><span class="cb-url">http://localhost:8090</span><span class="cb-cmt">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# admin UI</span></span>
-                  <span><span class="cb-url">http://localhost:8090/mailpit/</span><span class="cb-cmt">&nbsp;# if ENABLE_TEST_MODE=true</span></span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="do-footer do-footer-docker">
-            <span class="do-footer-note">Image: <code style="font-size:11px;">ghcr.io/0xdps/emailflare:latest</code></span>
-            <a href="/docs">Full Docker guide →</a>
-          </div>
-        </div>
-
-        <!-- ── Workers ── -->
-        <div class="deploy-option" style="border-color: oklch(28% 0.08 48 / 0.7);">
-          <div class="do-header" style="border-bottom-color: oklch(22% 0.06 48 / 0.5);">
-            <div class="do-badge do-badge-worker"><Icon name="lucide:zap" /> Serverless</div>
-            <div class="do-title">Cloudflare Workers</div>
-            <p class="do-sub">No servers, no containers, no volumes. D1 database + KV namespace + admin UI all on the edge. One command from clone to live.</p>
-          </div>
-          <div class="do-steps">
-            <div class="do-step">
-              <div class="do-step-num">1</div>
-              <div>
-                <div class="do-step-label">Clone &amp; install</div>
-                <p class="do-step-desc">Requires Node.js, pnpm, and a Wrangler-authenticated Cloudflare account.</p>
-                <div class="code-block">
-                  <span><span class="cb-cmd">git clone https://github.com/0xdps/emailflare</span></span>
-                  <span><span class="cb-cmd">cd emailflare &amp;&amp; pnpm install</span></span>
-                  <span><span class="cb-cmd">npx wrangler login</span></span>
-                </div>
-              </div>
-            </div>
-            <div class="do-step">
-              <div class="do-step-num">2</div>
-              <div>
-                <div class="do-step-label">Configure &amp; deploy</div>
-                <p class="do-step-desc">Copy the config template, fill in your values, then run setup — creates D1, KV, runs migrations, and deploys.</p>
-                <div class="code-block">
-                  <span><span class="cb-cmd">cp scripts/config.example.toml scripts/config.toml</span></span>
-                  <span><span class="cb-cmt"># fill in CF_API_TOKEN, CF_ACCOUNT_ID, ADMIN_TOKEN</span></span>
-                  <span>&nbsp;</span>
-                  <span><span class="cb-cmd">just worker-setup</span></span>
-                  <span><span class="cb-cmt"># creates D1 + KV, runs migrations, deploys</span></span>
-                </div>
-              </div>
-            </div>
-            <div class="do-step">
-              <div class="do-step-num">3</div>
-              <div>
-                <div class="do-step-label">You're live</div>
-                <p class="do-step-desc">Admin UI and API are served from your Workers subdomain. No separate hosting.</p>
-                <div class="code-block">
-                  <span><span class="cb-cmt"># your deployment URL</span></span>
-                  <span><span class="cb-url">https://emailflare.your-subdomain.workers.dev</span></span>
-                  <span>&nbsp;</span>
-                  <span><span class="cb-cmt"># custom domain optional via wrangler.jsonc</span></span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="do-footer do-footer-worker" style="border-top-color: oklch(22% 0.06 48 / 0.5);">
-            <span class="do-footer-note">D1 + KV + static assets — zero external services</span>
-            <a href="/cloudflare">Full Workers guide →</a>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- extra links -->
-      <div class="deploy-extras">
-        <a href="/cloudflare-token" class="deploy-extra">
-          <span class="de-icon"><Icon name="lucide:key-round" /></span>
-          <div>
-            <div class="de-title">Cloudflare API Token guide</div>
-            <div class="de-sub">Exact permissions, step-by-step — 3 minutes.</div>
-          </div>
-          <span class="de-arrow">→</span>
+      <div class="deploy-cta-grid">
+        <a href="/email-api#deploy" class="deploy-cta-card deploy-cta-email">
+          <div class="dcc-eyebrow">Email API</div>
+          <div class="dcc-title">Docker · Cloudflare Workers</div>
+          <p class="dcc-sub">One image — Hono API + React admin + SQLite. Or deploy serverless on Cloudflare Workers with D1 + KV. <code>just worker-setup</code> handles provisioning.</p>
+          <div class="dcc-cta">View deploy options →</div>
         </a>
-        <a href="https://railway.com/deploy/emailflare" target="_blank" rel="noopener" class="deploy-extra">
-          <span class="de-icon"><Icon name="lucide:train-front" /></span>
-          <div>
-            <div class="de-title">One-click Railway deploy</div>
-            <div class="de-sub">Pre-configured template — just add CF credentials.</div>
-          </div>
-          <span class="de-arrow">→</span>
-        </a>
-        <a href="/mesahub" class="deploy-extra">
-          <span class="de-icon"><Icon name="lucide:database" /></span>
-          <div>
-            <div class="de-title">Skip volume management</div>
-            <div class="de-sub">One-line switch to cloud-hosted SQLite via mesahub.</div>
-          </div>
-          <span class="de-arrow">→</span>
-        </a>
-        <a href="https://mailpit.axllent.org" target="_blank" rel="noopener" class="deploy-extra">
-          <span class="de-icon"><Icon name="lucide:mail" /></span>
-          <div>
-            <div class="de-title">Local email testing with Mailpit</div>
-            <div class="de-sub">Included in dev stack — no real emails sent.</div>
-          </div>
-          <span class="de-arrow">→</span>
+        <a href="/inbox#deploy" class="deploy-cta-card deploy-cta-inbox">
+          <div class="dcc-eyebrow" style="color:var(--green)">Inbox</div>
+          <div class="dcc-title">Cloudflare Workers · Node.js</div>
+          <p class="dcc-sub">Workers deploy uses D1 + Email Routing Worker binding. Node.js deploy runs the same Hono API in a container. <code>just inbox-setup</code> sets everything up.</p>
+          <div class="dcc-cta" style="color:var(--green)">View deploy options →</div>
         </a>
       </div>
     </div>
@@ -1569,7 +1446,8 @@ const structuredData = {
 
   <ul slot="footer-links" class="footer-links">
     <li><a href="https://github.com/0xdps/emailflare" target="_blank" rel="noopener">GitHub</a></li>
-    <li><a href="/docs">Docs</a></li>
+    <li><a href="/docs">Email API docs</a></li>
+    <li><a href="/inbox">Inbox</a></li>
     <li><a href="https://github.com/0xdps/emailflare/blob/trunk/SECURITY.md" target="_blank" rel="noopener">Security</a></li>
     <li><a href="https://github.com/0xdps/emailflare/blob/trunk/LICENSE" target="_blank" rel="noopener">License</a></li>
   </ul>

@@ -31,14 +31,14 @@ RUN --mount=type=cache,id=pnpm-store-inbox,target=/root/.local/share/pnpm/store 
 COPY services/inbox-server/ ./inbox-server/
 RUN cd inbox-server && pnpm run build
 
-# ── Stage: build-inbox-dashboard ──────────────────────────────────────────────
-FROM node:22-alpine AS build-inbox-dashboard
-WORKDIR /app/dashboard
+# ── Stage: build-inbox-ui ──────────────────────────────────────────────────────
+FROM node:22-alpine AS build-inbox-ui
+WORKDIR /app/inbox-ui
 RUN corepack enable && corepack prepare pnpm@latest --activate
-COPY services/dashboard/package.json services/dashboard/pnpm-lock.yaml services/dashboard/pnpm-workspace.yaml ./
+COPY services/inbox-ui/package.json services/inbox-ui/pnpm-lock.yaml services/inbox-ui/pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm-store-inbox,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
-COPY services/dashboard/ ./
+COPY services/inbox-ui/ ./
 RUN pnpm run build
 
 # ── Stage: caddy-bin ──────────────────────────────────────────────────────────
@@ -63,10 +63,10 @@ COPY --from=build-inbox-server /app/inbox-server/dist          ./inbox-server/di
 COPY services/inbox-server/package.json                        ./inbox-server/
 
 # Migration SQL files (needed at runtime for DB init)
-COPY services/inbox/migrations/ ./migrations/
+COPY services/inbox-worker/migrations/ ./migrations/
 
-# Dashboard SPA static files
-COPY --from=build-inbox-dashboard /app/dashboard/dist ./dashboard/dist
+# Inbox UI static files
+COPY --from=build-inbox-ui /app/inbox-ui/dist ./inbox-ui/dist
 
 # Caddy config
 COPY infra/Caddyfile.inbox /etc/caddy/Caddyfile

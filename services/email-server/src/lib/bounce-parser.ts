@@ -1,5 +1,5 @@
 // Parses DSN (RFC 3464) and ARF (RFC 5965) messages to extract bounce/complaint info.
-// Used by the webhook endpoint; logic mirrors services/worker/src/email-handler.ts.
+// Used by the webhook endpoint; logic mirrors services/email-worker/src/email-handler.ts.
 
 import PostalMime from 'postal-mime';
 

@@ -29,9 +29,9 @@
 
   "upload_source_maps": true,
 
-  // Dashboard SPA — build with: cd services/dashboard && pnpm build
+  // Inbox UI SPA — build with: cd services/inbox-ui && pnpm build
   "assets": {
-    "directory": "../dashboard/dist",
+    "directory": "../inbox-ui/dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application"
   },

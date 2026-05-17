@@ -25,13 +25,6 @@ async function appliedMigrations(): Promise<Set<string>> {
   return new Set(result.rows.map(r => (r as { name: string }).name));
 }
 
-function splitStatements(sql: string): string[] {
-  return sql
-    .split(';')
-    .map(s => s.trim())
-    .filter(s => s.length > 0 && !s.startsWith('--'));
-}
-
 export async function runMigrations(): Promise<void> {
   await ensureMigrationsTable();
 
@@ -52,11 +45,7 @@ export async function runMigrations(): Promise<void> {
 
     console.log(`[migrations] Applying ${file}...`);
     const sql = await readFile(join(dir, file), 'utf-8');
-    const statements = splitStatements(sql);
-
-    for (const stmt of statements) {
-      await mesaDb.exec(stmt, []);
-    }
+    await mesaDb.exec(sql, []);
 
     await mesaDb.exec(
       'INSERT INTO schema_migrations (name, applied_at) VALUES (?, ?)',

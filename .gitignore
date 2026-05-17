@@ -8,10 +8,10 @@ dist/
 .DS_Store
 *.log
 .tanstack/
-services/admin/src/routeTree.gen.ts
+services/email-ui/src/routeTree.gen.ts
 scripts/config.toml
-services/worker/.wrangler
-services/worker/.localflare
+services/email-worker/.wrangler
+services/email-worker/.localflare
 *.tsbuildinfo
 
 # Compiled output from services/emails (safety net if tsc writes into src/)

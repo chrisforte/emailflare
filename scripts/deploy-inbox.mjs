@@ -9,10 +9,10 @@
  *   4.  Creates KV namespace (emailflare-inbox-rate-limit)
  *   5.  Creates R2 bucket (emailflare-inbox-attachments)
  *   5b. Creates Queue (emailflare-inbox-sequences)
- *   6.  Patches services/inbox/wrangler.jsonc with the real resource IDs
+ *   6.  Patches services/inbox-worker/wrangler.jsonc with the real resource IDs
  *   7.  Applies D1 migrations (schema + inbox tables)
  *   8.  Prompts for secrets and sets them via `wrangler secret put`
- *   9.  Builds the dashboard SPA (services/dashboard)
+ *   9.  Builds the inbox UI SPA (services/inbox-ui)
  *   10. Deploys the inbox Worker
  *
  * Usage:
@@ -31,8 +31,8 @@ import { parse as parseToml } from 'smol-toml';
 
 const __dirname   = fileURLToPath(new URL('.', import.meta.url));
 const ROOT        = resolve(__dirname, '..');
-const INBOX_DIR   = resolve(ROOT, 'services/inbox');
-const DASH_DIR    = resolve(ROOT, 'services/dashboard');
+const INBOX_DIR   = resolve(ROOT, 'services/inbox-worker');
+const DASH_DIR    = resolve(ROOT, 'services/inbox-ui');
 const WRANGLER    = resolve(INBOX_DIR, 'wrangler.jsonc');
 const CONFIG_FILE = resolve(__dirname, 'config.toml');
 
@@ -256,7 +256,7 @@ if (qCreate.status === 0 || qOut.toLowerCase().includes('created queue')) {
 
 // ─── step 6: patch wrangler.jsonc ────────────────────────────────────────────
 
-log('Patching services/inbox/wrangler.jsonc with resource IDs…');
+log('Patching services/inbox-worker/wrangler.jsonc with resource IDs…');
 let jsonc = readFileSync(WRANGLER, 'utf8');
 const before = jsonc;
 jsonc = jsonc.replace(/REPLACE_WITH_D1_DATABASE_ID/g, d1Id);
@@ -322,7 +322,7 @@ for (const { name, label, cfgVal, sensitive } of SECRETS) {
   });
 
   if (result.status !== 0) {
-    warn(`Failed to set ${name}. Set it manually:\n  cd services/inbox && echo "value" | npx wrangler secret put ${name}`);
+    warn(`Failed to set ${name}. Set it manually:\n  cd services/inbox-worker && echo "value" | npx wrangler secret put ${name}`);
   } else {
     ok(`Secret ${name} set.`);
   }
@@ -330,7 +330,7 @@ for (const { name, label, cfgVal, sensitive } of SECRETS) {
 
 // ─── step 9: build dashboard ──────────────────────────────────────────────────
 
-log('Installing & building services/dashboard…');
+log('Installing & building services/inbox-ui…');
 try {
   run('pnpm install --frozen-lockfile', { cwd: DASH_DIR });
   run('pnpm build', { cwd: DASH_DIR });
@@ -361,10 +361,10 @@ process.stdout.write(`
    3. Point Cloudflare Email Routing rules at your Worker
 
  To redeploy after code changes:
-   cd services/dashboard && pnpm build
-   cd services/inbox && npx wrangler deploy
+   cd services/inbox-ui && pnpm build
+   cd services/inbox-worker && npx wrangler deploy
 
  To update a secret:
-   cd services/inbox && echo "new-value" | npx wrangler secret put SECRET_NAME
+   cd services/inbox-worker && echo "new-value" | npx wrangler secret put SECRET_NAME
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m
 `);

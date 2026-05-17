@@ -77,7 +77,7 @@ pnpm migrations:apply:local   # init local D1
 pnpm dev                       # wrangler dev on http://localhost:8787
 ```
 
-The admin UI (`services/admin`) can be pointed at `http://localhost:8787` for local testing.
+The email UI (`services/email-ui`) can be pointed at `http://localhost:8787` for local testing.
 
 ---
 
@@ -89,7 +89,7 @@ The admin UI (`services/admin`) can be pointed at `http://localhost:8787` for lo
 The Worker sends all emails (both `test` and `live` API keys) through the Cloudflare Email
 Sending REST API. The `is_test` flag is still recorded in `email_logs` for audit purposes.
 
-If you need SMTP test delivery locally, use the Node.js backend (`services/backend`) instead.
+If you need SMTP test delivery locally, use the Node.js backend (`services/email-server`) instead.
 
 ### Rate Limiting
 
@@ -103,4 +103,4 @@ Login rate limiting uses Workers KV (10 attempts / 60s per IP). This works on al
 
 `@react-email/render` runs in Workers via the `nodejs_compat` compatibility flag, which
 polyfills Node.js built-ins (including `AsyncLocalStorage` for theme context). All email
-layout components from `services/backend/src/emails/layouts/` are bundled at build time.
+layout components from `services/email-server/src/emails/layouts/` are bundled at build time.

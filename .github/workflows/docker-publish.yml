@@ -19,9 +19,9 @@ jobs:
       matrix:
         include:
           - name: backend
-            path: services/backend
+            path: services/email-server
           - name: admin
-            path: services/admin
+            path: services/email-ui
 
     steps:
       - name: Checkout repository

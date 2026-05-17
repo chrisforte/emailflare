@@ -1,5 +1,5 @@
 // Seed system email templates into MesaHub on first run.
-// Node.js port of services/inbox/src/seed.ts.
+// Node.js port of services/inbox-worker/src/seed.ts.
 
 import { customAlphabet } from 'nanoid';
 import { makeDb } from './db.js';

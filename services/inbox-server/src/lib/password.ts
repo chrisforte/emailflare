@@ -1,6 +1,6 @@
 // Password hashing using PBKDF2-SHA256 (Web Crypto API — Node.js compatible).
 // Format: $pbkdf2-sha256$v=1$<base64salt>$<base64hash>
-// Identical to services/inbox/src/lib/password.ts.
+// Identical to services/inbox-worker/src/lib/password.ts.
 
 const ALGO       = 'SHA-256';
 const ITERATIONS = 100_000;

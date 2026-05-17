@@ -1,6 +1,6 @@
 /**
  * Parse a `mh://` connection string into its component parts.
- * Copied from services/backend/src/lib/mesahub-url.ts.
+ * Copied from services/email-server/src/lib/mesahub-url.ts.
  *
  * Format: `mh://apikey@host[:port]/dbname`
  */

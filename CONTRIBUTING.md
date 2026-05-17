@@ -22,8 +22,8 @@ Useful commands:
 just dev
 just dev-down
 just build
-cd services/admin && pnpm build
-cd services/backend && pnpm build
+cd services/email-ui && pnpm build
+cd services/email-server && pnpm build
 cd services/landing && pnpm build
 ```
 

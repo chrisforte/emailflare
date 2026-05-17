@@ -17,7 +17,7 @@
 
   # Dashboard SPA — serve static files with SPA fallback
   handle {
-    root * {$DASHBOARD_DIR:/app/dashboard/dist}
+    root * {$DASHBOARD_DIR:/app/inbox-ui/dist}
     try_files {path} /index.html
     file_server
   }

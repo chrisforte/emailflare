@@ -70,7 +70,7 @@ export const env = {
   MIGRATIONS_DIR: process.env.MIGRATIONS_DIR ?? '/app/migrations',
 
   // Dashboard SPA dist directory (served by Caddy, but path used by index.ts in dev)
-  DASHBOARD_DIST: process.env.DASHBOARD_DIST ?? '/app/dashboard/dist',
+  DASHBOARD_DIST: process.env.DASHBOARD_DIST ?? '/app/inbox-ui/dist',
 } as const;
 
 // API key context stored in Hono Variables
