@@ -243,3 +243,142 @@ inbox-secret name:
 web:
     cd services/landing && pnpm dev
 
+# ============================================================================
+# INBOX SERVER  (services/inbox-server/ — standalone Node.js deployment)
+#
+# Local dev:
+#   just inbox-server-setup   (first time only: copy env + install deps)
+#   just inbox-server-local   (everything in one command: deps + server + UI)
+#
+# Production (Docker):
+#   just inbox-server-up      (build + start full stack)
+#   just inbox-server-logs    (tail logs)
+# ============================================================================
+
+# First-time setup: copy env template + install all inbox deps
+inbox-server-setup:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ ! -f .env.inbox.local ]; then
+        cp .env.inbox.example .env.inbox.local
+        echo "✓ Created .env.inbox.local"
+        echo "  Edit it to add CF_API_TOKEN, R2 credentials, etc. (optional for local dev)"
+    else
+        echo "✓ .env.inbox.local already exists"
+    fi
+    echo ""
+    echo "[1/2] Installing emails package..."
+    cd services/emails && pnpm install && pnpm run build
+    echo ""
+    echo "[2/2] Installing inbox-server..."
+    cd services/inbox-server && pnpm install
+    echo ""
+    echo "Done! Run: just inbox-server-local"
+
+# Start everything: Node.js server + dashboard UI — Ctrl-C stops all.
+# If MESAHUB_URL in .env.inbox.local points to localhost, also starts Docker deps.
+inbox-server-local:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ -f .env.inbox.local ] || { echo "Run 'just inbox-server-setup' first"; exit 1; }
+
+    # Load env
+    set -a; . .env.inbox.local; set +a
+
+    USE_DOCKER=false
+    if echo "${MESAHUB_URL:-}" | grep -qE 'localhost|127\.0\.0\.1'; then
+        USE_DOCKER=true
+    fi
+
+    # Trap: kill background processes + optionally stop Docker deps on exit
+    cleanup() {
+        echo ""
+        echo "Stopping..."
+        kill "$SERVER_PID" "$UI_PID" 2>/dev/null || true
+        if [ "$USE_DOCKER" = "true" ]; then
+            docker compose -f compose.inbox.dev.yaml down
+        fi
+    }
+    trap cleanup EXIT INT TERM
+
+    STEP=1
+
+    # Start Docker deps only when MESAHUB_URL points to localhost
+    if [ "$USE_DOCKER" = "true" ]; then
+        echo "[$STEP/3] Starting local MesaHub + Redis..."
+        MESAHUB_ADMIN_TOKEN="${MESAHUB_ADMIN_TOKEN:-inbox-dev-token}" \
+          docker compose -f compose.inbox.dev.yaml up --build -d
+        echo "  MesaHub  http://localhost:3003"
+        echo "  Redis    localhost:6379"
+        STEP=2
+    else
+        echo "  Using external MesaHub: ${MESAHUB_URL}"
+        STEP=1
+    fi
+
+    # Start Node.js inbox-server in background
+    echo "[$STEP/2] Starting inbox-server on :${INBOX_SERVER_PORT:-3002}..."
+    ( cd services/inbox-server && NODE_ENV=development npx tsx watch src/index.ts ) &
+    SERVER_PID=$!
+    STEP=$((STEP+1))
+
+    # Start dashboard Vite UI in background
+    echo "[$STEP/2] Starting dashboard UI..."
+    ( cd services/dashboard && VITE_BACKEND_PORT="${INBOX_SERVER_PORT:-3002}" pnpm dev ) &
+    UI_PID=$!
+
+    echo ""
+    echo "  inbox-server  http://localhost:${INBOX_SERVER_PORT:-3002}"
+    echo "  dashboard     http://localhost:5174"
+    echo ""
+    echo "Press Ctrl-C to stop everything."
+
+    wait "$SERVER_PID" "$UI_PID"
+
+# Wipe local dev database + Redis volumes (full reset), then re-run local
+inbox-server-reset:
+    docker compose -f compose.inbox.dev.yaml down -v
+    just inbox-server-local
+
+# Build TypeScript (emails first, then server)
+inbox-server-build:
+    cd services/emails && pnpm install && pnpm run build
+    cd services/inbox-server && pnpm run build
+
+# Start inbox-server in production mode (requires prior build + env vars set)
+inbox-server-start:
+    #!/usr/bin/env bash
+    [ -f .env.inbox.local ] && { set -a; . .env.inbox.local; set +a; }
+    cd services/inbox-server && NODE_ENV=production node dist/index.js
+
+# ── Production Docker stack ───────────────────────────────────────────────────
+
+# Start inbox production stack (full Docker build: Node.js + Redis + Caddy)
+inbox-server-up:
+    env -i PATH="$PATH" docker compose --env-file .env.inbox -f compose.inbox.yaml up --build -d
+
+# Stop inbox production stack
+inbox-server-down:
+    env -i PATH="$PATH" docker compose -f compose.inbox.yaml down
+
+# Rebuild and restart the inbox production stack
+inbox-server-update:
+    env -i PATH="$PATH" docker compose --env-file .env.inbox -f compose.inbox.yaml up --build -d
+
+# Tail logs from the inbox production stack
+inbox-server-logs:
+    env -i PATH="$PATH" docker compose -f compose.inbox.yaml logs -f
+
+# ── Deploy ────────────────────────────────────────────────────────────────────
+
+# First-time standalone deploy: R2 bucket + inbox-bridge CF Worker + builds
+deploy-inbox-standalone:
+    node scripts/deploy-inbox-standalone.mjs
+
+# Update an inbox-bridge CF Worker secret interactively.
+# Usage: just inbox-bridge-secret WEBHOOK_SECRET
+inbox-bridge-secret name:
+    #!/usr/bin/env sh
+    printf '{{name}}: '; stty -echo; read val; stty echo; echo
+    echo "$val" | npx wrangler secret put {{name}} --cwd services/inbox-bridge
+

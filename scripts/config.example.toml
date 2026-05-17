@@ -40,3 +40,33 @@ admin_origin = ""
 # Generate: npx web-push generate-vapid-keys
 vapid_public_key  = ""
 vapid_private_key = ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Inbox Server  (deploy-inbox-standalone.mjs / just deploy-inbox-standalone)
+# Standalone Node.js deployment. Uses Redis + MesaHub instead of CF D1/KV/Queue.
+# Reuses [secrets].session_secret, cf_api_token, cf_account_id.
+# ─────────────────────────────────────────────────────────────────────────────
+[inbox-server]
+# MesaHub database URL.
+# Use mh://local/inbox to start an embedded server in the same container.
+# Use mh://apikey@host[:port]/inbox for an external MesaHub instance.
+mesahub_url = "mh://local/inbox"
+
+# Redis connection URL (used for rate limiting and BullMQ job queue).
+redis_url = "redis://localhost:6379"
+
+# Shared secret between inbox-bridge (CF Worker) and inbox-server.
+# Generate: openssl rand -hex 32
+webhook_secret = ""
+
+# Public HTTPS URL of this inbox-server (used by inbox-bridge).
+# e.g. https://inbox.example.com
+inbox_server_url = ""
+
+# Cloudflare R2 credentials (S3-compatible API) for attachment storage.
+# Get these from the Cloudflare dashboard under R2 → Manage R2 API tokens.
+r2_account_id       = ""
+r2_access_key_id    = ""
+r2_secret_access_key = ""
+r2_bucket_name      = "emailflare-inbox-attachments"
+

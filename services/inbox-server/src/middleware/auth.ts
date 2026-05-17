@@ -1,0 +1,74 @@
+// Cookie-based session middleware for inbox-server.
+// Node.js port of services/inbox/src/middleware/auth.ts.
+// SESSION_SECRET is loaded from env module (not CF binding).
+
+import { SignJWT, jwtVerify } from 'jose';
+import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
+import { createMiddleware } from 'hono/factory';
+import { HTTPException } from 'hono/http-exception';
+import type { Context } from 'hono';
+import type { HonoEnv } from '../env.js';
+import { env } from '../env.js';
+
+export interface SessionPayload {
+  userId: string;
+  role: 'admin' | 'member';
+}
+
+const SESSION_COOKIE = 'ef_inbox_session';
+const SESSION_TTL    = 60 * 60 * 24 * 7; // 7 days
+const ALG            = 'HS256';
+
+function secretKey(): Uint8Array {
+  return new TextEncoder().encode(env.SESSION_SECRET);
+}
+
+export async function getSession(c: Context<HonoEnv>): Promise<SessionPayload | null> {
+  const token = getCookie(c, SESSION_COOKIE);
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify(token, secretKey());
+    if (typeof payload['userId'] !== 'string' || typeof payload['role'] !== 'string') return null;
+    return { userId: payload['userId'] as string, role: payload['role'] as 'admin' | 'member' };
+  } catch {
+    return null;
+  }
+}
+
+export async function saveSession(c: Context<HonoEnv>, data: SessionPayload): Promise<void> {
+  const token = await new SignJWT({ userId: data.userId, role: data.role })
+    .setProtectedHeader({ alg: ALG })
+    .setIssuedAt()
+    .setExpirationTime(`${SESSION_TTL}s`)
+    .sign(secretKey());
+
+  const isLocalDev = new URL(c.req.url).hostname === 'localhost';
+
+  setCookie(c, SESSION_COOKIE, token, {
+    httpOnly: true,
+    secure: !isLocalDev,
+    sameSite: 'Strict',
+    path: '/',
+    maxAge: SESSION_TTL,
+  });
+}
+
+export function clearSession(c: Context<HonoEnv>): void {
+  deleteCookie(c, SESSION_COOKIE, { path: '/' });
+}
+
+/** Middleware: require valid session, populate userId + userRole on context. */
+export const requireSession = createMiddleware<HonoEnv>(async (c, next) => {
+  const session = await getSession(c);
+  if (!session) throw new HTTPException(401, { message: 'Unauthorized' });
+  c.set('userId', session.userId);
+  c.set('userRole', session.role);
+  await next();
+});
+
+/** Middleware: require admin role. Must chain after requireSession. */
+export const requireAdmin = createMiddleware<HonoEnv>(async (c, next) => {
+  const role = c.get('userRole');
+  if (role !== 'admin') throw new HTTPException(403, { message: 'Forbidden' });
+  await next();
+});

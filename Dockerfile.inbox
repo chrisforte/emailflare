@@ -1,0 +1,79 @@
+# ── Stage: build-core ─────────────────────────────────────────────────────────
+# Builds the mesahub-server Go binary from source (same as root Dockerfile).
+FROM golang:1.24-alpine AS build-core
+RUN apk add --no-cache gcc musl-dev sqlite-dev git
+ARG MESAHUB_CORE_VERSION=trunk
+RUN git clone --depth 1 --branch ${MESAHUB_CORE_VERSION} \
+    https://github.com/mesahub-db/mesahub-core.git /mesahub-core
+WORKDIR /mesahub-core/server
+RUN CGO_ENABLED=1 GOOS=linux go build -o /go/bin/mesahub-server ./cmd/server
+
+# ── Stage: build-emails ────────────────────────────────────────────────────────
+FROM node:22-alpine AS build-emails
+WORKDIR /app/emails
+RUN corepack enable && corepack prepare pnpm@latest --activate
+COPY services/emails/package.json ./
+RUN --mount=type=cache,id=pnpm-store-inbox,target=/root/.local/share/pnpm/store \
+    pnpm install
+COPY services/emails/ ./
+RUN pnpm run build
+
+# ── Stage: build-inbox-server ─────────────────────────────────────────────────
+FROM node:22-alpine AS build-inbox-server
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+COPY services/inbox-server/package.json services/inbox-server/pnpm-lock.yaml ./inbox-server/
+COPY --from=build-emails /app/emails /app/emails
+RUN --mount=type=cache,id=pnpm-store-inbox,target=/root/.local/share/pnpm/store \
+    cd inbox-server && pnpm install --frozen-lockfile
+
+COPY services/inbox-server/ ./inbox-server/
+RUN cd inbox-server && pnpm run build
+
+# ── Stage: build-inbox-dashboard ──────────────────────────────────────────────
+FROM node:22-alpine AS build-inbox-dashboard
+WORKDIR /app/dashboard
+RUN corepack enable && corepack prepare pnpm@latest --activate
+COPY services/dashboard/package.json services/dashboard/pnpm-lock.yaml services/dashboard/pnpm-workspace.yaml ./
+RUN --mount=type=cache,id=pnpm-store-inbox,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
+COPY services/dashboard/ ./
+RUN pnpm run build
+
+# ── Stage: caddy-bin ──────────────────────────────────────────────────────────
+FROM caddy:2-alpine AS caddy-bin
+
+# ── Stage: prod ───────────────────────────────────────────────────────────────
+FROM node:22-alpine AS prod
+COPY --from=caddy-bin /usr/bin/caddy /usr/bin/caddy
+RUN apk add --no-cache curl openssl
+WORKDIR /app
+
+# mesahub-server binary (embedded mode)
+COPY --from=build-core /go/bin/mesahub-server /usr/local/bin/mesahub-server
+RUN mkdir -p /data
+VOLUME ["/data"]
+
+# inbox-server runtime
+COPY --from=build-emails   /app/emails/dist           ./emails/dist
+COPY --from=build-emails   /app/emails/package.json   ./emails/package.json
+COPY --from=build-inbox-server /app/inbox-server/node_modules ./inbox-server/node_modules
+COPY --from=build-inbox-server /app/inbox-server/dist          ./inbox-server/dist
+COPY services/inbox-server/package.json                        ./inbox-server/
+
+# Migration SQL files (needed at runtime for DB init)
+COPY services/inbox/migrations/ ./migrations/
+
+# Dashboard SPA static files
+COPY --from=build-inbox-dashboard /app/dashboard/dist ./dashboard/dist
+
+# Caddy config
+COPY infra/Caddyfile.inbox /etc/caddy/Caddyfile
+
+# Startup script
+COPY infra/start-inbox.sh /start-inbox.sh
+RUN chmod +x /start-inbox.sh
+
+EXPOSE 80
+CMD ["/start-inbox.sh"]

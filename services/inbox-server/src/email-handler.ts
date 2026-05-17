@@ -1,0 +1,136 @@
+// Inbound email handler for inbox-server.
+// Node.js port of services/inbox/src/email-handler.ts.
+//
+// Instead of receiving a ForwardableEmailMessage from the CF email() export,
+// this handler receives a validated JSON payload from the /webhook/email endpoint
+// (posted by the inbox-bridge CF Worker after HMAC verification).
+
+import PostalMime from 'postal-mime';
+import { customAlphabet } from 'nanoid';
+import { rawDb } from './db.js';
+import { putObject } from './storage.js';
+import { wsManager } from './websocket.js';
+
+export interface EmailPayload {
+  from: string;
+  to: string;
+  rawBase64: string;       // base64-encoded raw RFC 5322 message
+  spf?: string | null;
+  dkim?: string | null;
+  dmarc?: string | null;
+}
+
+const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
+
+const LARGE_BODY_THRESHOLD = 512 * 1024; // 512 KB
+
+export async function handleIncomingEmail(payload: EmailPayload): Promise<void> {
+  const rawBuf = Buffer.from(payload.rawBase64, 'base64');
+  const email  = await PostalMime.parse(rawBuf.buffer);
+
+  const fromAddress = payload.from.toLowerCase();
+  const toAddress   = payload.to.toLowerCase();
+  const now         = new Date().toISOString();
+
+  // ── Upsert person ───────────────────────────────────────────────────────────
+  let person = await rawDb.first<{ id: string }>(
+    'SELECT id FROM people WHERE email = ? LIMIT 1',
+    [fromAddress],
+  );
+
+  if (!person) {
+    const pid = nanoid();
+    const personName = email.from?.name ?? null;
+    await rawDb.run(
+      'INSERT INTO people (id, email, name, created_at) VALUES (?, ?, ?, ?)',
+      [pid, fromAddress, personName, now],
+    );
+    person = { id: pid };
+  }
+
+  // ── Resolve inbox ───────────────────────────────────────────────────────────
+  const inboxRow = await rawDb.first<{ email: string }>(
+    'SELECT email FROM inboxes WHERE email = ? LIMIT 1',
+    [toAddress],
+  );
+  const inboxAddress = inboxRow?.email ?? toAddress;
+
+  // ── Store body (R2 if large, inline otherwise) ─────────────────────────────
+  const bodyHtml  = email.html ?? null;
+  const bodyText  = email.text ?? null;
+  const bodyBytes = bodyHtml ? new TextEncoder().encode(bodyHtml) : null;
+  const isLarge   = bodyBytes ? bodyBytes.byteLength > LARGE_BODY_THRESHOLD : false;
+
+  let bodyR2Key: string | null = null;
+  let storedBodyHtml: string | null = bodyHtml;
+
+  if (isLarge && bodyBytes) {
+    bodyR2Key = `emails/${nanoid()}.html`;
+    await putObject(bodyR2Key, bodyBytes, 'text/html; charset=utf-8');
+    storedBodyHtml = null;
+  }
+
+  // ── Insert email row ────────────────────────────────────────────────────────
+  const emailId   = nanoid();
+  const messageId = email.messageId ?? null;
+  const inReplyTo = email.inReplyTo ?? null;
+
+  await rawDb.run(
+    `INSERT INTO inbox_emails
+       (id, person_id, inbox_address, subject, body_html, body_text, body_r2_key,
+        message_id, in_reply_to, spf, dkim, dmarc, is_read, received_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+     ON CONFLICT (message_id) DO NOTHING`,
+    [
+      emailId, person.id, inboxAddress,
+      email.subject ?? '(no subject)',
+      storedBodyHtml, bodyText, bodyR2Key,
+      messageId, inReplyTo,
+      payload.spf ?? null, payload.dkim ?? null, payload.dmarc ?? null,
+      now,
+    ],
+  );
+
+  // ── Store attachments in R2 ─────────────────────────────────────────────────
+  if (email.attachments?.length) {
+    for (const att of email.attachments) {
+      const r2Key = `attachments/${emailId}/${nanoid()}_${att.filename ?? 'file'}`;
+      const rawContent = att.content;
+      const buf: Buffer =
+        Buffer.isBuffer(rawContent)
+          ? rawContent
+          : rawContent instanceof ArrayBuffer
+            ? Buffer.from(rawContent)
+            : rawContent instanceof Uint8Array
+              ? Buffer.from(rawContent.buffer)
+              : Buffer.from(rawContent as string);
+
+      await putObject(r2Key, buf, att.mimeType ?? 'application/octet-stream');
+      await rawDb.run(
+        `INSERT INTO attachments (id, email_id, filename, content_type, r2_key, size, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [nanoid(), emailId, att.filename ?? 'attachment', att.mimeType ?? 'application/octet-stream', r2Key, buf.byteLength, now],
+      );
+    }
+  }
+
+  // ── Notify inbox members via WebSocket ──────────────────────────────────────
+  try {
+    const { rows: members } = await rawDb.query<{ user_id: string }>(
+      `SELECT user_id FROM inbox_members
+       WHERE inbox_id = (SELECT id FROM inboxes WHERE email = ? LIMIT 1)`,
+      [inboxAddress],
+    );
+
+    for (const { user_id } of members) {
+      wsManager.notifyUser(user_id, {
+        type: 'new_email',
+        emailId,
+        from: fromAddress,
+        subject: email.subject ?? '(no subject)',
+      });
+    }
+  } catch {
+    // Non-fatal: best-effort
+  }
+}
