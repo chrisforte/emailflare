@@ -32,6 +32,7 @@ install:
     pnpm install --dir services/inbox-ui
     pnpm install --dir services/inbox-server
     pnpm install --dir services/inbox-bridge
+    pnpm install --dir services/email-bridge
 
 # Rebuild the shared emails package (run after editing services/emails/src/)
 emails-build:
@@ -266,6 +267,39 @@ inbox-bridge-secret name:
     #!/usr/bin/env sh
     printf '{{name}}: '; stty -echo; read val; stty echo; echo
     echo "$val" | npx wrangler secret put {{name}} --cwd services/inbox-bridge
+
+# ============================================================================
+# CLOUDFLARE BRIDGES  (thin CF Workers for Docker/VPS deployments)
+# ============================================================================
+#
+# Docker/VPS users still need Cloudflare Email Routing to receive inbound mail.
+# These thin bridge Workers receive email and forward it to your servers:
+#
+#   email-bridge — bounces/complaints → POST /api/webhooks/bounce on email-server
+#   inbox-bridge — inbound email      → POST /webhook/email on inbox-server
+#
+# Deploy one or both. Interactive — asks for server URLs and webhook secrets.
+
+# First-time setup: deploy email-bridge and/or inbox-bridge CF Workers.
+# Asks which to deploy, collects server URLs + secrets, then prints
+# the CF Email Routing rules to create in the Cloudflare dashboard.
+cf-workers-setup:
+    node scripts/setup-cf-workers.mjs
+
+# Update an email-bridge secret interactively.
+# Usage: just email-bridge-secret WEBHOOK_SECRET
+email-bridge-secret name:
+    #!/usr/bin/env sh
+    printf '{{name}}: '; stty -echo; read val; stty echo; echo
+    echo "$val" | npx wrangler secret put {{name}} --cwd services/email-bridge
+
+# Redeploy email-bridge (no config changes, just push latest code)
+email-bridge-update:
+    cd services/email-bridge && npx wrangler deploy
+
+# Redeploy inbox-bridge (no config changes, just push latest code)
+inbox-bridge-update:
+    cd services/inbox-bridge && npx wrangler deploy
 
 # ============================================================================
 # LANDING PAGE  (services/landing/ — Astro, deployed to Cloudflare Pages)
