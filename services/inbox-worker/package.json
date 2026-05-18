@@ -9,8 +9,8 @@
     "types": "wrangler types",
     "migrations:apply:local": "wrangler d1 migrations apply emailflare --local",
     "migrations:apply": "wrangler d1 migrations apply emailflare --remote",
-    "build:dashboard": "cd ../dashboard && pnpm install --frozen-lockfile && pnpm build",
-    "deploy:full": "pnpm run build:dashboard && wrangler d1 migrations apply emailflare --remote && wrangler deploy"
+    "build:ui": "cd ../inbox-ui && pnpm install --frozen-lockfile && pnpm build",
+    "deploy:full": "pnpm run build:ui && wrangler d1 migrations apply emailflare --remote && wrangler deploy"
   },
   "dependencies": {
     "@emailflare/emails": "file:../emails",

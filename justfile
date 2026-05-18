@@ -8,7 +8,7 @@
 #   CF Worker  — edge, zero-ops, D1 + KV (+ R2/DO/Queues for inbox)
 #   Docker     — any VPS/VM, full control, embedded SQLite via MesaHub
 
-ENV_FILE     := ".env.local"
+ENV_FILE     := ".env.api.local"
 INBOX_ENV    := ".env.inbox"
 INBOX_DEV_ENV:= ".env.inbox.local"
 
@@ -42,50 +42,24 @@ emails-build:
 # ============================================================================
 
 # Start dev stack with hot reload (MesaHub + email-server + email-ui + Mailpit)
-dev:
+api-server-dev:
     env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.dev.yaml up --build
-
-# Start dev stack in the background
-dev-bg:
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.dev.yaml up --build -d
 
 # Stop dev stack
-dev-down:
+api-server-dev-down:
     env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.dev.yaml down
 
-# Wipe dev stack volumes and rebuild (full reset)
-dev-reset:
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.dev.yaml down -v
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.dev.yaml up --build
-
-# Tail logs from the dev stack (email-server + email-ui)
-logs:
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.dev.yaml logs -f backend admin
-
-# Tail logs for a single dev service: just logs-svc mesahub
-logs-svc service:
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.dev.yaml logs -f {{service}}
-
-# Start production container (uses ghcr.io/0xdps/emailflare:latest by default)
-prod:
+# Build + start production stack
+api-server-up:
     env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml up --build -d
 
-# Stop production container
-prod-down:
+# Stop production stack
+api-server-down:
     env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml down
 
-# Wipe production data volume and rebuild
-prod-reset:
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml down -v
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml up --build -d
-
 # Tail production logs
-prod-logs:
+api-server-logs:
     env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml logs -f
-
-# Build the production Docker image without starting it
-build:
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml build app
 
 # Show running containers (dev + prod stacks)
 status:
@@ -96,7 +70,10 @@ status:
     echo "=== Email API prod stack ==="
     env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml ps 2>/dev/null || echo "(not running)"
     echo ""
-    echo "=== Inbox Server stack ==="
+    echo "=== Inbox dev stack ==="
+    env -i PATH="$PATH" docker compose -f compose.inbox.dev.yaml ps 2>/dev/null || echo "(not running)"
+    echo ""
+    echo "=== Inbox prod stack ==="
     env -i PATH="$PATH" docker compose -f compose.inbox.yaml ps 2>/dev/null || echo "(not running)"
 
 # Quick health + auth smoke-test (auto-detects dev or prod port via ENV_FILE)
@@ -141,9 +118,22 @@ worker-setup:
 worker-update:
     cd services/email-worker && pnpm run cf:update
 
-# Start local Worker dev server with local D1 + KV stubs
+# Start local Worker dev server with local D1 + KV stubs.
+# Builds email-ui once if dist/ is missing (wrangler needs the assets dir).
+# For live UI editing run `just email-dev-ui` in a second terminal.
 worker-dev:
-    cd services/email-worker && pnpm dev
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ ! -d services/email-ui/dist ]; then
+        echo "email-ui/dist missing — building first…"
+        cd services/email-ui && pnpm install --frozen-lockfile && pnpm build
+        cd "$OLDPWD"
+    fi
+    cd services/email-worker && npx wrangler dev
+
+# Start email-ui Vite dev server (proxies /api to wrangler dev on :8787)
+email-dev-ui:
+    cd services/email-ui && pnpm dev
 
 # Start Localflare sidecar for local Cloudflare bindings.
 # Defaults to port 8790 to avoid colliding with wrangler dev on 8787.
@@ -243,122 +233,26 @@ inbox-secret name:
     echo "$val" | npx wrangler secret put {{name}} --cwd services/inbox-worker
 
 # ============================================================================
-# INBOX · NODE.JS SERVER  (inbox-server + inbox-ui + inbox-bridge + Caddy)
-#
-# Local dev:
-#   just inbox-server-setup    (first time: copy env + install deps)
-#   just inbox-server-local    (single command: server + UI, auto-starts Docker
-#                               deps if MESAHUB_URL points to localhost)
-#
-# Production (Docker):
-#   just inbox-server-up       (build + start full stack)
-#   just inbox-server-logs     (tail logs)
-#   just inbox-server-update   (rebuild + restart)
+# INBOX · NODE.JS SERVER  (inbox-server + inbox-ui + Caddy + MesaHub + Redis)
 # ============================================================================
 
-# First-time setup: copy env template + install all inbox-server deps
-inbox-server-setup:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    if [ ! -f .env.inbox.local ]; then
-        cp .env.inbox.example .env.inbox.local
-        echo "✓ Created .env.inbox.local"
-        echo "  Edit it to set MESAHUB_URL, CF_API_TOKEN, R2 credentials, etc."
-    else
-        echo "✓ .env.inbox.local already exists"
-    fi
-    echo ""
-    echo "[1/2] Installing emails package..."
-    cd services/emails && pnpm install && pnpm run build
-    echo ""
-    echo "[2/2] Installing inbox-server..."
-    cd services/inbox-server && pnpm install
-    echo ""
-    echo "Done. Run: just inbox-server-local"
+# Start full Docker dev stack: MesaHub + Redis + inbox-server (hot reload) + inbox-ui (Vite) + Caddy
+inbox-server-dev:
+    env -i PATH="$PATH" docker compose --env-file {{INBOX_DEV_ENV}} -f compose.inbox.dev.yaml up --build
 
-# Start Node.js server + inbox-ui — Ctrl-C stops all.
-# If MESAHUB_URL in .env.inbox.local points to localhost, also starts
-# Docker deps (MesaHub + Redis). Otherwise uses your external MESAHUB_URL.
-inbox-server-local:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    [ -f .env.inbox.local ] || { echo "Run 'just inbox-server-setup' first"; exit 1; }
+# Stop dev stack
+inbox-server-dev-down:
+    env -i PATH="$PATH" docker compose -f compose.inbox.dev.yaml down
 
-    set -a; . .env.inbox.local; set +a
-
-    USE_DOCKER=false
-    if echo "${MESAHUB_URL:-}" | grep -qE 'localhost|127\.0\.0\.1'; then
-        USE_DOCKER=true
-    fi
-
-    cleanup() {
-        echo ""
-        echo "Stopping..."
-        kill "$SERVER_PID" "$UI_PID" 2>/dev/null || true
-        if [ "$USE_DOCKER" = "true" ]; then
-            docker compose -f compose.inbox.dev.yaml down
-        fi
-    }
-    trap cleanup EXIT INT TERM
-
-    STEP=1
-    if [ "$USE_DOCKER" = "true" ]; then
-        echo "[$STEP/3] Starting local MesaHub + Redis..."
-        MESAHUB_ADMIN_TOKEN="${MESAHUB_ADMIN_TOKEN:-inbox-dev-token}" \
-          docker compose -f compose.inbox.dev.yaml up --build -d
-        echo "  MesaHub  http://localhost:3003"
-        echo "  Redis    localhost:6379"
-        STEP=2
-    else
-        echo "  Using external MesaHub: ${MESAHUB_URL}"
-        STEP=1
-    fi
-
-    echo "[$STEP/2] Starting inbox-server on :${INBOX_SERVER_PORT:-3002}..."
-    ( cd services/inbox-server && NODE_ENV=development npx tsx watch src/index.ts ) &
-    SERVER_PID=$!
-    STEP=$((STEP+1))
-
-    echo "[$STEP/2] Starting inbox-ui..."
-    ( cd services/inbox-ui && VITE_BACKEND_PORT="${INBOX_SERVER_PORT:-3002}" pnpm dev ) &
-    UI_PID=$!
-
-    echo ""
-    echo "  inbox-server  http://localhost:${INBOX_SERVER_PORT:-3002}"
-    echo "  inbox-ui      http://localhost:5174"
-    echo ""
-    echo "Press Ctrl-C to stop everything."
-    wait "$SERVER_PID" "$UI_PID"
-
-# Wipe local MesaHub + Redis volumes and restart (full local reset)
-inbox-server-reset:
-    docker compose -f compose.inbox.dev.yaml down -v
-    just inbox-server-local
-
-# Build TypeScript (emails package first, then inbox-server)
-inbox-server-build:
-    cd services/emails && pnpm install && pnpm run build
-    cd services/inbox-server && pnpm run build
-
-# Start inbox-server in production mode (requires prior build + env vars)
-inbox-server-start:
-    #!/usr/bin/env bash
-    [ -f .env.inbox.local ] && { set -a; . .env.inbox.local; set +a; }
-    cd services/inbox-server && NODE_ENV=production node dist/index.js
-
-# Start inbox production stack (Node.js + Redis + Caddy — full Docker build)
+# Build + start production stack
 inbox-server-up:
     env -i PATH="$PATH" docker compose --env-file {{INBOX_ENV}} -f compose.inbox.yaml up --build -d
 
-# Stop inbox production stack
+# Stop production stack
 inbox-server-down:
     env -i PATH="$PATH" docker compose -f compose.inbox.yaml down
 
-# Rebuild and restart the inbox production stack
-inbox-server-update:
-    env -i PATH="$PATH" docker compose --env-file {{INBOX_ENV}} -f compose.inbox.yaml up --build -d
-
-# Tail logs from the inbox production stack
+# Tail production logs
 inbox-server-logs:
     env -i PATH="$PATH" docker compose -f compose.inbox.yaml logs -f
 

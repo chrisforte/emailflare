@@ -19,3 +19,6 @@ services/emails/src/**/*.js
 services/emails/src/**/*.js.map
 services/emails/src/**/*.d.ts
 services/emails/src/**/*.d.ts.map
+
+!.env.api.example
+!.env.inbox.example

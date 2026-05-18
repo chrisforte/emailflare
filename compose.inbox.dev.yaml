@@ -1,12 +1,15 @@
-# emailflare inbox-server — local dev dependencies
+# emailflare inbox-server — full local dev stack
 #
-# Provides MesaHub (SQLite) + Redis so the Node.js server can run
-# outside Docker with hot reload via:  just inbox-server-dev
+# Mirrors the production inbox stack architecture:
+#   MesaHub (SQLite) + Redis + inbox-server (tsx hot reload) + inbox-ui (Vite HMR) + Caddy
 #
 # Usage:
-#   just inbox-server-deps        # start
-#   just inbox-server-deps-down   # stop
-#   just inbox-server-deps-reset  # wipe volumes + stop
+#   just inbox-server-dev          # start  (Ctrl-C to stop)
+#   just inbox-server-dev-down     # stop
+#   just inbox-server-dev-reset    # wipe volumes + stop
+#   just inbox-server-dev-logs     # tail logs
+#
+# Accessible at: http://localhost:${INBOX_PORT:-8091}
 
 services:
   mesahub-inbox:
@@ -44,5 +47,70 @@ services:
       timeout: 3s
       retries: 5
 
+  inbox-server:
+    container_name: emailflare-inbox-server
+    build:
+      context: ./services/inbox-server
+      dockerfile: Dockerfile
+      target: dev
+    command: sh -c "cd /emails && npm install --prefer-offline && npm run build && cd /app && npm install && tsx watch src/index.ts"
+    env_file:
+      - .env.inbox.local
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      # MESAHUB_URL is intentionally NOT set here — use .env.inbox.local to
+      # point at either the local mesahub-inbox container or an external instance.
+      # Local:    mh://inbox-dev-token@mesahub-inbox:3002/inbox-db
+      # External: mh://<api_key>@smh-api.mesahub.app/<db_name>
+      - REDIS_URL=redis://redis-inbox:6379
+      # Always use the container-internal migrations path regardless of env_file.
+      - MIGRATIONS_DIR=/app/migrations
+    depends_on:
+      mesahub-inbox:
+        # service_started (not service_healthy) so external-MesaHub users
+        # aren't blocked waiting for the local container's health check.
+        condition: service_started
+      redis-inbox:
+        condition: service_healthy
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ./services/emails:/emails
+      - emails-node-modules-inbox:/emails/node_modules
+      - ./services/inbox-server/src:/app/src
+      - ./services/inbox-server/package.json:/app/package.json
+      - inbox-server-node-modules:/app/node_modules
+      - ./services/inbox-worker/migrations:/app/migrations:ro
+
+  inbox-ui:
+    container_name: emailflare-inbox-ui
+    build:
+      context: ./services/inbox-ui
+      dockerfile: Dockerfile
+      target: dev
+    command: sh -c "npm install && npm run dev"
+    volumes:
+      - ./services/inbox-ui/src:/app/src
+      - ./services/inbox-ui/index.html:/app/index.html:ro
+      - ./services/inbox-ui/package.json:/app/package.json
+      - inbox-ui-node-modules:/app/node_modules
+    expose:
+      - "5174"
+
+  edge:
+    container_name: emailflare-inbox-edge
+    image: caddy:2-alpine
+    volumes:
+      - ./infra/Caddyfile.inbox.dev:/etc/caddy/Caddyfile:ro
+    ports:
+      - "${INBOX_PORT:-8091}:80"
+    depends_on:
+      - inbox-server
+      - inbox-ui
+
 volumes:
   mesahub-inbox-data:
+  emails-node-modules-inbox:
+  inbox-server-node-modules:
+  inbox-ui-node-modules:

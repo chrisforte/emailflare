@@ -14,8 +14,13 @@ const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklm
 const app = new Hono<HonoEnv>();
 
 app.get('/status', async (c) => {
-  const row = await rawDb.first('SELECT id FROM users LIMIT 1');
-  return c.json({ initialized: !!row });
+  try {
+    const row = await rawDb.first('SELECT id FROM users LIMIT 1');
+    return c.json({ initialized: !!row });
+  } catch {
+    // users table doesn't exist yet (migrations pending) — treat as uninitialized
+    return c.json({ initialized: false });
+  }
 });
 
 const setupSchema = z.object({

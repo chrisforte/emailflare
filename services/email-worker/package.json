@@ -11,9 +11,9 @@
     "migrations:apply": "wrangler d1 migrations apply emailflare --remote",
     "cf-typegen": "wrangler types",
     "cf:setup": "node ../../scripts/setup.mjs",
-    "cf:build-admin": "cd ../admin && pnpm install --frozen-lockfile && pnpm build",
-    "cf:update": "pnpm run cf:build-admin && wrangler d1 migrations apply emailflare --remote && wrangler deploy",
-    "cf:rollout": "pnpm run cf:build-admin && wrangler d1 migrations apply emailflare --remote && wrangler versions upload",
+    "cf:build-ui": "cd ../email-ui && pnpm install --frozen-lockfile && pnpm build",
+    "cf:update": "pnpm run cf:build-ui && wrangler d1 migrations apply emailflare --remote && wrangler deploy",
+    "cf:rollout": "pnpm run cf:build-ui && wrangler d1 migrations apply emailflare --remote && wrangler versions upload",
     "cf:rollout:full": "wrangler versions deploy --yes"
   },
   "dependencies": {

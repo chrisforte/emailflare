@@ -5,7 +5,7 @@ services:
       context: ./infra
       dockerfile: Dockerfile.mesahub
     env_file:
-      - .env.local
+      - .env.api.local
     environment:
       - PORT=3002
       - ADMIN_TOKEN=${ADMIN_TOKEN}
@@ -31,7 +31,7 @@ services:
       target: dev
     command: sh -c "cd /emails && npm install --prefer-offline && npm run build && cd /app && npm install && tsx watch src/index.ts"
     env_file:
-      - .env.local
+      - .env.api.local
     environment:
       - NODE_ENV=development
       # Keep backend internal port stable for Caddy upstream.

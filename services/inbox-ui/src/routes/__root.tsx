@@ -24,9 +24,15 @@ export const Route = createRootRoute({
             navigate({ to: '/setup' });
             return;
           }
-          return me().then(() => setChecked(true));
+          // Initialized — check session; redirect to login if not authenticated
+          return me()
+            .then(() => setChecked(true))
+            .catch(() => navigate({ to: '/login' }));
         })
-        .catch(() => navigate({ to: '/login' }));
+        .catch(() => {
+          // Setup status check failed entirely — assume not initialized
+          navigate({ to: '/setup' });
+        });
     }, []);
 
     if (!checked) return null;
