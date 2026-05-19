@@ -70,6 +70,7 @@ COPY --from=build-inbox-ui /app/inbox-ui/dist ./inbox-ui/dist
 
 # Caddy config
 COPY infra/Caddyfile.inbox /etc/caddy/Caddyfile
+RUN caddy fmt --overwrite /etc/caddy/Caddyfile
 
 # Startup script
 COPY infra/start-inbox.sh /start-inbox.sh
