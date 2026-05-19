@@ -103,10 +103,10 @@ jobs:
         id: resolve
         run: |
           if [[ "${{ github.ref_name }}" =~ ^s[0-9] ]]; then
-            echo "image=${{ env.REGISTRY }}/${{ github.repository_owner }}/emailflare-staging" >> $GITHUB_OUTPUT
+            echo "image=${{ env.REGISTRY }}/${{ github.repository_owner }}/emailflare-api-staging" >> $GITHUB_OUTPUT
             echo "is_staging=true" >> $GITHUB_OUTPUT
           else
-            echo "image=${{ env.REGISTRY }}/${{ github.repository }}" >> $GITHUB_OUTPUT
+            echo "image=${{ env.REGISTRY }}/${{ github.repository_owner }}/emailflare-api" >> $GITHUB_OUTPUT
             echo "is_staging=false" >> $GITHUB_OUTPUT
           fi
 

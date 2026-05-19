@@ -20,7 +20,7 @@ A Hono API for sending transactional email via the Cloudflare Email Sending API,
 **Docker image**
 
 ```text
-ghcr.io/0xdps/emailflare:latest
+ghcr.io/0xdps/emailflare-api:latest
 ```
 
 **Quick start**
