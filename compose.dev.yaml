@@ -1,6 +1,6 @@
 services:
   mesahub:
-    container_name: emailflare-mesahub
+    container_name: emailflare-api-mesahub
     build:
       context: ./infra
       dockerfile: Dockerfile.mesahub
@@ -24,7 +24,7 @@ services:
       start_period: 30s
 
   backend:
-    container_name: emailflare-backend
+    container_name: emailflare-api-server
     build:
       context: ./services/email-server
       dockerfile: Dockerfile
@@ -56,7 +56,7 @@ services:
       - backend-node-modules:/app/node_modules
 
   mailpit:
-    container_name: emailflare-mailpit
+    container_name: emailflare-api-mailpit
     image: axllent/mailpit:latest
     environment:
       - MP_WEBROOT=/mailpit
@@ -66,7 +66,7 @@ services:
       - "8026:8025"
 
   admin:
-    container_name: emailflare-admin
+    container_name: emailflare-api-admin
     build:
       context: ./services/email-ui
       dockerfile: Dockerfile
@@ -82,7 +82,7 @@ services:
       - "5173"
 
   edge:
-    container_name: emailflare-edge
+    container_name: emailflare-api-caddy
     image: caddy:2-alpine
     volumes:
       - ./infra/Caddyfile.dev:/etc/caddy/Caddyfile:ro

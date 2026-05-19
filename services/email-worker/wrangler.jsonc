@@ -17,7 +17,7 @@
   //
   // Manual setup (if needed):
   //   1. `wrangler d1 create emailflare`  → fill in database_id below
-  //   2. `wrangler kv namespace create emailflare-rate-limit` → fill in id below
+  //   2. `wrangler kv namespace create emailflare-api-rate-limit` → fill in id below
   //   3. `pnpm migrations:apply:local` → init local dev DB
   //   4. Set secrets:
   //        wrangler secret put ADMIN_TOKEN        (min 32 chars)

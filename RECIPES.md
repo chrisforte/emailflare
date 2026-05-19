@@ -88,82 +88,82 @@ just emailflare-api-smoke
 
 ---
 
-## emailflare-worker — Cloudflare Worker
+## emailflare-api-worker — Cloudflare Worker
 
 Uses `services/email-worker` (D1 + KV) deployed to the Cloudflare edge.
 
-### `just emailflare-worker-login`
+### `just emailflare-api-worker-login`
 Authenticate the `wrangler` CLI with Cloudflare (opens browser).
 
 ```sh
-just emailflare-worker-login
+just emailflare-api-worker-login
 ```
 
-### `just emailflare-worker-setup`
+### `just emailflare-api-worker-setup`
 First-time setup. Creates D1 + KV, runs migrations, sets secrets, deploys the Worker and email-ui assets. Run once per environment.
 
 ```sh
 # Copy config first
 cp scripts/config.example.toml scripts/config.toml
 # Fill in scripts/config.toml, then:
-just emailflare-worker-setup
+just emailflare-api-worker-setup
 ```
 
-### `just emailflare-worker-update`
+### `just emailflare-api-worker-update`
 Apply any pending D1 migrations and redeploy the Worker in one step. Use for ongoing updates.
 
 ```sh
-just emailflare-worker-update
+just emailflare-api-worker-update
 ```
 
-### `just emailflare-worker-dev`
+### `just emailflare-api-worker-dev`
 Start a local Worker dev server with local D1/KV stubs. Builds `email-ui` first if `dist/` is missing.
 
 ```sh
-just emailflare-worker-dev
+just emailflare-api-worker-dev
 ```
 
 For live UI editing, run this in a second terminal:
 
 ```sh
-just emailflare-worker-dev-ui
+just emailflare-api-worker-dev-ui
 ```
 
-### `just emailflare-worker-dev-ui`
+### `just emailflare-api-worker-dev-ui`
 Start the email-ui Vite dev server. Proxies `/api` to the wrangler dev server on `:8787`.
 
 ```sh
-just emailflare-worker-dev-ui
+just emailflare-api-worker-dev-ui
 ```
 
-### `just emailflare-worker-localflare [port]`
+### `just emailflare-api-worker-localflare [port]`
 Start the Localflare sidecar for local Cloudflare bindings. Defaults to port `8790`.
 
 ```sh
-just emailflare-worker-localflare           # port 8790
-just emailflare-worker-localflare 8787      # explicit port
+just emailflare-api-worker-localflare           # port 8790
+just emailflare-api-worker-localflare 8787      # explicit port
 ```
 
-### `just emailflare-worker-secret <NAME>`
+### `just emailflare-api-worker-secret <NAME>`
 Set or rotate a Worker secret interactively (value is never echoed).
 
 ```sh
-just emailflare-worker-secret ADMIN_TOKEN
-just emailflare-worker-secret SESSION_SECRET
+just emailflare-api-worker-secret ADMIN_TOKEN
+just emailflare-api-worker-secret SESSION_SECRET
 ```
 
-### `just emailflare-worker-rollout`
+### `just emailflare-api-worker-rollout`
 Upload a new Worker version for a gradual traffic rollout. After uploading, use `wrangler versions deploy` to shift traffic percentage.
 
 ```sh
-just emailflare-worker-rollout
+just emailflare-api-worker-rollout
 ```
 
-### `just emailflare-worker-remove`
+### `just emailflare-api-worker-remove`
 Tear down all Email API Cloudflare resources: the Worker, its D1 database, and its KV namespace. Safe to re-run.
 
 ```sh
-just emailflare-worker-remove
+just emailflare-api-worker-remove
 ```
 
 ---
@@ -346,8 +346,8 @@ just emailflare-api-dev
 ```sh
 cp scripts/config.example.toml scripts/config.toml
 # fill in config.toml
-just emailflare-worker-login
-just emailflare-worker-setup
+just emailflare-api-worker-login
+just emailflare-api-worker-setup
 ```
 
 **First time (Docker / Inbox)**
@@ -363,12 +363,12 @@ just emailflare-inbox-deploy
 
 **Deploy an update (Cloudflare Worker)**
 ```sh
-just emailflare-worker-update    # Email API Worker
-just emailflare-inbox-update     # Inbox Worker
+just emailflare-api-worker-update    # Email API Worker
+just emailflare-inbox-update         # Inbox Worker
 ```
 
 **Rotate a secret**
 ```sh
-just emailflare-worker-secret ADMIN_TOKEN
+just emailflare-api-worker-secret ADMIN_TOKEN
 just emailflare-inbox-secret SESSION_SECRET
 ```

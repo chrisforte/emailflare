@@ -1,4 +1,4 @@
-# emailflare-worker
+# emailflare-api-worker
 
 Cloudflare-native parallel deployment of the emailflare backend.
 

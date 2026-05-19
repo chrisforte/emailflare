@@ -1,4 +1,4 @@
-// emailflare-email-bridge
+// emailflare-api-bridge
 //
 // Thin Cloudflare Worker — the only export is the email() handler.
 // Receives inbound email (bounces / complaints) via CF Email Routing and

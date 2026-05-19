@@ -1,5 +1,5 @@
 {
-  // emailflare-email-bridge
+  // emailflare-api-bridge
   //
   // Thin bridge worker — receives inbound email from Cloudflare Email Routing
   // and forwards raw bytes to the Node.js email-server for bounce/complaint

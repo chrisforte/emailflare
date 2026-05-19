@@ -103,26 +103,26 @@ emailflare-api-logs:
     env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml logs -f
 
 # ============================================================================
-# EMAILFLARE-WORKER · CLOUDFLARE WORKER  (email-worker + email-ui on the edge)
+# EMAILFLARE-API-WORKER · CLOUDFLARE WORKER  (email-worker + email-ui on the edge)
 # ============================================================================
 
 # Authenticate wrangler with Cloudflare (opens browser)
-emailflare-worker-login:
+emailflare-api-worker-login:
     cd services/email-worker && npx wrangler login
 
 # First-time setup: creates D1 + KV, runs migrations, sets secrets, deploys.
 # Copy scripts/config.example.toml → scripts/config.toml before running.
-emailflare-worker-setup:
+emailflare-api-worker-setup:
     node scripts/setup.mjs
 
 # Apply pending D1 migrations and deploy the latest Worker code (atomic)
-emailflare-worker-update:
+emailflare-api-worker-update:
     cd services/email-worker && pnpm run cf:update
 
 # Start local Worker dev server with local D1 + KV stubs.
 # Builds email-ui once if dist/ is missing (wrangler needs the assets dir).
-# For live UI editing run `just emailflare-worker-dev-ui` in a second terminal.
-emailflare-worker-dev:
+# For live UI editing run `just emailflare-api-worker-dev-ui` in a second terminal.
+emailflare-api-worker-dev:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ ! -d services/email-ui/dist ]; then
@@ -133,30 +133,30 @@ emailflare-worker-dev:
     cd services/email-worker && npx wrangler dev
 
 # Start email-ui Vite dev server (proxies /api to wrangler dev on :8787)
-emailflare-worker-dev-ui:
+emailflare-api-worker-dev-ui:
     cd services/email-ui && pnpm dev
 
 # Start Localflare sidecar for local Cloudflare bindings.
 # Defaults to port 8790 to avoid colliding with wrangler dev on 8787.
-# Usage: just emailflare-worker-localflare          # port 8790
-#        just emailflare-worker-localflare 8787     # explicit override
-emailflare-worker-localflare port='8790':
+# Usage: just emailflare-api-worker-localflare          # port 8790
+#        just emailflare-api-worker-localflare 8787     # explicit override
+emailflare-api-worker-localflare port='8790':
     cd services/email-worker && npx localflare --port {{port}}
 
 # Update a Worker secret interactively.
-# Usage: just emailflare-worker-secret SECRET_NAME
-emailflare-worker-secret name:
+# Usage: just emailflare-api-worker-secret SECRET_NAME
+emailflare-api-worker-secret name:
     #!/usr/bin/env sh
     printf '{{name}}: '; stty -echo; read val; stty echo; echo
     echo "$val" | npx wrangler secret put {{name}} --cwd services/email-worker
 
 # Upload a new Worker version for gradual traffic rollout.
 # After this, use `wrangler versions deploy` to shift traffic percentage.
-emailflare-worker-rollout:
+emailflare-api-worker-rollout:
     cd services/email-worker && pnpm run cf:rollout
 
 # Tear down all Worker CF resources (Worker + D1 + KV). Safe to re-run.
-emailflare-worker-remove:
+emailflare-api-worker-remove:
     #!/usr/bin/env bash
     set -euo pipefail
 

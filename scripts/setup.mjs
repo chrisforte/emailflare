@@ -5,7 +5,7 @@
  * What this does:
  *   1. Checks wrangler is authenticated
  *   2. Creates D1 database (emailflare)
- *   3. Creates KV namespace (emailflare-rate-limit)
+ *   3. Creates KV namespace (emailflare-api-rate-limit)
  *   4. Patches wrangler.jsonc with the real resource IDs
  *   5. Applies D1 migrations (schema + system template seed)
  *   6. Prompts for secrets and sets them via `wrangler secret put`
@@ -51,7 +51,7 @@ if (existsSync(CONFIG_FILE)) {
 }
 
 const DB_NAME = cfg.deploy?.database_name || process.env.EMAILFLARE_DB_NAME || 'emailflare';
-const KV_NAME = 'emailflare-rate-limit';
+const KV_NAME = 'emailflare-api-rate-limit';
 
 // Inject deploy credentials so wrangler picks them up automatically
 if (cfg.deploy?.cloudflare_api_token) {

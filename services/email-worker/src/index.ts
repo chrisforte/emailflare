@@ -76,7 +76,7 @@ app.use('/api/*', async (c, next) => {
 });
 
 // ── Health ────────────────────────────────────────────────────────────────────
-app.get('/health', (c) => c.json({ ok: true, service: 'emailflare-worker', ts: Date.now() }));
+app.get('/health', (c) => c.json({ ok: true, service: 'emailflare-api-worker', ts: Date.now() }));
 
 // ── Public send API (API key + rate limited) ───────────────────────────────────
 app.use('/v1/*', requireApiKey);

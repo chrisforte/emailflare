@@ -78,7 +78,7 @@ This single command:
 
 1. Verifies Cloudflare authentication
 2. Creates the D1 database (`emailflare`)
-3. Creates the KV namespace (`emailflare-rate-limit`)
+3. Creates the KV namespace (`emailflare-api-rate-limit`)
 4. Patches `wrangler.jsonc` with the real resource IDs
 5. Applies database migrations (schema + system email templates)
 6. Sets all Worker secrets
