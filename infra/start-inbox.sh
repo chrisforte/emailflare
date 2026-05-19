@@ -75,6 +75,14 @@ else
 fi
 
 # ── [1] Start Node.js inbox server ────────────────────────────────────────────
+# Always use the container-absolute migrations path regardless of env vars
+# injected by the hosting platform (e.g. Railway).
+export MIGRATIONS_DIR="${MIGRATIONS_DIR:-/app/migrations}"
+case "$MIGRATIONS_DIR" in
+  /*) ;;  # already absolute — keep as-is
+  *)  export MIGRATIONS_DIR=/app/migrations ;;  # relative path — override
+esac
+
 echo "[1/3] Starting inbox-server on :$INBOX_NODE_PORT..."
 PORT="$INBOX_NODE_PORT" node /app/inbox-server/dist/index.js &
 NODE_PID=$!
