@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Loader2, Users, Trash2, Copy, Check } from 'lucide-react';
-import { getUsers, createInvite, revokeUser, User } from '../../api';
+import { getUsers, createInvite, revokeUser, changeUserRole, me, User } from '../../api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,41 +10,60 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 
 function RoleBadge({ role }: { role: User['role'] }) {
+  if (role === 'super-admin') {
+    return (
+      <Badge className="text-[10px] h-4 px-1.5 bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-50">
+        owner
+      </Badge>
+    );
+  }
+  if (role === 'admin') {
+    return (
+      <Badge className="text-[10px] h-4 px-1.5 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-50">
+        admin
+      </Badge>
+    );
+  }
   return (
-    <Badge
-      variant={role === 'admin' ? 'default' : 'secondary'}
-      className="text-[10px] h-4 px-1.5"
-    >
-      {role}
+    <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+      user
     </Badge>
   );
 }
 
 export default function UsersPage() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'admin' | 'member'>('member');
   const [inviteUrl, setInviteUrl] = useState('');
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState('');
   const [copied, setCopied] = useState(false);
   const [revokeId, setRevokeId] = useState<string | null>(null);
   const [revoking, setRevoking] = useState(false);
+  const [changingRoleId, setChangingRoleId] = useState<string | null>(null);
 
   useEffect(() => {
-    getUsers().then(setUsers).finally(() => setLoading(false));
+    Promise.all([me(), getUsers()])
+      .then(([u, list]) => { setCurrentUser(u); setUsers(list); })
+      .finally(() => setLoading(false));
   }, []);
 
   async function handleInvite() {
     setInviteError('');
     setInviting(true);
     try {
-      const { inviteUrl: url } = await createInvite(inviteEmail.trim());
+      const { inviteUrl: url } = await createInvite(inviteEmail.trim(), inviteRole);
       setInviteUrl(url);
     } catch (err: any) {
       const msg = err?.response?.data?.error;
@@ -58,6 +77,7 @@ export default function UsersPage() {
   function closeInviteDialog() {
     setInviteOpen(false);
     setInviteEmail('');
+    setInviteRole('member');
     setInviteUrl('');
     setInviteError('');
     setCopied(false);
@@ -80,6 +100,20 @@ export default function UsersPage() {
       setRevoking(false);
     }
   }
+
+  async function handleRoleChange(userId: string, newRole: 'admin' | 'member') {
+    setChangingRoleId(userId);
+    try {
+      await changeUserRole(userId, newRole);
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+    } catch {
+      // revert is implicit — state unchanged on error
+    } finally {
+      setChangingRoleId(null);
+    }
+  }
+
+  const isSuperAdmin = currentUser?.role === 'super-admin';
 
   return (
     <div className="p-6 max-w-4xl">
@@ -114,12 +148,30 @@ export default function UsersPage() {
                 <TableRow key={user.id}>
                   <TableCell className="font-medium text-sm">{user.name}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{user.email}</TableCell>
-                  <TableCell><RoleBadge role={user.role} /></TableCell>
+                  <TableCell>
+                    {user.role === 'super-admin' ? (
+                      <RoleBadge role={user.role} />
+                    ) : (
+                      <Select
+                        value={user.role}
+                        onValueChange={val => handleRoleChange(user.id, val as 'admin' | 'member')}
+                        disabled={changingRoleId === user.id}
+                      >
+                        <SelectTrigger className="h-6 w-[90px] text-[11px] px-2 border-0 bg-transparent p-0 shadow-none focus:ring-0">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin" className="text-xs">admin</SelectItem>
+                          <SelectItem value="member" className="text-xs">user</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(user.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                   </TableCell>
                   <TableCell className="text-right">
-                    {user.role !== 'admin' && (
+                    {user.role !== 'super-admin' && (
                       <Button
                         size="sm"
                         variant="ghost"
@@ -158,6 +210,27 @@ export default function UsersPage() {
                   autoFocus
                   onKeyDown={e => e.key === 'Enter' && inviteEmail.trim() && handleInvite()}
                 />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="invite-role">Role</Label>
+                <Select
+                  value={inviteRole}
+                  onValueChange={val => setInviteRole(val as 'admin' | 'member')}
+                >
+                  <SelectTrigger id="invite-role" className="h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isSuperAdmin && (
+                      <SelectItem value="admin" className="text-sm">
+                        Admin — inbox + API management
+                      </SelectItem>
+                    )}
+                    <SelectItem value="member" className="text-sm">
+                      User — inbox access only
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               {inviteError && (
                 <Alert variant="destructive">

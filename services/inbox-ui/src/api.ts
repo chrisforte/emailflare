@@ -46,7 +46,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'member';
+  role: 'super-admin' | 'admin' | 'member';
   created_at: string;
 }
 
@@ -57,8 +57,8 @@ export async function me(): Promise<User> {
 
 // ── Invites ───────────────────────────────────────────────────────────────────
 
-export async function createInvite(email: string): Promise<{ inviteUrl: string }> {
-  const { data } = await api.post('/api/admin/invites', { email });
+export async function createInvite(email: string, role: 'admin' | 'member' = 'member'): Promise<{ inviteUrl: string }> {
+  const { data } = await api.post('/api/admin/invites', { email, role });
   return data;
 }
 
@@ -80,6 +80,10 @@ export async function getUsers(): Promise<User[]> {
 
 export async function revokeUser(id: string): Promise<void> {
   await api.delete(`/api/admin/users/${id}`);
+}
+
+export async function changeUserRole(id: string, role: 'admin' | 'member'): Promise<void> {
+  await api.patch(`/api/admin/users/${id}/role`, { role });
 }
 
 // ── Inbox types ───────────────────────────────────────────────────────────────

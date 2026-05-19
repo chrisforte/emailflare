@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import OwnerAccessBanner from '../../components/OwnerAccessBanner';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter,
 } from '@/components/ui/sheet';
@@ -194,7 +195,9 @@ export default function Sequences() {
   }
 
   return (
-    <div className="p-6 max-w-4xl">
+    <div className="flex flex-col h-full">
+      <OwnerAccessBanner />
+      <div className="p-6 max-w-4xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -306,6 +309,7 @@ export default function Sequences() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

@@ -6,6 +6,9 @@ import {
 } from 'lucide-react';
 import api, { me, User } from '../api';
 
+// Paths accessible to all roles (member, admin, super-admin)
+const MEMBER_PATHS = ['/inbox', '/inbox/sequences', '/inbox/settings'];
+
 // ─── Logo ─────────────────────────────────────────────────────────────────────
 
 function AppLogo({ size = 28 }: { size?: number }) {
@@ -59,6 +62,14 @@ function NavDivider() {
   return <div className="h-px bg-border mx-2 my-1.5" />;
 }
 
+function NavSection({ label }: { label: string }) {
+  return (
+    <p className="px-2.5 pt-3 pb-0.5 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider select-none">
+      {label}
+    </p>
+  );
+}
+
 // ─── Layout ───────────────────────────────────────────────────────────────────
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -66,7 +77,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    me().then(setUser).catch(() => {});
+    me().then(u => {
+      setUser(u);
+      // Redirect members away from admin-only paths
+      if (u.role === 'member') {
+        const path = window.location.pathname;
+        const isMemberPath = MEMBER_PATHS.some(p => path === p || path.startsWith(p + '/'));
+        if (!isMemberPath) {
+          router.navigate({ to: '/inbox' });
+        }
+      }
+    }).catch(() => {});
   }, []);
 
   async function handleLogout() {
@@ -74,8 +95,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     router.navigate({ to: '/login' });
   }
 
-  const isAdmin = user?.role === 'admin';
-  const initials = user?.name
+  const role       = user?.role;
+  const isAdmin    = role === 'admin' || role === 'super-admin';
+  const isSuperAdmin = role === 'super-admin';
+  const initials   = user?.name
     ? user.name.split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase()
     : '?';
 
@@ -94,29 +117,32 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-2 py-2.5 flex flex-col gap-0">
-          <NavItem to="/" exact icon={LayoutDashboard} label="Dashboard" />
-          <NavItem to="/logs" icon={ScrollText} label="Logs" />
+        <nav className="flex-1 overflow-y-auto px-2 py-2 flex flex-col gap-0">
 
-          <NavDivider />
-
+          {/* ── Inbox (all roles) ── */}
+          <NavSection label="Inbox" />
           <NavItem to="/inbox" icon={Mail} label="People" />
           <NavItem to="/inbox/sequences" icon={ListOrdered} label="Sequences" />
-
-          <NavDivider />
-
-          <NavItem to="/templates" icon={FileText} label="Templates" />
-          <NavItem to="/playground" icon={FlaskConical} label="Playground" />
-
-          <NavDivider />
-
-          <NavItem to="/domains" icon={Globe} label="Domains" />
-          <NavItem to="/keys" icon={Key} label="API Keys" />
           <NavItem to="/inbox/settings" icon={Inbox} label="Inboxes" />
 
+          {/* ── Email API (admin + super-admin) ── */}
           {isAdmin && (
             <>
+              <NavSection label="Email API" />
+              <NavItem to="/" exact icon={LayoutDashboard} label="Dashboard" />
+              <NavItem to="/logs" icon={ScrollText} label="Logs" />
+              <NavItem to="/templates" icon={FileText} label="Templates" />
+              <NavItem to="/playground" icon={FlaskConical} label="Playground" />
               <NavDivider />
+              <NavItem to="/domains" icon={Globe} label="Domains" />
+              <NavItem to="/keys" icon={Key} label="API Keys" />
+            </>
+          )}
+
+          {/* ── Admin (super-admin only) ── */}
+          {isSuperAdmin && (
+            <>
+              <NavSection label="Admin" />
               <NavItem to="/settings/users" icon={Users} label="Users" />
             </>
           )}
@@ -156,8 +182,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <p className="text-[12px] font-semibold text-foreground truncate">{user?.name ?? '—'}</p>
               <p className="text-[10.5px] text-muted-foreground mt-[3px] truncate">{user?.email ?? ''}</p>
             </div>
-            {isAdmin && (
+            {isSuperAdmin && (
               <span className="text-[9px] font-semibold text-orange-600 bg-orange-50 border border-orange-200 rounded px-1 py-0.5 shrink-0">
+                owner
+              </span>
+            )}
+            {role === 'admin' && (
+              <span className="text-[9px] font-semibold text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 py-0.5 shrink-0">
                 admin
               </span>
             )}

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * emailflare-inbox: first-time Cloudflare setup & deploy
+ * emailflare-inbox-worker: first-time Cloudflare setup & deploy
  *
  * What this does:
  *   1.  Checks wrangler is authenticated
@@ -341,7 +341,7 @@ try {
 
 // ─── step 10: deploy ──────────────────────────────────────────────────────────
 
-log('Deploying emailflare-inbox Worker…');
+log('Deploying emailflare-inbox-worker…');
 try {
   run('npx wrangler deploy');
   ok('Inbox Worker deployed!');
@@ -353,7 +353,7 @@ try {
 
 process.stdout.write(`
 \x1b[32m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- emailflare-inbox is live!
+ emailflare-inbox-worker is live!
 
  Next steps:
    1. Open the dashboard → /setup to create your admin account

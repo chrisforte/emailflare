@@ -44,7 +44,7 @@ export type HonoEnv = {
   Variables: {
     apiKey: ApiKeyContext;
     userId: string;
-    userRole: 'admin' | 'member';
+    userRole: 'super-admin' | 'admin' | 'member';
   };
 };
 

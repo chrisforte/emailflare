@@ -297,7 +297,7 @@ The following secrets are required. Press Enter to skip any that are already set
   CF_API_TOKEN     — Cloudflare API token with Email Routing + DNS permissions
   CF_ACCOUNT_ID    — Your Cloudflare account ID
   ADMIN_ORIGIN     — The Worker URL (admin UI is served from the same origin)
-                     e.g. https://emailflare-worker.ACCOUNT.workers.dev
+                     e.g. https://emailflare-api-worker.ACCOUNT.workers.dev
 
 `);
 
@@ -308,7 +308,7 @@ const SECRETS = [
   { name: 'SESSION_SECRET', label: 'SESSION_SECRET (32+ random chars)',  cfgVal: cfg.secrets?.session_secret },
   { name: 'CF_API_TOKEN',   label: 'CF_API_TOKEN',                       cfgVal: cfg.secrets?.cf_api_token },
   { name: 'CF_ACCOUNT_ID',  label: 'CF_ACCOUNT_ID',                      cfgVal: cfg.secrets?.cf_account_id },
-  { name: 'ADMIN_ORIGIN',   label: 'ADMIN_ORIGIN (worker URL, e.g. https://emailflare-worker.ACCOUNT.workers.dev)', cfgVal: cfg.secrets?.admin_origin },
+  { name: 'ADMIN_ORIGIN',   label: 'ADMIN_ORIGIN (worker URL, e.g. https://emailflare-api-worker.ACCOUNT.workers.dev)', cfgVal: cfg.secrets?.admin_origin },
 ];
 
 rl.close();

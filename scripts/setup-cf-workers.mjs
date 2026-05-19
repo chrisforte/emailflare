@@ -299,7 +299,7 @@ if (deployEmailBridge) {
   process.stdout.write(`  ${bold('For bounce/complaint handling')} (email-bridge):
      Add a routing rule for your return-path address:
        Match:   Specific address — e.g. bounces@mail.yourdomain.com
-       Action:  Send to Worker  — emailflare-email-bridge
+       Action:  Send to Worker  — emailflare-api-bridge
 
      Then set the return-path domain in your email-server:
        RETURN_PATH_DOMAIN=mail.yourdomain.com

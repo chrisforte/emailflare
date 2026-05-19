@@ -40,10 +40,10 @@ app.post('/', zValidator('json', setupSchema), async (c) => {
 
   await rawDb.run(
     'INSERT INTO users (id, name, email, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-    [id, name, email, passwordHash, 'admin', now],
+    [id, name, email, passwordHash, 'super-admin', now],
   );
 
-  await saveSession(c, { userId: id, role: 'admin' });
+  await saveSession(c, { userId: id, role: 'super-admin' });
   return c.json({ ok: true }, 201);
 });
 

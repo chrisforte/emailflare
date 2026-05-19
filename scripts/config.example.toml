@@ -27,7 +27,7 @@ cf_account_id = ""
 
 # Full URL of the worker (admin UI is served from the same origin).
 # You'll know this after the first deploy — re-run setup to set it.
-# e.g. https://emailflare-worker.YOUR-ACCOUNT.workers.dev
+# e.g. https://emailflare-api-worker.YOUR-ACCOUNT.workers.dev
 admin_origin = ""
 
 # ─────────────────────────────────────────────────────────────────────────────

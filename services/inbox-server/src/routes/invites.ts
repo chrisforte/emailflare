@@ -24,9 +24,17 @@ async function sha256Hex(input: string): Promise<string> {
 app.post(
   '/admin/invites',
   requireSession, requireAdmin,
-  zValidator('json', z.object({ email: z.string().email().toLowerCase() })),
+  zValidator('json', z.object({
+    email: z.string().email().toLowerCase(),
+    role:  z.enum(['admin', 'member']).optional().default('member'),
+  })),
   async (c) => {
-    const { email } = c.req.valid('json');
+    const { email, role: requestedRole } = c.req.valid('json');
+
+    // Admins (non-super) can only invite members
+    const callerRole = c.get('userRole');
+    const role = callerRole === 'super-admin' ? requestedRole : 'member';
+
     const existing = await rawDb.first('SELECT id FROM users WHERE email = ? LIMIT 1', [email]);
     if (existing) return c.json({ error: 'already_exists' }, 409);
 
@@ -34,10 +42,11 @@ app.post(
     const tokenHash = await sha256Hex(rawToken);
     const id        = nanoid();
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+    const createdBy = c.get('userId');
 
     await rawDb.run(
-      'INSERT INTO invites (id, email, token_hash, expires_at, used, created_at) VALUES (?, ?, ?, ?, 0, ?)',
-      [id, email, tokenHash, expiresAt, new Date().toISOString()],
+      'INSERT INTO invites (id, email, token_hash, created_by, expires_at, role, used, created_at) VALUES (?, ?, ?, ?, ?, ?, 0, ?)',
+      [id, email, tokenHash, createdBy, expiresAt, role, new Date().toISOString()],
     );
 
     const origin = new URL(c.req.url).origin;
@@ -65,8 +74,8 @@ const acceptSchema = z.object({
 // POST /api/invites/:token/accept
 app.post('/invites/:token/accept', zValidator('json', acceptSchema), async (c) => {
   const tokenHash = await sha256Hex(c.req.param('token'));
-  const invite = await rawDb.first<{ id: string; email: string; expires_at: string; used: number }>(
-    'SELECT id, email, expires_at, used FROM invites WHERE token_hash = ? LIMIT 1',
+  const invite = await rawDb.first<{ id: string; email: string; expires_at: string; used: number; role: string }>(
+    'SELECT id, email, expires_at, used, role FROM invites WHERE token_hash = ? LIMIT 1',
     [tokenHash],
   );
   if (!invite || invite.used) return c.json({ error: 'invite_not_found' }, 404);
@@ -76,13 +85,14 @@ app.post('/invites/:token/accept', zValidator('json', acceptSchema), async (c) =
   const passwordHash = await hashPassword(password);
   const userId = nanoid();
   const now    = new Date().toISOString();
+  const role   = (invite.role as 'admin' | 'member') ?? 'member';
 
   await rawDb.batch([
-    { sql: 'INSERT INTO users (id, name, email, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?, ?)', params: [userId, name, invite.email, passwordHash, 'member', now] },
+    { sql: 'INSERT INTO users (id, name, email, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?, ?)', params: [userId, name, invite.email, passwordHash, role, now] },
     { sql: 'UPDATE invites SET used = 1 WHERE id = ?', params: [invite.id] },
   ]);
 
-  await saveSession(c, { userId, role: 'member' });
+  await saveSession(c, { userId, role });
   return c.json({ ok: true }, 201);
 });
 

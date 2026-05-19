@@ -62,7 +62,7 @@ cf_api_token = "your-runtime-token"
 cf_account_id = "your-account-id"
 
 # Leave blank on first run — fill in after deploy with the worker URL.
-# e.g. https://emailflare-worker.YOUR-ACCOUNT.workers.dev
+# e.g. https://emailflare-api-worker.YOUR-ACCOUNT.workers.dev
 admin_origin = ""
 ```
 
@@ -92,7 +92,7 @@ The setup is idempotent — safe to re-run if anything fails.
 After the first deploy, the worker URL is printed in the output:
 
 ```
-https://emailflare-worker.YOUR-ACCOUNT.workers.dev
+https://emailflare-api-worker.YOUR-ACCOUNT.workers.dev
 ```
 
 Set `admin_origin` in `scripts/config.toml` to that URL, then re-run:

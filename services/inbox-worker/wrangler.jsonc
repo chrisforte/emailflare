@@ -15,7 +15,7 @@
   //   7. Deploy: wrangler deploy
 
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "emailflare-inbox",
+  "name": "emailflare-inbox-worker",
   "main": "src/index.ts",
   "compatibility_date": "2025-05-01",
   "compatibility_flags": ["nodejs_compat"],

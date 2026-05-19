@@ -27,7 +27,7 @@
   //        wrangler secret put ADMIN_ORIGIN       (e.g. "https://admin.example.com")
 
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "emailflare-worker",
+  "name": "emailflare-api-worker",
   "main": "src/index.ts",
   "compatibility_date": "2025-05-01",
   "compatibility_flags": ["nodejs_compat"],

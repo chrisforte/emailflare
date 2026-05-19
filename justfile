@@ -1,8 +1,8 @@
 # EmailFlare · task runner
 #
 # Products:
-#   email-api  — transactional email sending  (services/email-worker + services/email-server)
-#   inbox      — hosted email inboxes         (services/inbox-worker  + services/inbox-server)
+#   emailflare-api    — transactional email sending  (services/email-worker + services/email-server)
+#   emailflare-inbox  — hosted email inboxes         (services/inbox-worker  + services/inbox-server)
 #
 # Deployment targets per product:
 #   CF Worker  — edge, zero-ops, D1 + KV (+ R2/DO/Queues for inbox)
@@ -35,35 +35,11 @@ install:
     pnpm install --dir services/email-bridge
 
 # Rebuild the shared emails package (run after editing services/emails/src/)
-emails-build:
+emailflare-emails-build:
     cd services/emails && pnpm run build
 
-# ============================================================================
-# EMAIL API · DOCKER  (email-server + email-ui + Caddy + Mailpit)
-# ============================================================================
-
-# Start dev stack with hot reload (MesaHub + email-server + email-ui + Mailpit)
-api-server-dev:
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.dev.yaml up --build
-
-# Stop dev stack
-api-server-dev-down:
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.dev.yaml down
-
-# Build + start production stack
-api-server-up:
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml up --build -d
-
-# Stop production stack
-api-server-down:
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml down
-
-# Tail production logs
-api-server-logs:
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml logs -f
-
-# Show running containers (dev + prod stacks)
-status:
+# Show running containers across all stacks
+emailflare-status:
     #!/usr/bin/env bash
     echo "=== Email API dev stack ==="
     env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.dev.yaml ps 2>/dev/null || echo "(not running)"
@@ -78,7 +54,7 @@ status:
     env -i PATH="$PATH" docker compose -f compose.inbox.yaml ps 2>/dev/null || echo "(not running)"
 
 # Quick health + auth smoke-test (auto-detects dev or prod port via ENV_FILE)
-smoke:
+emailflare-api-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     [ -f {{ENV_FILE}} ] || { echo "{{ENV_FILE}} missing"; exit 1; }
@@ -94,7 +70,7 @@ smoke:
     echo "smoke checks passed"
 
 # Verify Docker is running and required env files exist
-doctor:
+emailflare-doctor:
     #!/usr/bin/env bash
     set -euo pipefail
     command -v docker >/dev/null 2>&1 || { echo "docker is required"; exit 1; }
@@ -103,26 +79,50 @@ doctor:
     echo "doctor: all good"
 
 # ============================================================================
-# EMAIL API · CLOUDFLARE WORKER  (email-worker + email-ui on the edge)
+# EMAILFLARE-API · DOCKER  (email-server + email-ui + Caddy + Mailpit)
+# ============================================================================
+
+# Start dev stack with hot reload (MesaHub + email-server + email-ui + Mailpit)
+emailflare-api-dev:
+    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.dev.yaml up --build
+
+# Stop dev stack
+emailflare-api-dev-down:
+    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.dev.yaml down
+
+# Build + start production stack
+emailflare-api-up:
+    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml up --build -d
+
+# Stop production stack
+emailflare-api-down:
+    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml down
+
+# Tail production logs
+emailflare-api-logs:
+    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml logs -f
+
+# ============================================================================
+# EMAILFLARE-WORKER · CLOUDFLARE WORKER  (email-worker + email-ui on the edge)
 # ============================================================================
 
 # Authenticate wrangler with Cloudflare (opens browser)
-worker-login:
+emailflare-worker-login:
     cd services/email-worker && npx wrangler login
 
 # First-time setup: creates D1 + KV, runs migrations, sets secrets, deploys.
 # Copy scripts/config.example.toml → scripts/config.toml before running.
-worker-setup:
+emailflare-worker-setup:
     node scripts/setup.mjs
 
 # Apply pending D1 migrations and deploy the latest Worker code (atomic)
-worker-update:
+emailflare-worker-update:
     cd services/email-worker && pnpm run cf:update
 
 # Start local Worker dev server with local D1 + KV stubs.
 # Builds email-ui once if dist/ is missing (wrangler needs the assets dir).
-# For live UI editing run `just email-dev-ui` in a second terminal.
-worker-dev:
+# For live UI editing run `just emailflare-worker-dev-ui` in a second terminal.
+emailflare-worker-dev:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ ! -d services/email-ui/dist ]; then
@@ -133,30 +133,30 @@ worker-dev:
     cd services/email-worker && npx wrangler dev
 
 # Start email-ui Vite dev server (proxies /api to wrangler dev on :8787)
-email-dev-ui:
+emailflare-worker-dev-ui:
     cd services/email-ui && pnpm dev
 
 # Start Localflare sidecar for local Cloudflare bindings.
 # Defaults to port 8790 to avoid colliding with wrangler dev on 8787.
-# Usage: just localflare          # port 8790
-#        just localflare 8787     # explicit override
-localflare port='8790':
+# Usage: just emailflare-worker-localflare          # port 8790
+#        just emailflare-worker-localflare 8787     # explicit override
+emailflare-worker-localflare port='8790':
     cd services/email-worker && npx localflare --port {{port}}
 
 # Update a Worker secret interactively.
-# Usage: just worker-secret SECRET_NAME
-worker-secret name:
+# Usage: just emailflare-worker-secret SECRET_NAME
+emailflare-worker-secret name:
     #!/usr/bin/env sh
     printf '{{name}}: '; stty -echo; read val; stty echo; echo
     echo "$val" | npx wrangler secret put {{name}} --cwd services/email-worker
 
 # Upload a new Worker version for gradual traffic rollout.
 # After this, use `wrangler versions deploy` to shift traffic percentage.
-worker-rollout-upload:
+emailflare-worker-rollout:
     cd services/email-worker && pnpm run cf:rollout
 
 # Tear down all Worker CF resources (Worker + D1 + KV). Safe to re-run.
-remove-worker:
+emailflare-worker-remove:
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -190,19 +190,19 @@ remove-worker:
     echo "Done."
 
 # ============================================================================
-# INBOX · CLOUDFLARE WORKER  (inbox-worker + inbox-ui, D1 + R2 + KV + DO)
+# EMAILFLARE-INBOX · CLOUDFLARE WORKER  (inbox-worker + inbox-ui, D1 + R2 + KV + DO)
 # ============================================================================
 
 # First-time setup: creates D1, KV, R2, Queue, patches wrangler.jsonc,
 # runs migrations, sets secrets, builds inbox-ui, deploys. Idempotent.
 # Optionally copy scripts/config.example.toml → scripts/config.toml first.
-inbox-deploy:
+emailflare-inbox-deploy:
     node scripts/deploy-inbox.mjs
 
 # Start local inbox Worker dev server.
 # Builds inbox-ui once if dist/ is missing (wrangler needs the assets dir).
-# For live UI editing run `just inbox-dev-ui` in a second terminal.
-inbox-dev:
+# For live UI editing run `just emailflare-inbox-dev-ui` in a second terminal.
+emailflare-inbox-dev:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ ! -d services/inbox-ui/dist ]; then
@@ -213,57 +213,57 @@ inbox-dev:
     cd services/inbox-worker && npx wrangler dev
 
 # Start inbox-ui Vite dev server (proxies /api and /v1 to wrangler dev on :8787)
-inbox-dev-ui:
+emailflare-inbox-dev-ui:
     cd services/inbox-ui && pnpm dev
 
 # Apply pending D1 migrations, rebuild inbox-ui, and deploy the Worker
-inbox-update:
+emailflare-inbox-update:
     cd services/inbox-worker && npx wrangler d1 migrations apply emailflare --remote
     cd services/inbox-ui && pnpm build
     cd services/inbox-worker && npx wrangler deploy
 
 # Build inbox-ui only (without deploying)
-inbox-build-ui:
+emailflare-inbox-build-ui:
     cd services/inbox-ui && pnpm install --frozen-lockfile && pnpm build
 
 # Update an inbox Worker secret interactively.
-# Usage: just inbox-secret SESSION_SECRET
-inbox-secret name:
+# Usage: just emailflare-inbox-secret SESSION_SECRET
+emailflare-inbox-secret name:
     #!/usr/bin/env sh
     printf '{{name}}: '; stty -echo; read val; stty echo; echo
     echo "$val" | npx wrangler secret put {{name}} --cwd services/inbox-worker
 
 # ============================================================================
-# INBOX · NODE.JS SERVER  (inbox-server + inbox-ui + Caddy + MesaHub + Redis)
+# EMAILFLARE-INBOX · NODE.JS SERVER  (inbox-server + inbox-ui + Caddy + MesaHub + Redis)
 # ============================================================================
 
 # Start full Docker dev stack: MesaHub + Redis + inbox-server (hot reload) + inbox-ui (Vite) + Caddy
-inbox-server-dev:
+emailflare-inbox-server-dev:
     env -i PATH="$PATH" docker compose --env-file {{INBOX_DEV_ENV}} -f compose.inbox.dev.yaml up --build
 
 # Stop dev stack
-inbox-server-dev-down:
+emailflare-inbox-server-dev-down:
     env -i PATH="$PATH" docker compose -f compose.inbox.dev.yaml down
 
 # Build + start production stack
-inbox-server-up:
+emailflare-inbox-server-up:
     env -i PATH="$PATH" docker compose --env-file {{INBOX_ENV}} -f compose.inbox.yaml up --build -d
 
 # Stop production stack
-inbox-server-down:
+emailflare-inbox-server-down:
     env -i PATH="$PATH" docker compose -f compose.inbox.yaml down
 
 # Tail production logs
-inbox-server-logs:
+emailflare-inbox-server-logs:
     env -i PATH="$PATH" docker compose -f compose.inbox.yaml logs -f
 
 # First-time standalone deploy: R2 bucket + inbox-bridge CF Worker
-deploy-inbox-standalone:
+emailflare-inbox-standalone-deploy:
     node scripts/deploy-inbox-standalone.mjs
 
 # Update an inbox-bridge Worker secret interactively.
-# Usage: just inbox-bridge-secret WEBHOOK_SECRET
-inbox-bridge-secret name:
+# Usage: just emailflare-inbox-bridge-secret WEBHOOK_SECRET
+emailflare-inbox-bridge-secret name:
     #!/usr/bin/env sh
     printf '{{name}}: '; stty -echo; read val; stty echo; echo
     echo "$val" | npx wrangler secret put {{name}} --cwd services/inbox-bridge
@@ -275,30 +275,30 @@ inbox-bridge-secret name:
 # Docker/VPS users still need Cloudflare Email Routing to receive inbound mail.
 # These thin bridge Workers receive email and forward it to your servers:
 #
-#   email-bridge — bounces/complaints → POST /api/webhooks/bounce on email-server
-#   inbox-bridge — inbound email      → POST /webhook/email on inbox-server
+#   emailflare-api-bridge   — bounces/complaints → POST /api/webhooks/bounce on email-server
+#   emailflare-inbox-bridge — inbound email      → POST /webhook/email on inbox-server
 #
 # Deploy one or both. Interactive — asks for server URLs and webhook secrets.
 
-# First-time setup: deploy email-bridge and/or inbox-bridge CF Workers.
+# First-time setup: deploy emailflare-api-bridge and/or emailflare-inbox-bridge CF Workers.
 # Asks which to deploy, collects server URLs + secrets, then prints
 # the CF Email Routing rules to create in the Cloudflare dashboard.
-cf-workers-setup:
+emailflare-bridge-setup:
     node scripts/setup-cf-workers.mjs
 
-# Update an email-bridge secret interactively.
-# Usage: just email-bridge-secret WEBHOOK_SECRET
-email-bridge-secret name:
+# Update an emailflare-api-bridge secret interactively.
+# Usage: just emailflare-api-bridge-secret WEBHOOK_SECRET
+emailflare-api-bridge-secret name:
     #!/usr/bin/env sh
     printf '{{name}}: '; stty -echo; read val; stty echo; echo
     echo "$val" | npx wrangler secret put {{name}} --cwd services/email-bridge
 
-# Redeploy email-bridge (no config changes, just push latest code)
-email-bridge-update:
+# Redeploy emailflare-api-bridge (no config changes, just push latest code)
+emailflare-api-bridge-update:
     cd services/email-bridge && npx wrangler deploy
 
-# Redeploy inbox-bridge (no config changes, just push latest code)
-inbox-bridge-update:
+# Redeploy emailflare-inbox-bridge (no config changes, just push latest code)
+emailflare-inbox-bridge-update:
     cd services/inbox-bridge && npx wrangler deploy
 
 # ============================================================================
@@ -306,5 +306,5 @@ inbox-bridge-update:
 # ============================================================================
 
 # Start landing page dev server
-web:
+emailflare-web:
     cd services/landing && pnpm dev

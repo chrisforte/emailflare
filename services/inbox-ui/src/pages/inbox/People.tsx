@@ -5,6 +5,7 @@ import {
   Person, Thread, InboxEmail, SentEmail,
 } from '../../api';
 import { cn } from '@/lib/utils';
+import OwnerAccessBanner from '../../components/OwnerAccessBanner';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -336,7 +337,9 @@ export default function People() {
   const selected = people.find(p => p.id === selectedId) ?? null;
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full flex-col">
+      <OwnerAccessBanner />
+      <div className="flex flex-1 overflow-hidden">
 
       {/* ── Left: contact list ── */}
       <div className="w-[272px] shrink-0 flex flex-col border-r border-border h-full">
@@ -410,6 +413,7 @@ export default function People() {
         )}
       </div>
 
+      </div>
     </div>
   );
 }
