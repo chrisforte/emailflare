@@ -98,6 +98,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # s* tags → private staging package; v* tags → public production package
+      - name: Resolve image name
+        id: resolve
+        run: |
+          if [[ "${{ github.ref_name }}" =~ ^s[0-9] ]]; then
+            echo "image=${{ env.REGISTRY }}/${{ github.repository_owner }}/emailflare-staging" >> $GITHUB_OUTPUT
+            echo "is_staging=true" >> $GITHUB_OUTPUT
+          else
+            echo "image=${{ env.REGISTRY }}/${{ github.repository }}" >> $GITHUB_OUTPUT
+            echo "is_staging=false" >> $GITHUB_OUTPUT
+          fi
+
       - uses: docker/setup-qemu-action@v3
 
       - uses: docker/setup-buildx-action@v3
@@ -114,11 +126,12 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          images: ${{ steps.resolve.outputs.image }}
           tags: |
-            type=semver,pattern=v{{version}}
-            type=semver,pattern=v{{major}}.{{minor}}
-            type=raw,value=latest,enable=${{ github.ref_type == 'tag' }}
+            type=semver,pattern=v{{version}},enable=${{ steps.resolve.outputs.is_staging == 'false' }}
+            type=semver,pattern=v{{major}}.{{minor}},enable=${{ steps.resolve.outputs.is_staging == 'false' }}
+            type=raw,value=latest,enable=${{ github.ref_type == 'tag' && steps.resolve.outputs.is_staging == 'false' }}
+            type=raw,value=${{ github.ref_name }},enable=${{ steps.resolve.outputs.is_staging == 'true' }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -146,6 +159,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # s* tags → private staging package; v* tags → public production package
+      - name: Resolve image name
+        id: resolve
+        run: |
+          if [[ "${{ github.ref_name }}" =~ ^s[0-9] ]]; then
+            echo "image=${{ env.REGISTRY }}/${{ github.repository_owner }}/emailflare-inbox-staging" >> $GITHUB_OUTPUT
+            echo "is_staging=true" >> $GITHUB_OUTPUT
+          else
+            echo "image=${{ env.REGISTRY }}/${{ github.repository_owner }}/emailflare-inbox" >> $GITHUB_OUTPUT
+            echo "is_staging=false" >> $GITHUB_OUTPUT
+          fi
+
       - uses: docker/setup-qemu-action@v3
 
       - uses: docker/setup-buildx-action@v3
@@ -162,11 +187,12 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/emailflare-inbox
+          images: ${{ steps.resolve.outputs.image }}
           tags: |
-            type=semver,pattern=v{{version}}
-            type=semver,pattern=v{{major}}.{{minor}}
-            type=raw,value=latest,enable=${{ github.ref_type == 'tag' }}
+            type=semver,pattern=v{{version}},enable=${{ steps.resolve.outputs.is_staging == 'false' }}
+            type=semver,pattern=v{{major}}.{{minor}},enable=${{ steps.resolve.outputs.is_staging == 'false' }}
+            type=raw,value=latest,enable=${{ github.ref_type == 'tag' && steps.resolve.outputs.is_staging == 'false' }}
+            type=raw,value=${{ github.ref_name }},enable=${{ steps.resolve.outputs.is_staging == 'true' }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
