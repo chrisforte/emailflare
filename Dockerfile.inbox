@@ -26,7 +26,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY services/inbox-server/package.json services/inbox-server/pnpm-lock.yaml ./inbox-server/
 COPY --from=build-emails /app/emails /app/emails
 RUN --mount=type=cache,id=pnpm-store-inbox,target=/root/.local/share/pnpm/store \
-    cd inbox-server && pnpm install --frozen-lockfile
+    cd inbox-server && pnpm install
 
 COPY services/inbox-server/ ./inbox-server/
 RUN cd inbox-server && pnpm run build
