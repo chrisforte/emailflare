@@ -76,8 +76,7 @@ fi
 
 # ── [1] Start Node.js inbox server ────────────────────────────────────────────
 echo "[1/3] Starting inbox-server on :$INBOX_NODE_PORT..."
-export PORT="$INBOX_NODE_PORT"
-node /app/inbox-server/dist/index.js &
+PORT="$INBOX_NODE_PORT" node /app/inbox-server/dist/index.js &
 NODE_PID=$!
 
 # Wait for inbox-server to be ready
