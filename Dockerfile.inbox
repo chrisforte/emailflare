@@ -11,7 +11,7 @@ RUN CGO_ENABLED=1 GOOS=linux go build -o /go/bin/mesahub-server ./cmd/server
 # ── Stage: build-emails ────────────────────────────────────────────────────────
 FROM node:22-alpine AS build-emails
 WORKDIR /app/emails
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.33.4 --activate
 COPY services/emails/package.json ./
 RUN --mount=type=cache,id=pnpm-store-inbox,target=/root/.local/share/pnpm/store \
     pnpm install
@@ -21,7 +21,7 @@ RUN pnpm run build
 # ── Stage: build-inbox-server ─────────────────────────────────────────────────
 FROM node:22-alpine AS build-inbox-server
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.33.4 --activate
 
 COPY services/inbox-server/package.json services/inbox-server/pnpm-lock.yaml ./inbox-server/
 COPY --from=build-emails /app/emails /app/emails
@@ -34,7 +34,7 @@ RUN cd inbox-server && pnpm run build
 # ── Stage: build-inbox-ui ──────────────────────────────────────────────────────
 FROM node:22-alpine AS build-inbox-ui
 WORKDIR /app/inbox-ui
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.33.4 --activate
 COPY services/inbox-ui/package.json services/inbox-ui/pnpm-lock.yaml services/inbox-ui/pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm-store-inbox,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
