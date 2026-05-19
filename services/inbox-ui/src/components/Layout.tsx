@@ -125,6 +125,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <NavItem to="/inbox/sequences" icon={ListOrdered} label="Sequences" />
           <NavItem to="/inbox/settings" icon={Inbox} label="Inboxes" />
 
+          {/* ── Admin (super-admin only) ── */}
+          {isSuperAdmin && (
+            <>
+              <NavSection label="Admin" />
+              <NavItem to="/settings/users" icon={Users} label="Users" />
+            </>
+          )}
+
           {/* ── Email API (admin + super-admin) ── */}
           {isAdmin && (
             <>
@@ -136,14 +144,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <NavDivider />
               <NavItem to="/domains" icon={Globe} label="Domains" />
               <NavItem to="/keys" icon={Key} label="API Keys" />
-            </>
-          )}
-
-          {/* ── Admin (super-admin only) ── */}
-          {isSuperAdmin && (
-            <>
-              <NavSection label="Admin" />
-              <NavItem to="/settings/users" icon={Users} label="Users" />
             </>
           )}
         </nav>

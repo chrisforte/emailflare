@@ -1,0 +1,55 @@
+name: Docker Build Check
+
+on:
+  push:
+    branches:
+      - trunk
+
+jobs:
+  # ── Check: emailflare-api image ──────────────────────────────────────────────
+  check-api:
+    name: Check emailflare-api Dockerfile
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: false
+          build-args: |
+            MESAHUB_CORE_VERSION=trunk
+          cache-from: type=gha,scope=check-api
+          cache-to: type=gha,mode=max,scope=check-api
+
+  # ── Check: emailflare-inbox image ────────────────────────────────────────────
+  check-inbox:
+    name: Check emailflare-inbox Dockerfile
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.inbox
+          platforms: linux/amd64
+          push: false
+          build-args: |
+            MESAHUB_CORE_VERSION=trunk
+          cache-from: type=gha,scope=check-inbox
+          cache-to: type=gha,mode=max,scope=check-inbox

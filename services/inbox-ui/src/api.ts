@@ -86,6 +86,20 @@ export async function changeUserRole(id: string, role: 'admin' | 'member'): Prom
   await api.patch(`/api/admin/users/${id}/role`, { role });
 }
 
+// ── Domains ───────────────────────────────────────────────────────────────────
+
+export interface Domain {
+  id: string;
+  name: string;
+  verified: number;
+  created_at: string;
+}
+
+export async function getDomains(): Promise<Domain[]> {
+  const { data } = await api.get<Domain[]>('/api/domains');
+  return data;
+}
+
 // ── Inbox types ───────────────────────────────────────────────────────────────
 
 export interface Person {

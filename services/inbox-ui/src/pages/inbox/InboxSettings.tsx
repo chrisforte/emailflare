@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Trash2, Pencil, Loader2, Inbox, Users } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { Plus, Trash2, Pencil, Loader2, Inbox, Users, Globe, AlertTriangle } from 'lucide-react';
 import {
   getInboxes, createInbox, updateInbox, deleteInbox,
   getInboxMembers, addInboxMember, removeInboxMember,
-  Inbox as InboxType, User, getUsers,
+  getDomains,
+  Inbox as InboxType, Domain as DomainType, User, getUsers,
 } from '../../api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,10 +27,12 @@ import {
 
 export default function InboxSettings() {
   const [inboxes, setInboxes] = useState<InboxType[]>([]);
+  const [domains, setDomains] = useState<DomainType[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<InboxType | null>(null);
-  const [email, setEmail] = useState('');
+  const [localPart, setLocalPart] = useState('');
+  const [selectedDomain, setSelectedDomain] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [mode, setMode] = useState<'thread' | 'chat'>('thread');
   const [saving, setSaving] = useState(false);
@@ -44,12 +48,16 @@ export default function InboxSettings() {
   const [addingMember, setAddingMember] = useState(false);
 
   useEffect(() => {
-    getInboxes().then(setInboxes).finally(() => setLoading(false));
+    Promise.all([getInboxes(), getDomains()]).then(([inboxList, domainList]) => {
+      setInboxes(inboxList);
+      setDomains(domainList);
+    }).finally(() => setLoading(false));
   }, []);
 
   function openCreate() {
     setEditing(null);
-    setEmail('');
+    setLocalPart('');
+    setSelectedDomain(domains[0]?.name ?? '');
     setDisplayName('');
     setMode('thread');
     setDialogOpen(true);
@@ -57,7 +65,6 @@ export default function InboxSettings() {
 
   function openEdit(inbox: InboxType) {
     setEditing(inbox);
-    setEmail(inbox.email);
     setDisplayName(inbox.display_name);
     setMode(inbox.mode);
     setDialogOpen(true);
@@ -70,7 +77,7 @@ export default function InboxSettings() {
         const updated = await updateInbox(editing.id, { display_name: displayName, mode });
         setInboxes(prev => prev.map(i => i.id === updated.id ? updated : i));
       } else {
-        const created = await createInbox({ email, display_name: displayName, mode });
+        const created = await createInbox({ email: `${localPart.trim()}@${selectedDomain}`, display_name: displayName, mode });
         setInboxes(prev => [...prev, created]);
       }
       setDialogOpen(false);
@@ -133,20 +140,43 @@ export default function InboxSettings() {
           <h1 className="text-[18px] font-semibold text-foreground tracking-tight">Inboxes</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Manage receiving addresses and team members</p>
         </div>
-        <Button size="sm" onClick={openCreate}>
+        <Button size="sm" onClick={openCreate} disabled={domains.length === 0}>
           <Plus size={14} />
           New inbox
         </Button>
       </div>
 
+      {!loading && domains.length === 0 && (
+        <div className="mb-4 flex items-center gap-2.5 px-3.5 py-3 rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-800">
+          <AlertTriangle size={14} className="shrink-0 text-amber-500" />
+          <span className="flex-1">No domains configured — you need a domain before creating an inbox.</span>
+          <Link to="/domains" className="text-xs font-semibold text-amber-700 hover:text-amber-900 underline-offset-2 hover:underline whitespace-nowrap">
+            Set up a domain →
+          </Link>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 size={20} className="animate-spin text-muted-foreground" /></div>
       ) : inboxes.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
-          <Inbox size={36} className="opacity-20" />
-          <p className="text-sm">No inboxes configured yet</p>
-          <Button size="sm" variant="outline" onClick={openCreate}>Create your first inbox</Button>
-        </div>
+        domains.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
+            <Globe size={36} className="opacity-20" />
+            <p className="text-sm font-medium text-foreground/70">No domains configured</p>
+            <p className="text-xs text-center max-w-xs text-muted-foreground/70">
+              Add a domain to your account first — the inbox email address must belong to a domain in your system.
+            </p>
+            <Link to="/domains">
+              <Button size="sm" variant="outline">Set up a domain →</Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
+            <Inbox size={36} className="opacity-20" />
+            <p className="text-sm">No inboxes configured yet</p>
+            <Button size="sm" variant="outline" onClick={openCreate}>Create your first inbox</Button>
+          </div>
+        )
       ) : (
         <div className="rounded-xl border border-border overflow-hidden">
           <Table>
@@ -197,13 +227,27 @@ export default function InboxSettings() {
             {!editing && (
               <div className="flex flex-col gap-1.5">
                 <Label>Email address</Label>
-                <Input
-                  placeholder="support@yourdomain.com"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  autoFocus
-                />
-                <p className="text-[11px] text-muted-foreground">Must match a Cloudflare Email Routing address</p>
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    className="flex-1"
+                    placeholder="support"
+                    value={localPart}
+                    onChange={e => setLocalPart(e.target.value.replace(/[@\s]/g, ''))}
+                    autoFocus
+                  />
+                  <span className="text-sm text-muted-foreground select-none">@</span>
+                  <Select value={selectedDomain} onValueChange={v => setSelectedDomain(v ?? '')}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {domains.map(d => (
+                        <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-[11px] text-muted-foreground">Must be configured in Cloudflare Email Routing</p>
               </div>
             )}
             <div className="flex flex-col gap-1.5">
@@ -230,7 +274,7 @@ export default function InboxSettings() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving || (!editing && !email.trim()) || !displayName.trim()}>
+            <Button onClick={handleSave} disabled={saving || (!editing && (!localPart.trim() || !selectedDomain)) || !displayName.trim()}>
               {saving && <Loader2 size={13} className="animate-spin" />}
               {saving ? 'Saving…' : editing ? 'Save changes' : 'Create'}
             </Button>
@@ -240,7 +284,7 @@ export default function InboxSettings() {
 
       {/* Members Sheet */}
       <Sheet open={!!membersInbox} onOpenChange={open => !open && setMembersInbox(null)}>
-        <SheetContent className="w-[420px] sm:max-w-[420px]">
+        <SheetContent className="w-[420px] sm:max-w-[420px] px-6">
           <SheetHeader>
             <SheetTitle>Members — {membersInbox?.display_name}</SheetTitle>
           </SheetHeader>

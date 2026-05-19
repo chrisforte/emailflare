@@ -34,7 +34,7 @@ export default function Login() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate({ to: '/' });
+      navigate({ to: '/inbox' });
     } catch {
       setError('Invalid email or password.');
     } finally {

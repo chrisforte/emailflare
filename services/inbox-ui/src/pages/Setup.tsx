@@ -38,7 +38,7 @@ export default function Setup() {
     setLoading(true);
     try {
       await setup(name.trim(), email.trim(), password);
-      navigate({ to: '/' });
+      navigate({ to: '/inbox' });
     } catch (err: any) {
       const msg = err?.response?.data?.error;
       setError(msg === 'already_initialized' ? 'Inbox is already set up.' : 'Setup failed. Please try again.');

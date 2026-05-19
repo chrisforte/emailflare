@@ -58,7 +58,7 @@ export default function AcceptInvite() {
     setLoading(true);
     try {
       await acceptInvite(token, name.trim(), password);
-      navigate({ to: '/' });
+      navigate({ to: '/inbox' });
     } catch (err: any) {
       const msg = err?.response?.data?.error;
       if (msg === 'invite_expired') setError('This invite has expired.');

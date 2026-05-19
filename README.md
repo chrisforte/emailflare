@@ -1,113 +1,158 @@
+<p align="center">
+  <img src="./services/email-ui/public/favicon.svg" width="64" height="64" alt="EmailFlare logo" />
+</p>
+
 # EmailFlare
 
-EmailFlare is a minimal self-hosted email sending platform built around Cloudflare Email Sending, a small admin UI, and SQLite-backed storage with the lowest practical infrastructure footprint.
+EmailFlare is a self-hosted email platform with two independent services that work together:
 
-Storage is powered by mesahub core, which acts as the embedded storage engine in the minimum-infra setup:
+- **emailflare-api** — transactional email sending API with an admin dashboard (domains, templates, API keys, logs)
+- **emailflare-inbox** — team inbox and lightweight CRM (receive, thread, reply, sequences, multi-user)
 
-- https://github.com/mesahub-db/mesahub-core
+Both services are built around Cloudflare Email Sending, use SQLite-backed storage via embedded [mesahub-core](https://github.com/mesahub-db/mesahub-core), and are designed for minimum infrastructure — each runs as a single Docker container with one persistent volume.
 
-It is designed for teams that want:
+---
 
-- a simple email API
-- a small admin dashboard for domains, templates, keys, and logs
-- one-container deployment for platforms like Railway
-- self-hosting with Docker and embedded SQLite storage instead of a separate database service
+## emailflare-api · Email Sending API
 
-## What ships in this repo
+A Hono API for sending transactional email via the Cloudflare Email Sending API, with a React admin panel for managing domains, templates, API keys, and logs.
 
-- `services/email-server`: Hono API for admin, keys, templates, stats, and email send operations
-- `services/email-ui`: React admin panel (Vite + React + TanStack Router)
-- `services/emails`: shared email layouts and rendering package used by both email-server and email-worker
-- `services/email-worker`: Cloudflare Worker — bundles the API and email-ui SPA for edge deployment, backed by D1 and KV
-- `services/landing`: landing and docs pages
-- `scripts/`: setup tooling for the Cloudflare Worker deployment (`setup.mjs`, `config.example.toml`)
-- `Dockerfile`: production image that bundles backend, admin, and embedded mesahub
-- `compose.yaml`: single-container self-host / production-style setup
-- `compose.dev.yaml`: local development stack with hot reload
-- `justfile`: task runner recipes for dev, prod, and Cloudflare Worker operations
-- `railway.json`: Railway service config for repo-based deploys
-- `docs/SELF_HOSTING.md`: Docker self-hosting guide
-- `docs/CLOUDFLARE.md`: Cloudflare Workers deployment guide
-
-## Quick start
-
-### Run locally with Docker
-
-```bash
-cp .env.example .env.local
-# fill in Cloudflare token/account values
-
-just prod
-```
-
-Open `http://localhost:8090`.
-
-### Published Docker image
-
-GitHub Actions publishes the production image to:
+**Docker image**
 
 ```text
 ghcr.io/0xdps/emailflare:latest
 ```
 
-Version tags are also published for tagged releases.
+**Quick start**
 
-## Self-hosting
+```bash
+cp .env.api.example .env.local
+# fill in SESSION_SECRET, ADMIN_TOKEN, CF_API_TOKEN, CF_ACCOUNT_ID
 
-The default self-host path keeps infrastructure intentionally small:
+docker compose --env-file .env.local -f compose.yaml up -d
+```
 
-- SQLite storage through embedded mesahub powered by mesahub core
-- no separate Postgres or Redis service
-- one Docker image for the app stack
-- one persistent volume mounted at `/data`
+Open `http://localhost:8090`.
 
-Read the full guide in [docs/SELF_HOSTING.md](./docs/SELF_HOSTING.md).
-
-## Cloudflare Workers deployment
-
-Deploy EmailFlare as a Cloudflare Worker — no Docker, no servers. The Worker bundles the API and admin panel and is backed by D1 (SQLite) and KV.
+**Cloudflare Worker deployment** (no Docker, edge-native)
 
 ```bash
 just install
 cp scripts/config.example.toml scripts/config.toml
 # fill in your values
-just worker-setup
+just emailflare-api-worker-setup
 ```
 
-Read the full guide in [docs/CLOUDFLARE.md](./docs/CLOUDFLARE.md).
+Read the full guide: [docs/CLOUDFLARE.md](./docs/CLOUDFLARE.md)
 
-## Railway
-
-Deploy EmailFlare to Railway in one click:
+**Railway**
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/emailflare)
 
-The template pre-configures secrets, embedded storage, and a persistent `/data` volume. You only need to supply `CF_API_TOKEN` and `CF_ACCOUNT_ID`.
+---
+
+## emailflare-inbox · Team Inbox & CRM
+
+A Node.js inbox server with a React dashboard for receiving inbound email via Cloudflare Email Routing, threading conversations, replying, running sequences, and managing contacts across a team.
+
+**Docker image**
+
+```text
+ghcr.io/0xdps/emailflare-inbox:latest
+```
+
+**Quick start**
+
+```bash
+cp .env.inbox.example .env.inbox.local
+# fill in SESSION_SECRET, WEBHOOK_SECRET, CF_API_TOKEN, CF_ACCOUNT_ID, REDIS_URL
+
+docker compose --env-file .env.inbox.local -f compose.inbox.yaml up -d
+```
+
+Open `http://localhost:8091`.
+
+**Cloudflare Worker deployment** (inbox-worker + inbox-bridge)
+
+```bash
+just install
+cp scripts/config.example.toml scripts/config.toml
+# fill in your values
+just emailflare-inbox-deploy
+```
+
+Read the full guide: [docs/CLOUDFLARE.md](./docs/CLOUDFLARE.md)
+
+---
+
+## What ships in this repo
+
+**Email API**
+- `services/email-server` — Hono API: domains, templates, keys, stats, send
+- `services/email-ui` — React admin panel (Vite + TanStack Router)
+- `services/email-worker` — Cloudflare Worker bundling API + admin UI (D1 + KV)
+- `services/email-bridge` — CF Worker: receives bounce/complaint email and forwards to email-server webhook
+- `Dockerfile` — production image for emailflare-api
+- `compose.yaml` — single-container production compose
+- `compose.dev.yaml` — local dev stack with hot reload
+
+**Inbox**
+- `services/inbox-server` — Hono inbox API: inboxes, people, threads, sequences, templates
+- `services/inbox-ui` — React inbox dashboard (Vite + TanStack Router)
+- `services/inbox-worker` — Cloudflare Worker variant of the inbox (D1)
+- `services/inbox-bridge` — CF Worker: receives inbound email via CF Email Routing, forwards to inbox-server
+- `Dockerfile.inbox` — production image for emailflare-inbox
+- `compose.inbox.yaml` — single-container production compose
+- `compose.inbox.dev.yaml` — local dev stack with hot reload
+
+**Shared**
+- `services/emails` — shared email layouts and rendering used by both servers
+- `scripts/` — setup tooling for CF Worker deployments (`setup.mjs`, `config.example.toml`)
+- `justfile` — task runner for dev, prod, and Cloudflare Worker operations ([RECIPES.md](./RECIPES.md))
+- `docs/SELF_HOSTING.md` — Docker self-hosting guide
+- `docs/CLOUDFLARE.md` — Cloudflare Workers deployment guide
+
+---
+
+## Self-hosting
+
+Both services follow the same minimal self-host pattern:
+
+- SQLite via embedded mesahub-core (no separate database)
+- one Docker image per service
+- one persistent volume at `/data`
+
+Read the full guide: [docs/SELF_HOSTING.md](./docs/SELF_HOSTING.md)
+
+---
+
+## Minimum required environment
+
+**emailflare-api** (`.env.local`):
+
+| Variable | Description |
+|---|---|
+| `ADMIN_TOKEN` | Admin API token (32+ chars) |
+| `SESSION_SECRET` | Session signing secret (32+ chars) |
+| `MESAHUB_URL` | `mh://local/emailflare` for embedded SQLite |
+| `CF_API_TOKEN` | Cloudflare token with Email Sending + Zone permissions |
+| `CF_ACCOUNT_ID` | Cloudflare account ID |
+
+**emailflare-inbox** (`.env.inbox.local`):
+
+| Variable | Description |
+|---|---|
+| `SESSION_SECRET` | Session signing secret (32+ chars) |
+| `WEBHOOK_SECRET` | Shared secret for inbox-bridge webhook auth |
+| `MESAHUB_URL` | `mh://local/inbox-db` for embedded SQLite |
+| `REDIS_URL` | Redis connection string (rate limiting + BullMQ) |
+| `CF_API_TOKEN` | Cloudflare token for sending replies |
+| `CF_ACCOUNT_ID` | Cloudflare account ID |
+
+---
 
 ## Open source
 
 - License: [MIT](./LICENSE)
 - Contributing guide: [CONTRIBUTING.md](./CONTRIBUTING.md)
 - Security policy: [SECURITY.md](./SECURITY.md)
-
-## Minimum required environment
-
-Required runtime variables are documented in `.env.example`. The key ones are:
-
-- `ADMIN_TOKEN`
-- `SESSION_SECRET`
-- `MESAHUB_URL`
-- `CF_API_TOKEN`
-- `CF_ACCOUNT_ID`
-
-For the minimum-infra path, keep:
-
-```text
-MESAHUB_URL=mh://local/emailflare
-```
-
-That enables embedded SQLite-backed storage inside the app deployment.
-
-Under the hood, the embedded storage path uses mesahub core:
-
-- https://github.com/mesahub-db/mesahub-core
