@@ -1102,7 +1102,7 @@ const structuredData = {
             <a class="btn btn-secondary" href="https://github.com/0xdps/emailflare" target="_blank" rel="noopener">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
               View on GitHub
-              <span id="gh-stars-hero" style="display:inline-flex;align-items:center;gap:3px;margin-left:4px;padding:1px 7px;border-radius:100px;background:oklch(93% 0.006 60);border:1px solid oklch(82% 0.012 58);font-size:11.5px;font-weight:600;color:oklch(40% 0.012 58);">&#9733; 100</span>
+              <span id="gh-stars-hero" style="display:inline-flex;align-items:center;gap:3px;margin-left:4px;padding:1px 7px;border-radius:100px;background:oklch(93% 0.006 60);border:1px solid oklch(82% 0.012 58);font-size:11.5px;font-weight:600;color:oklch(40% 0.012 58);font-variant-numeric:tabular-nums;">&#9733; 100</span>
             </a>
           </div>
         </div>
@@ -1417,7 +1417,7 @@ const structuredData = {
         <a class="btn btn-primary" href="https://github.com/0xdps/emailflare" target="_blank" rel="noopener">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
           View on GitHub
-          <span id="gh-stars-oss" style="display:inline-flex;align-items:center;gap:3px;margin-left:4px;padding:1px 7px;border-radius:100px;background:oklch(100% 0 0 / 0.12);border:1px solid oklch(100% 0 0 / 0.18);font-size:11.5px;font-weight:600;color:oklch(88% 0.01 58);">★ 100</span>
+          <span id="gh-stars-oss" style="display:inline-flex;align-items:center;gap:3px;margin-left:4px;padding:1px 7px;border-radius:100px;background:oklch(100% 0 0 / 0.12);border:1px solid oklch(100% 0 0 / 0.18);font-size:11.5px;font-weight:600;color:oklch(88% 0.01 58);font-variant-numeric:tabular-nums;">★ 100</span>
         </a>
         <a class="btn btn-secondary" href="https://github.com/0xdps/emailflare/blob/trunk/CONTRIBUTING.md" target="_blank" rel="noopener">Contributing guide</a>
         <a class="btn btn-secondary" href="https://github.com/0xdps/emailflare/blob/trunk/docs/SELF_HOSTING.md" target="_blank" rel="noopener">Self-hosting docs</a>
@@ -1479,5 +1479,6 @@ const structuredData = {
         .catch(function() {});
     }
     document.addEventListener('astro:page-load', runStarCount);
+    document.addEventListener('DOMContentLoaded', runStarCount);
   </script>
 </Base>

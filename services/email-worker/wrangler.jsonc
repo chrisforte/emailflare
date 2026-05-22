@@ -31,7 +31,6 @@
   "main": "src/index.ts",
   "compatibility_date": "2025-05-01",
   "compatibility_flags": ["nodejs_compat"],
-  "account_id": "532cea73d241b8513e953d361cc25176",
   "workers_dev": true,
   "preview_urls": false,
 
@@ -57,7 +56,7 @@
     {
       "binding": "DB",
       "database_name": "emailflare",
-      "database_id": "569d845e-5691-4f71-84f6-e31a878e4bd6",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
       "migrations_dir": "migrations"
     }
   ],
@@ -66,18 +65,17 @@
   "kv_namespaces": [
     {
       "binding": "RATE_LIMIT_KV",
-      "id": "dd700ff5c7fd4a77ae4acee19bfcd215"
+      "id": "REPLACE_WITH_KV_NAMESPACE_ID"
     }
   ],
 
-  // Runtime env vars (Localflare reads vars from config for manifest visibility).
-  // Production values should be set with `wrangler secret put`.
+  // Local-dev defaults read by Localflare for manifest visibility.
+  // Sensitive values (ADMIN_TOKEN, SESSION_SECRET, CF_API_TOKEN, CF_ACCOUNT_ID)
+  // and per-deploy values (ADMIN_ORIGIN in production) are set via
+  // `wrangler secret put`. A Worker cannot have a `var` and a `secret`
+  // with the same name — the `secret put` call fails with code 10053.
   "vars": {
-    "ADMIN_ORIGIN": "localhost:5173",
-    "ADMIN_TOKEN": "set-via-secret",
-    "SESSION_SECRET": "set-via-secret",
-    "CF_API_TOKEN": "set-via-secret",
-    "CF_ACCOUNT_ID": "set-via-secret"
+    "ADMIN_ORIGIN": "localhost:5173"
   },
 
   // Workers Rate Limiting for API key calls (100 req / 60s per key)

@@ -63,6 +63,17 @@ const {
   <slot name="head" />
   <ClientRouter defaultPrefetch="load" />
   <script is:inline defer src="https://manage.anately.sh/script.js" data-website-id="c517f1e2-5f2c-4659-948e-659371cdeb46"></script>
+  <script is:inline>
+    // Umami doesn't natively handle Astro's ClientRouter page transitions.
+    // Manually track each navigation via astro:page-load so no pageview is missed.
+    document.addEventListener('astro:page-load', function () {
+      if (window.umami) {
+        window.umami.track(function (props) {
+          return { ...props, url: window.location.pathname + window.location.search };
+        });
+      }
+    });
+  </script>
 </head>
 <body>
 

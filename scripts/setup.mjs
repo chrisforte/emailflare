@@ -184,18 +184,11 @@ if (!accountId) {
   }
 }
 
-// Inject into environment so all subsequent wrangler calls use this account
+// Inject into environment so all subsequent wrangler calls use this account.
+// wrangler.jsonc intentionally omits `account_id` so the project is portable —
+// wrangler picks up the account from CLOUDFLARE_ACCOUNT_ID, the OAuth session,
+// or a scoped API token. See docs/CLOUDFLARE.md.
 process.env.CLOUDFLARE_ACCOUNT_ID = accountId;
-
-// Patch wrangler.jsonc with the account_id
-{
-  let jsonc = readFileSync(WRANGLER_JSONC, 'utf8');
-  if (jsonc.includes('REPLACE_WITH_CF_ACCOUNT_ID')) {
-    jsonc = jsonc.replace(/REPLACE_WITH_CF_ACCOUNT_ID/g, accountId);
-    writeFileSync(WRANGLER_JSONC, jsonc, 'utf8');
-    ok('wrangler.jsonc patched with account_id.');
-  }
-}
 
 // ─── step 2: create D1 database ─────────────────────────────────────────────
 
