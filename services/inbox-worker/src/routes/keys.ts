@@ -1,12 +1,10 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
 import { sha256Hex } from '../middleware/apiKey.ts';
 import { makeDb } from '../db.ts';
 import type { HonoEnv } from '../env.ts';
+import { keyCreateSchema, generateId } from '@emailflare/email-core';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 
 function randomHex(bytes: number): string {
   const arr = crypto.getRandomValues(new Uint8Array(bytes));
@@ -22,15 +20,8 @@ app.get('/', async (c) => {
   return c.json(rows.map(({ key_hash: _, ...r }) => r));
 });
 
-const createSchema = z.object({
-  name: z.string().min(1),
-  type: z.enum(['test', 'live']).default('live'),
-  scope: z.enum(['global', 'domain', 'multi']).default('global'),
-  domainIds: z.array(z.string()).optional(),
-});
-
 // POST /api/keys
-app.post('/', zValidator('json', createSchema), async (c) => {
+app.post('/', zValidator('json', keyCreateSchema), async (c) => {
   const { name, type, scope, domainIds } = c.req.valid('json');
   const { apiKeys, apiKeyDomains } = makeDb(c.env.DB);
 
@@ -40,7 +31,7 @@ app.post('/', zValidator('json', createSchema), async (c) => {
   const keyPrefix = rawKey.slice(0, 14);
 
   const row = await apiKeys.insert({
-    id: nanoid(),
+    id: generateId(),
     name,
     key_hash: keyHash,
     key_prefix: keyPrefix,

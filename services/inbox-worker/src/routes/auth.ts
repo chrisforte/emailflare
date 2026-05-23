@@ -3,21 +3,16 @@
 
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
 import { verifyPassword } from '../lib/password.ts';
 import { getSession, saveSession, clearSession } from '../middleware/auth.ts';
 import { checkLoginRateLimit } from '../middleware/loginRateLimit.ts';
 import type { HonoEnv } from '../env.ts';
+import { userLoginSchema } from '@emailflare/inbox-core';
 
 const app = new Hono<HonoEnv>();
 
-const loginSchema = z.object({
-  email: z.string().email().toLowerCase(),
-  password: z.string().min(1),
-});
-
 // POST /api/auth/login
-app.post('/login', zValidator('json', loginSchema), async (c) => {
+app.post('/login', zValidator('json', userLoginSchema), async (c) => {
   const ip =
     c.req.header('CF-Connecting-IP') ??
     c.req.header('X-Forwarded-For')?.split(',')[0].trim() ??

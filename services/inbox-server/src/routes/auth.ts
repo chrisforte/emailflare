@@ -1,21 +1,16 @@
 // Auth routes: login, logout, me
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
 import { verifyPassword } from '../lib/password.js';
 import { getSession, saveSession, clearSession } from '../middleware/auth.js';
 import { checkLoginRateLimit } from '../middleware/loginRateLimit.js';
 import { rawDb } from '../db.js';
 import type { HonoEnv } from '../env.js';
+import { userLoginSchema } from '@emailflare/inbox-core';
 
 const app = new Hono<HonoEnv>();
 
-const loginSchema = z.object({
-  email:    z.string().email().toLowerCase(),
-  password: z.string().min(1),
-});
-
-app.post('/login', zValidator('json', loginSchema), async (c) => {
+app.post('/login', zValidator('json', userLoginSchema), async (c) => {
   const ip =
     c.req.header('CF-Connecting-IP') ??
     c.req.header('X-Forwarded-For')?.split(',')[0].trim() ??

@@ -4,35 +4,23 @@
 
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
+import { generateId } from '@emailflare/email-core';
 import { sendEmail, type CFSendEmailParams } from '../../services/cloudflare.ts';
 import type { HonoEnv } from '../../env.ts';
+import { composeSchema } from '@emailflare/inbox-core';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 const app = new Hono<HonoEnv>();
-
-const sendSchema = z.object({
-  to: z.string().email(),
-  from: z.string().email(),
-  fromName: z.string().optional(),
-  subject: z.string().min(1),
-  html: z.string().optional(),
-  text: z.string().optional(),
-  inReplyTo: z.string().optional(),
-  personId: z.string().optional(),
-});
 
 async function upsertPerson(env: HonoEnv['Bindings'], email: string): Promise<string> {
   const existing = await env.DB.prepare('SELECT id FROM people WHERE email = ? LIMIT 1').bind(email).first<{ id: string }>();
   if (existing) return existing.id;
-  const id = nanoid();
+  const id = generateId();
   await env.DB.prepare('INSERT INTO people (id, email, name, created_at) VALUES (?, ?, NULL, ?)').bind(id, email, new Date().toISOString()).run();
   return id;
 }
 
 // POST /api/inbox/compose
-app.post('/compose', zValidator('json', sendSchema), async (c) => {
+app.post('/compose', zValidator('json', composeSchema), async (c) => {
   const body = c.req.valid('json');
   const now  = new Date().toISOString();
 
@@ -48,7 +36,7 @@ app.post('/compose', zValidator('json', sendSchema), async (c) => {
     c.env.CF_API_TOKEN,
   );
 
-  const id = nanoid();
+  const id = generateId();
   await c.env.DB.prepare(
     `INSERT INTO sent_inbox_emails (id, person_id, in_reply_to, from_address, to_address, subject, status, cf_message_id, sent_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,

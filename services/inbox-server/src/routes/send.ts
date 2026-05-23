@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
+import { generateId } from '@emailflare/email-core';
 import { makeDb, rawDb } from '../db.js';
 import { sendEmail } from '../services/cloudflare.js';
 import { renderLayout } from '@emailflare/emails';
@@ -9,7 +9,6 @@ import type { LayoutName } from '@emailflare/emails';
 import { env } from '../env.js';
 import type { HonoEnv, ApiKeyContext } from '../env.js';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 const app = new Hono<HonoEnv>();
 
 const sendSchema = z.object({
@@ -107,7 +106,7 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
       );
 
       await emailLogs.insert({
-        id: nanoid(), to_address: recipient, from_address: body.from, subject,
+        id: generateId(), to_address: recipient, from_address: body.from, subject,
         status: 'sent', cf_message_id: cfResult.id ?? null,
         domain_id: domainId, template_id: templateId, api_key_id: apiKey.keyId,
         idempotency_key: idempotencyKey, error: null,
@@ -119,7 +118,7 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       await emailLogs.insert({
-        id: nanoid(), to_address: recipient, from_address: body.from, subject,
+        id: generateId(), to_address: recipient, from_address: body.from, subject,
         status: 'failed', cf_message_id: null,
         domain_id: domainId, template_id: templateId, api_key_id: apiKey.keyId,
         idempotency_key: null, error: message,

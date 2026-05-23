@@ -1,10 +1,8 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
 import { createHash, randomBytes } from 'node:crypto';
-import { customAlphabet } from 'nanoid';
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 import { apiKeys, apiKeyDomains } from '../db.js';
+import { keyCreateSchema, generateId } from '@emailflare/email-core';
 
 const app = new Hono();
 
@@ -15,15 +13,8 @@ app.get('/', async (c) => {
   return c.json(rows.map(({ key_hash: _, ...r }) => r));
 });
 
-const createSchema = z.object({
-  name: z.string().min(1),
-  type: z.enum(['test', 'live']).default('live'),
-  scope: z.enum(['global', 'domain', 'multi']).default('global'),
-  domainIds: z.array(z.string()).optional(),
-});
-
 // POST /api/keys
-app.post('/', zValidator('json', createSchema), async (c) => {
+app.post('/', zValidator('json', keyCreateSchema), async (c) => {
   const { name, type, scope, domainIds } = c.req.valid('json');
 
   // Generate key: eftest_<40 hex> or eflive_<40 hex>
@@ -33,7 +24,7 @@ app.post('/', zValidator('json', createSchema), async (c) => {
   const keyPrefix = rawKey.slice(0, 14); // "eftest_" or "eflive_" (7) + first 7 hex chars
 
   const row = await apiKeys.insert({
-    id: nanoid(),
+    id: generateId(),
     name,
     key_hash: keyHash,
     key_prefix: keyPrefix,

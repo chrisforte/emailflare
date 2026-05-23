@@ -22,6 +22,8 @@ default:
 
 # Install deps for all services (run after clone or adding a new service)
 install:
+    pnpm install --dir packages/email-core
+    pnpm install --dir packages/inbox-core
     pnpm install --dir scripts
     pnpm install --dir services/emails
     cd services/emails && pnpm run build
@@ -42,16 +44,16 @@ emailflare-emails-build:
 emailflare-status:
     #!/usr/bin/env bash
     echo "=== Email API dev stack ==="
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.dev.yaml ps 2>/dev/null || echo "(not running)"
+    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.email-api.dev.yaml ps 2>/dev/null || echo "(not running)"
     echo ""
     echo "=== Email API prod stack ==="
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml ps 2>/dev/null || echo "(not running)"
+    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.email-api.yaml ps 2>/dev/null || echo "(not running)"
     echo ""
     echo "=== Inbox dev stack ==="
-    env -i PATH="$PATH" docker compose -f compose.inbox.dev.yaml ps 2>/dev/null || echo "(not running)"
+    env -i PATH="$PATH" docker compose -f compose.email-inbox.dev.yaml ps 2>/dev/null || echo "(not running)"
     echo ""
     echo "=== Inbox prod stack ==="
-    env -i PATH="$PATH" docker compose -f compose.inbox.yaml ps 2>/dev/null || echo "(not running)"
+    env -i PATH="$PATH" docker compose -f compose.email-inbox.yaml ps 2>/dev/null || echo "(not running)"
 
 # Quick health + auth smoke-test (auto-detects dev or prod port via ENV_FILE)
 emailflare-api-smoke:
@@ -84,23 +86,23 @@ emailflare-doctor:
 
 # Start dev stack with hot reload (MesaHub + email-server + email-ui + Mailpit)
 emailflare-api-dev:
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.dev.yaml up --build
+    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.email-api.dev.yaml up --build
 
 # Stop dev stack
 emailflare-api-dev-down:
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.dev.yaml down
+    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.email-api.dev.yaml down
 
 # Build + start production stack
 emailflare-api-up:
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml up --build -d
+    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.email-api.yaml up --build -d
 
 # Stop production stack
 emailflare-api-down:
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml down
+    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.email-api.yaml down
 
 # Tail production logs
 emailflare-api-logs:
-    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.yaml logs -f
+    env -i PATH="$PATH" docker compose --env-file {{ENV_FILE}} -f compose.email-api.yaml logs -f
 
 # ============================================================================
 # EMAILFLARE-API-WORKER · CLOUDFLARE WORKER  (email-worker + email-ui on the edge)
@@ -239,23 +241,23 @@ emailflare-inbox-secret name:
 
 # Start full Docker dev stack: MesaHub + Redis + inbox-server (hot reload) + inbox-ui (Vite) + Caddy
 emailflare-inbox-server-dev:
-    env -i PATH="$PATH" docker compose --env-file {{INBOX_DEV_ENV}} -f compose.inbox.dev.yaml up --build
+    env -i PATH="$PATH" docker compose --env-file {{INBOX_DEV_ENV}} -f compose.email-inbox.dev.yaml up --build
 
 # Stop dev stack
 emailflare-inbox-server-dev-down:
-    env -i PATH="$PATH" docker compose -f compose.inbox.dev.yaml down
+    env -i PATH="$PATH" docker compose -f compose.email-inbox.dev.yaml down
 
 # Build + start production stack
 emailflare-inbox-server-up:
-    env -i PATH="$PATH" docker compose --env-file {{INBOX_ENV}} -f compose.inbox.yaml up --build -d
+    env -i PATH="$PATH" docker compose --env-file {{INBOX_ENV}} -f compose.email-inbox.yaml up --build -d
 
 # Stop production stack
 emailflare-inbox-server-down:
-    env -i PATH="$PATH" docker compose -f compose.inbox.yaml down
+    env -i PATH="$PATH" docker compose -f compose.email-inbox.yaml down
 
 # Tail production logs
 emailflare-inbox-server-logs:
-    env -i PATH="$PATH" docker compose -f compose.inbox.yaml logs -f
+    env -i PATH="$PATH" docker compose -f compose.email-inbox.yaml logs -f
 
 # First-time standalone deploy: R2 bucket + inbox-bridge CF Worker
 emailflare-inbox-standalone-deploy:

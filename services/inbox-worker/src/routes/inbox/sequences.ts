@@ -8,24 +8,11 @@
 
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
+import { generateId } from '@emailflare/email-core';
 import type { HonoEnv } from '../../env.ts';
+import { sequenceSchema } from '@emailflare/inbox-core';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 const app = new Hono<HonoEnv>();
-
-const stepSchema = z.object({
-  delay_days: z.number().int().min(0),
-  subject: z.string().min(1),
-  html: z.string().optional(),
-  text: z.string().optional(),
-});
-
-const sequenceSchema = z.object({
-  name: z.string().min(1).max(200),
-  steps: z.array(stepSchema).min(1),
-});
 
 // GET /api/inbox/sequences
 app.get('/', async (c) => {
@@ -36,7 +23,7 @@ app.get('/', async (c) => {
 // POST /api/inbox/sequences
 app.post('/', zValidator('json', sequenceSchema), async (c) => {
   const { name, steps } = c.req.valid('json');
-  const id  = nanoid();
+  const id  = generateId();
   const now = new Date().toISOString();
   await c.env.DB.prepare(
     'INSERT INTO sequences (id, name, steps, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
@@ -84,7 +71,7 @@ app.post('/:id/enroll', zValidator('json', enrollSchema), async (c) => {
   const person = await c.env.DB.prepare('SELECT id FROM people WHERE id = ? LIMIT 1').bind(personId).first();
   if (!person) return c.json({ error: 'Person not found' }, 404);
 
-  const id = nanoid();
+  const id = generateId();
   await c.env.DB.prepare(
     `INSERT INTO sequence_enrollments (id, sequence_id, person_id, from_address, variables, current_step, status, enrolled_at)
      VALUES (?, ?, ?, ?, ?, 0, 'active', ?)

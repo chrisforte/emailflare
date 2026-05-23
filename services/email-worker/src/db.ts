@@ -2,82 +2,22 @@
 // Provides a lightweight typed wrapper over Cloudflare D1Database that
 // mirrors the MesaHub client API used by the Node.js backend.
 
-// ── Row type definitions ──────────────────────────────────────────────────────
-
-export interface DomainRow {
-  [key: string]: unknown;
-  id: string;
-  name: string;
-  cf_zone_id: string;
-  cf_subdomain_id: string | null;
-  dkim_selector: string | null;
-  return_path_domain: string | null;
-  verified: number; // 0 | 1
-  created_at: string;
-}
-
-export interface TemplateRow {
-  [key: string]: unknown;
-  id: string;
-  name: string;
-  slug: string | null;
-  subject: string;
-  html_body: string;
-  text_body: string | null;
-  layout: string | null;
-  is_system: number; // 0 | 1
-  domain_id: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ApiKeyRow {
-  [key: string]: unknown;
-  id: string;
-  name: string;
-  key_hash: string;
-  key_prefix: string;
-  scope: 'global' | 'domain' | 'multi';
-  key_type: 'test' | 'live';
-  active: number; // 0 | 1
-  last_used_at: string | null;
-  send_count: number;
-  created_at: string;
-}
-
-export interface ApiKeyDomainRow {
-  [key: string]: unknown;
-  api_key_id: string;
-  domain_id: string;
-}
-
-export interface EmailLogRow {
-  [key: string]: unknown;
-  id: string;
-  to_address: string;
-  from_address: string;
-  subject: string;
-  status: 'pending' | 'sent' | 'failed' | 'bounced' | 'complained';
-  cf_message_id: string | null;
-  domain_id: string | null;
-  template_id: string | null;
-  api_key_id: string | null;
-  idempotency_key: string | null;
-  error: string | null;
-  is_test: number; // 0 | 1
-  sent_at: string;
-  bounced_at?: string | null;
-}
-
-export interface SuppressionRow {
-  [key: string]: unknown;
-  id: string;
-  email: string;
-  reason: 'hard_bounce' | 'soft_bounce' | 'complaint' | 'manual';
-  domain_id: string | null;
-  email_log_id: string | null;
-  created_at: string;
-}
+export type {
+  DomainRow,
+  TemplateRow,
+  ApiKeyRow,
+  ApiKeyDomainRow,
+  EmailLogRow,
+  SuppressionRow,
+} from '@emailflare/email-core';
+import type {
+  DomainRow,
+  TemplateRow,
+  ApiKeyRow,
+  ApiKeyDomainRow,
+  EmailLogRow,
+  SuppressionRow,
+} from '@emailflare/email-core';
 
 // ── D1Table — typed query wrapper ────────────────────────────────────────────
 

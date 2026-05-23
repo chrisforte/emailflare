@@ -1,12 +1,11 @@
 // Seed the system email templates into D1.
 // Call once after applying migrations: POST /api/_seed (admin token required).
 
-import { customAlphabet } from 'nanoid';
+import { generateId } from '@emailflare/email-core';
 import { makeDb } from './db.ts';
 import { LAYOUTS } from './emails.ts';
 import type { LayoutName } from './emails.ts';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 
 const SYSTEM_SUBJECTS: Record<LayoutName, string> = {
   'welcome':                  'Welcome to {{appName}}, {{name}}!',
@@ -69,7 +68,7 @@ export async function seedSystemTemplates(d1: D1Database): Promise<void> {
     const existing = await templates.findOne({ where: { slug: layoutId } });
     if (!existing) {
       await templates.insert({
-        id: nanoid(),
+        id: generateId(),
         name: label,
         slug: layoutId,
         subject: SYSTEM_SUBJECTS[layoutId],

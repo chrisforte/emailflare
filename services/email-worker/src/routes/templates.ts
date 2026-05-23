@@ -1,27 +1,14 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
 import { makeDb } from '../db.ts';
 import type { TemplateRow } from '../db.ts';
 import { renderLayout, LAYOUTS, THEMES } from '../emails.ts';
 import type { LayoutName } from '../emails.ts';
 import type { HonoEnv } from '../env.ts';
+import { templateSchema, toSlug, enrich, generateId } from '@emailflare/email-core';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 
 const app = new Hono<HonoEnv>();
-
-function toSlug(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-}
-
-function enrich(row: TemplateRow) {
-  const variables: string[] = row.is_system && row.layout
-    ? (LAYOUTS[row.layout as LayoutName]?.variables ?? [])
-    : [];
-  return { ...row, variables };
-}
 
 // GET /api/templates
 app.get('/', async (c) => {
@@ -34,7 +21,7 @@ app.get('/', async (c) => {
       { column: 'updated_at', direction: 'desc' },
     ],
   });
-  return c.json(rows.map(enrich));
+  return c.json(rows.map(r => enrich(r, LAYOUTS)));
 });
 
 // GET /api/templates/themes
@@ -54,16 +41,7 @@ app.get('/:idOrSlug', async (c) => {
   const row = (await templates.findOne({ where: { id: key } }))
     ?? (await templates.findOne({ where: { slug: key } }));
   if (!row) return c.json({ error: 'Template not found' }, 404);
-  return c.json(enrich(row));
-});
-
-const templateSchema = z.object({
-  name: z.string().min(1),
-  slug: z.string().regex(/^[a-z0-9-]+$/, 'Slug must be lowercase letters, numbers, hyphens').optional(),
-  subject: z.string().min(1),
-  htmlBody: z.string().min(1),
-  textBody: z.string().optional(),
-  domainId: z.string().optional().nullable(),
+  return c.json(enrich(row, LAYOUTS));
 });
 
 // POST /api/templates
@@ -77,7 +55,7 @@ app.post('/', zValidator('json', templateSchema), async (c) => {
   const finalSlug  = existing ? `${slug}-${nanoid(4)}` : slug;
 
   const row = await templates.insert({
-    id: nanoid(),
+    id: generateId(),
     name: body.name,
     slug: finalSlug,
     subject: body.subject,
@@ -90,7 +68,7 @@ app.post('/', zValidator('json', templateSchema), async (c) => {
     updated_at: now,
   });
 
-  return c.json(enrich(row), 201);
+  return c.json(enrich(row, LAYOUTS), 201);
 });
 
 // PUT /api/templates/:id
@@ -127,7 +105,7 @@ app.put('/:id', zValidator('json', templateSchema.partial()), async (c) => {
   });
 
   const updated = await templates.findOne({ where: { id: row.id } });
-  return c.json(enrich(updated!));
+  return c.json(enrich(updated!, LAYOUTS));
 });
 
 // DELETE /api/templates/:id

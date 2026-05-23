@@ -1,12 +1,11 @@
 // Seed system email templates into MesaHub on first run.
 // Node.js port of services/inbox-worker/src/seed.ts.
 
-import { customAlphabet } from 'nanoid';
+import { generateId } from '@emailflare/email-core';
 import { makeDb } from './db.js';
 import { LAYOUTS } from '@emailflare/emails';
 import type { LayoutName } from '@emailflare/emails';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 
 const SYSTEM_SUBJECTS: Record<LayoutName, string> = {
   'welcome':                  'Welcome to {{appName}}, {{name}}!',
@@ -69,7 +68,7 @@ export async function seedSystemTemplates(): Promise<void> {
     const existing = await templates.findOne({ where: { slug: layoutId } });
     if (!existing) {
       await templates.insert({
-        id:         nanoid(),
+        id:         generateId(),
         name:       label,
         slug:       layoutId,
         subject:    SYSTEM_SUBJECTS[layoutId],

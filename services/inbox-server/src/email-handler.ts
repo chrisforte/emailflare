@@ -6,7 +6,7 @@
 // (posted by the inbox-bridge CF Worker after HMAC verification).
 
 import PostalMime from 'postal-mime';
-import { customAlphabet } from 'nanoid';
+import { generateId } from '@emailflare/email-core';
 import { rawDb } from './db.js';
 import { putObject } from './storage.js';
 import { wsManager } from './websocket.js';
@@ -20,7 +20,6 @@ export interface EmailPayload {
   dmarc?: string | null;
 }
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 
 const LARGE_BODY_THRESHOLD = 512 * 1024; // 512 KB
 
@@ -39,7 +38,7 @@ export async function handleIncomingEmail(payload: EmailPayload): Promise<void> 
   );
 
   if (!person) {
-    const pid = nanoid();
+    const pid = generateId();
     const personName = email.from?.name ?? null;
     await rawDb.run(
       'INSERT INTO people (id, email, name, created_at) VALUES (?, ?, ?, ?)',
@@ -65,13 +64,13 @@ export async function handleIncomingEmail(payload: EmailPayload): Promise<void> 
   let storedBodyHtml: string | null = bodyHtml;
 
   if (isLarge && bodyBytes) {
-    bodyR2Key = `emails/${nanoid()}.html`;
+    bodyR2Key = `emails/${generateId()}.html`;
     await putObject(bodyR2Key, bodyBytes, 'text/html; charset=utf-8');
     storedBodyHtml = null;
   }
 
   // ── Insert email row ────────────────────────────────────────────────────────
-  const emailId   = nanoid();
+  const emailId   = generateId();
   const messageId = email.messageId ?? null;
   const inReplyTo = email.inReplyTo ?? null;
 
@@ -94,7 +93,7 @@ export async function handleIncomingEmail(payload: EmailPayload): Promise<void> 
   // ── Store attachments in R2 ─────────────────────────────────────────────────
   if (email.attachments?.length) {
     for (const att of email.attachments) {
-      const r2Key = `attachments/${emailId}/${nanoid()}_${att.filename ?? 'file'}`;
+      const r2Key = `attachments/${emailId}/${generateId()}_${att.filename ?? 'file'}`;
       const rawContent = att.content;
       const buf: Buffer =
         Buffer.isBuffer(rawContent)
@@ -109,7 +108,7 @@ export async function handleIncomingEmail(payload: EmailPayload): Promise<void> 
       await rawDb.run(
         `INSERT INTO attachments (id, email_id, filename, content_type, r2_key, size, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [nanoid(), emailId, att.filename ?? 'attachment', att.mimeType ?? 'application/octet-stream', r2Key, buf.byteLength, now],
+        [generateId(), emailId, att.filename ?? 'attachment', att.mimeType ?? 'application/octet-stream', r2Key, buf.byteLength, now],
       );
     }
   }

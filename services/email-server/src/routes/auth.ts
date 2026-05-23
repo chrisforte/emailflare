@@ -1,19 +1,15 @@
 import { timingSafeEqual } from 'node:crypto';
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
 import { env } from '../env.js';
 import { getSession, saveSession, clearSession } from '../middleware/auth.js';
 import { checkLoginRateLimit } from '../middleware/loginRateLimit.js';
+import { adminLoginSchema } from '@emailflare/email-core';
 
 const app = new Hono();
 
-const loginSchema = z.object({
-  token: z.string().min(1),
-});
-
 // POST /api/auth/login — public, no session required
-app.post('/login', zValidator('json', loginSchema), async (c) => {
+app.post('/login', zValidator('json', adminLoginSchema), async (c) => {
   const ip =
     c.req.header('CF-Connecting-IP') ??
     c.req.header('X-Forwarded-For')?.split(',')[0].trim() ??

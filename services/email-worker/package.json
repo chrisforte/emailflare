@@ -11,12 +11,14 @@
     "migrations:apply": "wrangler d1 migrations apply emailflare --remote",
     "cf-typegen": "wrangler types",
     "cf:setup": "node ../../scripts/setup.mjs",
+    "cf:build-packages": "pnpm install --frozen-lockfile --dir ../../packages/email-core && pnpm --dir ../../packages/email-core run build",
     "cf:build-ui": "cd ../email-ui && pnpm install --frozen-lockfile && pnpm build",
-    "cf:update": "pnpm run cf:build-ui && wrangler d1 migrations apply emailflare --remote && wrangler deploy",
-    "cf:rollout": "pnpm run cf:build-ui && wrangler d1 migrations apply emailflare --remote && wrangler versions upload",
+    "cf:update": "pnpm run cf:build-packages && pnpm run cf:build-ui && wrangler d1 migrations apply emailflare --remote && wrangler deploy",
+    "cf:rollout": "pnpm run cf:build-packages && pnpm run cf:build-ui && wrangler d1 migrations apply emailflare --remote && wrangler versions upload",
     "cf:rollout:full": "wrangler versions deploy --yes"
   },
   "dependencies": {
+    "@emailflare/email-core": "file:../../packages/email-core",
     "@emailflare/emails": "file:../emails",
     "@hono/zod-validator": "^0.4.3",
     "hono": "^4.7.5",

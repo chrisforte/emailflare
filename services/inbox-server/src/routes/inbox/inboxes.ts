@@ -1,20 +1,13 @@
 // Inbox management routes
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
+import { generateId } from '@emailflare/email-core';
 import { requireAdmin } from '../../middleware/auth.js';
 import { rawDb } from '../../db.js';
 import type { HonoEnv } from '../../env.js';
+import { inboxSchema } from '@emailflare/inbox-core';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 const app = new Hono<HonoEnv>();
-
-const inboxSchema = z.object({
-  email:        z.string().email().toLowerCase(),
-  display_name: z.string().min(1).max(100),
-  mode:         z.enum(['thread', 'individual']).default('thread'),
-});
 
 app.get('/', async (c) => {
   const { rows } = await rawDb.query('SELECT * FROM inboxes ORDER BY created_at DESC');
@@ -26,7 +19,7 @@ app.post('/', requireAdmin, zValidator('json', inboxSchema), async (c) => {
   const existing = await rawDb.first('SELECT id FROM inboxes WHERE email = ? LIMIT 1', [body.email]);
   if (existing) return c.json({ error: 'Inbox already exists' }, 409);
 
-  const id = nanoid();
+  const id = generateId();
   await rawDb.run(
     'INSERT INTO inboxes (id, email, display_name, mode, created_at) VALUES (?, ?, ?, ?, ?)',
     [id, body.email, body.display_name, body.mode, new Date().toISOString()],

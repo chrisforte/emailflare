@@ -26,7 +26,7 @@ services:
   inbox:
     build:
       context: .
-      dockerfile: Dockerfile.inbox
+      dockerfile: Dockerfile.email-inbox
     restart: unless-stopped
     ports:
       - "${INBOX_PORT:-8091}:80"

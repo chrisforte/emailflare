@@ -102,7 +102,7 @@ else
 fi
 
 echo "[3/5] Starting backend on port $BACKEND_PORT..."
-PORT=$BACKEND_PORT node /app/backend/dist/index.js &
+PORT=$BACKEND_PORT node /app/services/email-server/dist/index.js &
 BACKEND_PID=$!
 
 echo "Waiting for backend to be ready..."

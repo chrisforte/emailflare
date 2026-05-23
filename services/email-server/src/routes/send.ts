@@ -1,32 +1,14 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 import { db, emailLogs, templates } from '../db.js';
 import { sendEmail } from '../services/cloudflare.js';
 import { sendEmailViaSmtp } from '../services/smtp.js';
 import { renderLayout } from '@emailflare/emails';
 import type { LayoutName } from '@emailflare/emails';
+import { sendSchema, applyVariables, generateId } from '@emailflare/email-core';
 import type { ApiKeyContext } from '../middleware/apiKey.js';
 
 const app = new Hono();
-
-const sendSchema = z.object({
-  from: z.string().email(),
-  fromName: z.string().optional(),
-  to: z.union([z.string().email(), z.array(z.string().email()).max(50)]),
-  replyTo: z.string().email().optional(),
-  subject: z.string().min(1).optional(),
-  html: z.string().optional(),
-  text: z.string().optional(),
-  templateId: z.string().optional(),
-  templateSlug: z.string().optional(),
-  variables: z.record(z.string()).optional(),
-  themeId: z.string().optional(),
-}).refine(d => d.templateId || d.templateSlug || d.html || d.text, {
-  message: 'Provide templateId, templateSlug, or at least one of html/text',
-});
 
 // POST /v1/send
 app.post('/', zValidator('json', sendSchema), async (c) => {
@@ -119,7 +101,7 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
       });
 
       await emailLogs.insert({
-        id: nanoid(),
+        id: generateId(),
         to_address: recipient,
         from_address: body.from,
         subject,
@@ -140,7 +122,7 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
       const message = err instanceof Error ? err.message : 'Unknown error';
 
       await emailLogs.insert({
-        id: nanoid(),
+        id: generateId(),
         to_address: recipient,
         from_address: body.from,
         subject,
@@ -170,9 +152,5 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
   const allFailed = results.every(r => r.error);
   return c.json({ results }, allFailed ? 502 : 200);
 });
-
-function applyVariables(template: string, vars: Record<string, string>): string {
-  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`);
-}
 
 export default app;

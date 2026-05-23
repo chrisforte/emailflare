@@ -2,11 +2,10 @@
 // that arrive at the return-path address and updates email_logs + suppressions.
 
 import PostalMime from 'postal-mime';
-import { customAlphabet } from 'nanoid';
+import { generateId } from '@emailflare/email-core';
 import { D1Db } from './db.ts';
 import type { Env } from './env.ts';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 
 // ── Detection helpers ──────────────────────────────────────────────────────────
 
@@ -199,7 +198,7 @@ async function processBounce(content: string, db: D1Db, now: string): Promise<vo
     await db.run(
       `INSERT OR IGNORE INTO suppressions (id, email, reason, domain_id, email_log_id, created_at)
        VALUES (?, ?, 'hard_bounce', ?, ?, ?)`,
-      [nanoid(), recipient, logRow?.domain_id ?? null, logRow?.id ?? null, now],
+      [generateId(), recipient, logRow?.domain_id ?? null, logRow?.id ?? null, now],
     );
     console.log(`[email-handler] Hard bounce suppressed: ${recipient} — ${reason}`);
     return;
@@ -211,7 +210,7 @@ async function processBounce(content: string, db: D1Db, now: string): Promise<vo
     await db.run(
       `INSERT OR IGNORE INTO suppressions (id, email, reason, domain_id, email_log_id, created_at)
        VALUES (?, ?, 'hard_bounce', ?, ?, ?)`,
-      [nanoid(), recipient, logRow?.domain_id ?? null, logRow?.id ?? null, now],
+      [generateId(), recipient, logRow?.domain_id ?? null, logRow?.id ?? null, now],
     );
     console.log(`[email-handler] Spam rejection suppressed: ${recipient} — ${reason}`);
     return;
@@ -231,7 +230,7 @@ async function processBounce(content: string, db: D1Db, now: string): Promise<vo
     await db.run(
       `INSERT OR IGNORE INTO suppressions (id, email, reason, domain_id, email_log_id, created_at)
        VALUES (?, ?, 'soft_bounce', ?, ?, ?)`,
-      [nanoid(), recipient, logRow?.domain_id ?? null, logRow?.id ?? null, now],
+      [generateId(), recipient, logRow?.domain_id ?? null, logRow?.id ?? null, now],
     );
     console.log(`[email-handler] Soft bounce suppressed after ${cnt} bounces: ${recipient}`);
   } else {
@@ -267,7 +266,7 @@ async function processComplaint(content: string, db: D1Db, now: string): Promise
   await db.run(
     `INSERT OR IGNORE INTO suppressions (id, email, reason, domain_id, email_log_id, created_at)
      VALUES (?, ?, 'complaint', ?, ?, ?)`,
-    [nanoid(), recipient, logRow?.domain_id ?? null, logRow?.id ?? null, now],
+    [generateId(), recipient, logRow?.domain_id ?? null, logRow?.id ?? null, now],
   );
   console.log(`[email-handler] Complaint suppressed: ${recipient}`);
 }

@@ -1,31 +1,24 @@
 // Inbox templates (reusable reply templates)
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
+import { generateId } from '@emailflare/email-core';
 import { rawDb } from '../../db.js';
 import type { HonoEnv } from '../../env.js';
+import { inboxTemplateSchema } from '@emailflare/inbox-core';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 const app = new Hono<HonoEnv>();
-
-const templateSchema = z.object({
-  slug:      z.string().min(1).regex(/^[a-z0-9-]+$/),
-  subject:   z.string().min(1),
-  body_html: z.string().min(1),
-});
 
 app.get('/', async (c) => {
   const { rows } = await rawDb.query('SELECT * FROM inbox_templates ORDER BY created_at DESC');
   return c.json(rows);
 });
 
-app.post('/', zValidator('json', templateSchema), async (c) => {
+app.post('/', zValidator('json', inboxTemplateSchema), async (c) => {
   const body = c.req.valid('json');
   const existing = await rawDb.first('SELECT id FROM inbox_templates WHERE slug = ? LIMIT 1', [body.slug]);
   if (existing) return c.json({ error: 'Slug already exists' }, 409);
 
-  const id  = nanoid();
+  const id  = generateId();
   const now = new Date().toISOString();
   await rawDb.run(
     'INSERT INTO inbox_templates (id, slug, subject, body_html, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
@@ -34,7 +27,7 @@ app.post('/', zValidator('json', templateSchema), async (c) => {
   return c.json({ id, ...body }, 201);
 });
 
-app.put('/:id', zValidator('json', templateSchema.partial()), async (c) => {
+app.put('/:id', zValidator('json', inboxTemplateSchema.partial()), async (c) => {
   const row = await rawDb.first('SELECT id FROM inbox_templates WHERE id = ? LIMIT 1', [c.req.param('id')]);
   if (!row) return c.json({ error: 'Template not found' }, 404);
 

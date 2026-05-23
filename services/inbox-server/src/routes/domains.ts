@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
+import { generateId } from '@emailflare/email-core';
 import { makeDb, deleteDomainCascade } from '../db.js';
 import {
   CloudflareApiError,
@@ -14,7 +14,6 @@ import {
 import { env } from '../env.js';
 import type { HonoEnv } from '../env.js';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 const app = new Hono<HonoEnv>();
 
 app.get('/', async (c) => {
@@ -74,7 +73,7 @@ app.post('/', zValidator('json', createSchema), async (c) => {
   }
 
   const row = await domains.insert({
-    id:                 nanoid(),
+    id:                 generateId(),
     name,
     cf_zone_id:         zoneId,
     cf_subdomain_id:    cfResult.tag,

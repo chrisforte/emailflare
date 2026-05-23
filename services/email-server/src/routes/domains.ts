@@ -1,13 +1,11 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 import { domains, deleteDomainCascade } from '../db.js';
 import { CloudflareApiError } from '../services/cloudflare.js';
 import { createSendingSubdomain, listSendingSubdomains, getSubdomainDnsRecords, getSendingSubdomain, getZoneByHostname } from '../services/cloudflare.js';
 import { getBounceWorkerInfo, enableEmailRouting, setCatchAllToWorker } from '../services/cloudflare.js';
 import { env } from '../env.js';
+import { domainCreateSchema, generateId } from '@emailflare/email-core';
 
 const app = new Hono();
 
@@ -24,13 +22,8 @@ app.get('/:id', async (c) => {
   return c.json(domain);
 });
 
-const createSchema = z.object({
-  name: z.string().min(3),
-  cfZoneId: z.string().optional(),
-});
-
 // POST /api/domains
-app.post('/', zValidator('json', createSchema), async (c) => {
+app.post('/', zValidator('json', domainCreateSchema), async (c) => {
   const { name, cfZoneId } = c.req.valid('json');
 
   // Check if this subdomain is already in our DB
@@ -67,7 +60,7 @@ app.post('/', zValidator('json', createSchema), async (c) => {
   }
 
   const row = await domains.insert({
-    id: nanoid(),
+    id: generateId(),
     name,
     cf_zone_id: zoneId,
     cf_subdomain_id: cfResult.tag,

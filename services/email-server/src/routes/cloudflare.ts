@@ -1,8 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
+import { generateId } from '@emailflare/email-core';
 import { env } from '../env.js';
 import { domains } from '../db.js';
 import {
@@ -138,7 +137,7 @@ app.post('/backfill-domains', async (c) => {
       }
 
       await domains.insert({
-        id:                 nanoid(),
+        id:                 generateId(),
         name:               sub.name,
         cf_zone_id:         zone.id,
         cf_subdomain_id:    sub.tag,

@@ -14,71 +14,22 @@ const { apiUrl, apiKey, dbName } = parseMesahubUrl(env.MESAHUB_URL);
 const client = new MesahubClient({ apiKey, apiUrl, routePrefix: 'api' });
 export const mesaDb = client.db(dbName);
 
-// ── Row types ─────────────────────────────────────────────────────────────────
+// ── Row types (email-api subset) — re-exported from @emailflare/email-core ────
 
-export interface DomainRow {
-  [key: string]: unknown;
-  id: string;
-  name: string;
-  cf_zone_id: string;
-  cf_subdomain_id: string | null;
-  dkim_selector: string | null;
-  return_path_domain: string | null;
-  verified: number;
-  created_at: string;
-}
-
-export interface TemplateRow {
-  [key: string]: unknown;
-  id: string;
-  name: string;
-  slug: string | null;
-  subject: string;
-  html_body: string;
-  text_body: string | null;
-  layout: string | null;
-  is_system: number;
-  domain_id: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ApiKeyRow {
-  [key: string]: unknown;
-  id: string;
-  name: string;
-  key_hash: string;
-  key_prefix: string;
-  scope: 'global' | 'domain' | 'multi';
-  key_type: 'test' | 'live';
-  active: number;
-  last_used_at: string | null;
-  send_count: number;
-  created_at: string;
-}
-
-export interface ApiKeyDomainRow {
-  [key: string]: unknown;
-  api_key_id: string;
-  domain_id: string;
-}
-
-export interface EmailLogRow {
-  [key: string]: unknown;
-  id: string;
-  to_address: string;
-  from_address: string;
-  subject: string;
-  status: 'pending' | 'sent' | 'failed';
-  cf_message_id: string | null;
-  domain_id: string | null;
-  template_id: string | null;
-  api_key_id: string | null;
-  idempotency_key: string | null;
-  error: string | null;
-  is_test: number;
-  sent_at: string;
-}
+export type {
+  DomainRow,
+  TemplateRow,
+  ApiKeyRow,
+  ApiKeyDomainRow,
+  EmailLogRow,
+} from '@emailflare/email-core';
+import type {
+  DomainRow,
+  TemplateRow,
+  ApiKeyRow,
+  ApiKeyDomainRow,
+  EmailLogRow,
+} from '@emailflare/email-core';
 
 // ── Where clause builder (same as D1 version) ─────────────────────────────────
 

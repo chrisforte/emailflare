@@ -17,21 +17,30 @@ WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Build the shared emails package first (backend depends on it via file:../emails)
-COPY services/emails/package.json ./emails/package.json
+# Build the shared email-core package first
+COPY packages/email-core/package.json ./packages/email-core/package.json
+COPY packages/email-core/tsconfig.json ./packages/email-core/tsconfig.json
 RUN --mount=type=cache,id=pnpm-store-backend,target=/root/.local/share/pnpm/store \
-    cd emails && pnpm install
+    cd packages/email-core && pnpm install
 
-COPY services/emails/ ./emails/
-RUN cd emails && pnpm run build
+COPY packages/email-core/src/ ./packages/email-core/src/
+RUN cd packages/email-core && pnpm run build
 
-# Now install and build the email-server
-COPY services/email-server/package.json services/email-server/pnpm-lock.yaml services/email-server/pnpm-workspace.yaml ./backend/
+# Build the shared emails package next (email-server depends on it via file:../emails)
+COPY services/emails/package.json ./services/emails/package.json
 RUN --mount=type=cache,id=pnpm-store-backend,target=/root/.local/share/pnpm/store \
-    cd backend && pnpm install --frozen-lockfile
+    cd services/emails && pnpm install
 
-COPY services/email-server/ ./backend/
-RUN cd backend && pnpm run build
+COPY services/emails/ ./services/emails/
+RUN cd services/emails && pnpm run build
+
+# Now install and build the email-server (path mirrors repo layout for file: dep resolution)
+COPY services/email-server/package.json services/email-server/pnpm-lock.yaml services/email-server/pnpm-workspace.yaml ./services/email-server/
+RUN --mount=type=cache,id=pnpm-store-backend,target=/root/.local/share/pnpm/store \
+    cd services/email-server && pnpm install --frozen-lockfile
+
+COPY services/email-server/ ./services/email-server/
+RUN cd services/email-server && pnpm run build
 
 # ── Stage: build-email-ui ────────────────────────────────────────────────────
 FROM node:22-alpine AS build-email-ui
@@ -70,18 +79,20 @@ RUN set -e; \
 
 RUN mkdir -p /usr/share/caddy
 
-# Backend runtime (emails dist is at ../emails relative to backend, per file: dep symlink)
-COPY --from=build-backend /app/emails/dist           ./emails/dist
-COPY --from=build-backend /app/emails/package.json   ./emails/package.json
-COPY --from=build-backend /app/backend/node_modules ./backend/node_modules
-COPY --from=build-backend /app/backend/dist          ./backend/dist
-COPY services/email-server/package.json                   ./backend/
+# Backend runtime (file: deps are resolved relative to services/email-server/, mirroring repo layout)
+COPY --from=build-backend /app/services/emails/dist           ./services/emails/dist
+COPY --from=build-backend /app/services/emails/package.json   ./services/emails/package.json
+COPY --from=build-backend /app/packages/email-core/dist       ./packages/email-core/dist
+COPY --from=build-backend /app/packages/email-core/package.json ./packages/email-core/package.json
+COPY --from=build-backend /app/services/email-server/node_modules ./services/email-server/node_modules
+COPY --from=build-backend /app/services/email-server/dist     ./services/email-server/dist
+COPY services/email-server/package.json                       ./services/email-server/
 
 # Email UI static files
 COPY --from=build-email-ui /app/email-ui/dist /usr/share/caddy
 
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
+COPY start-email-api.sh /app/start-email-api.sh
+RUN chmod +x /app/start-email-api.sh
 
 EXPOSE 80
-CMD ["/app/start.sh"]
+CMD ["/app/start-email-api.sh"]

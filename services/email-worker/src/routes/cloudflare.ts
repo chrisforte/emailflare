@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
-import { customAlphabet } from 'nanoid';
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
+import { generateId } from '@emailflare/email-core';
 import { getCloudflareTokenStatus, listAllZones, listSendingSubdomains } from '../services/cloudflare.ts';
 import { makeDb } from '../db.ts';
 import type { HonoEnv } from '../env.ts';
@@ -40,7 +39,7 @@ app.post('/backfill-domains', async (c) => {
       }
 
       await domains.insert({
-        id:                 nanoid(),
+        id:                 generateId(),
         name:               sub.name,
         cf_zone_id:         zone.id,
         cf_subdomain_id:    sub.tag,

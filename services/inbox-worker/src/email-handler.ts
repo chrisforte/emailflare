@@ -5,10 +5,9 @@
 // Registered as `email` export in index.ts.
 
 import PostalMime from 'postal-mime';
-import { customAlphabet } from 'nanoid';
+import { generateId } from '@emailflare/email-core';
 import type { Env } from './env.ts';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 
 const LARGE_BODY_THRESHOLD = 512 * 1024; // 512 KB
 
@@ -26,7 +25,7 @@ export async function handleIncomingEmail(message: ForwardableEmailMessage, env:
   ).bind(fromAddress).first<{ id: string }>();
 
   if (!person) {
-    const pid = nanoid();
+    const pid = generateId();
     const personName = email.from?.name ?? null;
     await env.DB.prepare(
       'INSERT INTO people (id, email, name, created_at) VALUES (?, ?, ?, ?)',
@@ -51,7 +50,7 @@ export async function handleIncomingEmail(message: ForwardableEmailMessage, env:
   let storedBodyHtml: string | null = bodyHtml;
 
   if (isLarge && bodyBytes) {
-    bodyR2Key = `emails/${nanoid()}.html`;
+    bodyR2Key = `emails/${generateId()}.html`;
     await env.ATTACHMENTS.put(bodyR2Key, bodyBytes, {
       httpMetadata: { contentType: 'text/html; charset=utf-8' },
     });
@@ -59,7 +58,7 @@ export async function handleIncomingEmail(message: ForwardableEmailMessage, env:
   }
 
   // ── Insert email row ────────────────────────────────────────────────────────
-  const emailId   = nanoid();
+  const emailId   = generateId();
   const messageId = email.messageId ?? null;
   const inReplyTo = email.inReplyTo ?? null;
 
@@ -88,7 +87,7 @@ export async function handleIncomingEmail(message: ForwardableEmailMessage, env:
   // ── Store attachments in R2 ─────────────────────────────────────────────────
   if (email.attachments?.length) {
     for (const att of email.attachments) {
-      const r2Key = `attachments/${emailId}/${nanoid()}_${att.filename ?? 'file'}`;
+      const r2Key = `attachments/${emailId}/${generateId()}_${att.filename ?? 'file'}`;
       // Normalize content to ArrayBuffer for R2 and size calculation
       const rawContent = att.content;
       const contentBuf: ArrayBuffer =
@@ -105,7 +104,7 @@ export async function handleIncomingEmail(message: ForwardableEmailMessage, env:
         `INSERT INTO attachments (id, email_id, filename, content_type, r2_key, size, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
       ).bind(
-        nanoid(),
+        generateId(),
         emailId,
         att.filename ?? 'attachment',
         att.mimeType ?? 'application/octet-stream',

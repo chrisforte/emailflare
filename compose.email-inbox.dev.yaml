@@ -50,10 +50,19 @@ services:
   inbox-server:
     container_name: emailflare-inbox-server
     build:
-      context: ./services/inbox-server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/inbox-server/Dockerfile
       target: dev
-    command: sh -c "cd /emails && npm install --prefer-offline && npm run build && cd /app && npm install && tsx watch src/index.ts"
+    # On first start (or after wipe), builds email-core + inbox-core + emails before starting.
+    # node_modules volumes persist across restarts so subsequent starts are fast.
+    command: >
+      sh -c "
+        cd /app/packages/email-core && pnpm install && pnpm run build &&
+        cd /app/packages/inbox-core && pnpm install && pnpm run build &&
+        cd /app/services/emails && pnpm install --prefer-offline && pnpm run build &&
+        cd /app/services/inbox-server && pnpm install &&
+        pnpm exec tsx watch src/index.ts
+      "
     env_file:
       - .env.inbox.local
     environment:
@@ -76,11 +85,15 @@ services:
     extra_hosts:
       - host.docker.internal:host-gateway
     volumes:
-      - ./services/emails:/emails
-      - emails-node-modules-inbox:/emails/node_modules
-      - ./services/inbox-server/src:/app/src
-      - ./services/inbox-server/package.json:/app/package.json
-      - inbox-server-node-modules:/app/node_modules
+      - ./packages/email-core:/app/packages/email-core
+      - email-core-node-modules:/app/packages/email-core/node_modules
+      - ./packages/inbox-core:/app/packages/inbox-core
+      - inbox-core-node-modules:/app/packages/inbox-core/node_modules
+      - ./services/emails:/app/services/emails
+      - emails-node-modules-inbox:/app/services/emails/node_modules
+      - ./services/inbox-server/src:/app/services/inbox-server/src
+      - ./services/inbox-server/package.json:/app/services/inbox-server/package.json
+      - inbox-server-node-modules:/app/services/inbox-server/node_modules
       - ./services/inbox-worker/migrations:/app/migrations:ro
 
   inbox-ui:
@@ -89,7 +102,7 @@ services:
       context: ./services/inbox-ui
       dockerfile: Dockerfile
       target: dev
-    command: sh -c "npm install && npm run dev"
+    command: sh -c "pnpm install && pnpm run dev"
     volumes:
       - ./services/inbox-ui/src:/app/src
       - ./services/inbox-ui/index.html:/app/index.html:ro
@@ -102,7 +115,7 @@ services:
     container_name: emailflare-inbox-edge
     image: caddy:2-alpine
     volumes:
-      - ./infra/Caddyfile.inbox.dev:/etc/caddy/Caddyfile:ro
+      - ./infra/Caddyfile.email-inbox.dev:/etc/caddy/Caddyfile:ro
     ports:
       - "${INBOX_PORT:-8091}:80"
     depends_on:
@@ -111,6 +124,8 @@ services:
 
 volumes:
   mesahub-inbox-data:
+  email-core-node-modules:
+  inbox-core-node-modules:
   emails-node-modules-inbox:
   inbox-server-node-modules:
   inbox-ui-node-modules:

@@ -9,19 +9,12 @@
 
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
+import { generateId } from '@emailflare/email-core';
 import { requireAdmin } from '../../middleware/auth.ts';
 import type { HonoEnv } from '../../env.ts';
+import { inboxSchema } from '@emailflare/inbox-core';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 const app = new Hono<HonoEnv>();
-
-const inboxSchema = z.object({
-  email:        z.string().email().toLowerCase(),
-  display_name: z.string().min(1).max(100),
-  mode:         z.enum(['thread', 'individual']).default('thread'),
-});
 
 // GET /api/inbox/inboxes
 app.get('/', async (c) => {
@@ -35,7 +28,7 @@ app.post('/', requireAdmin, zValidator('json', inboxSchema), async (c) => {
   const existing = await c.env.DB.prepare('SELECT id FROM inboxes WHERE email = ? LIMIT 1').bind(body.email).first();
   if (existing) return c.json({ error: 'Inbox already exists' }, 409);
 
-  const id = nanoid();
+  const id = generateId();
   await c.env.DB.prepare(
     'INSERT INTO inboxes (id, email, display_name, mode, created_at) VALUES (?, ?, ?, ?, ?)',
   ).bind(id, body.email, body.display_name, body.mode, new Date().toISOString()).run();

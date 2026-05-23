@@ -1,25 +1,12 @@
 // Sequence management routes
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
+import { generateId } from '@emailflare/email-core';
 import { rawDb } from '../../db.js';
 import type { HonoEnv } from '../../env.js';
+import { sequenceSchema } from '@emailflare/inbox-core';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 const app = new Hono<HonoEnv>();
-
-const stepSchema = z.object({
-  delay_days: z.number().int().min(0),
-  subject:    z.string().min(1),
-  html:       z.string().optional(),
-  text:       z.string().optional(),
-});
-
-const sequenceSchema = z.object({
-  name:  z.string().min(1).max(200),
-  steps: z.array(stepSchema).min(1),
-});
 
 app.get('/', async (c) => {
   const { rows } = await rawDb.query('SELECT * FROM sequences ORDER BY created_at DESC');
@@ -28,7 +15,7 @@ app.get('/', async (c) => {
 
 app.post('/', zValidator('json', sequenceSchema), async (c) => {
   const { name, steps } = c.req.valid('json');
-  const id  = nanoid();
+  const id  = generateId();
   const now = new Date().toISOString();
   await rawDb.run(
     'INSERT INTO sequences (id, name, steps, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
@@ -74,7 +61,7 @@ app.post('/:id/enroll', zValidator('json', enrollSchema), async (c) => {
   const person = await rawDb.first('SELECT id FROM people WHERE id = ? LIMIT 1', [personId]);
   if (!person) return c.json({ error: 'Person not found' }, 404);
 
-  const id = nanoid();
+  const id = generateId();
   await rawDb.run(
     `INSERT INTO sequence_enrollments
        (id, sequence_id, person_id, from_address, variables, current_step, status, enrolled_at)

@@ -7,37 +7,15 @@
 
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
 import { makeDb, D1Db } from '../db.ts';
 import { sendEmail } from '../services/cloudflare.ts';
 import { renderLayout } from '../emails.ts';
 import type { LayoutName } from '../emails.ts';
 import type { HonoEnv, ApiKeyContext } from '../env.ts';
+import { sendSchema, applyVariables, generateId } from '@emailflare/email-core';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 
 const app = new Hono<HonoEnv>();
-
-const sendSchema = z.object({
-  from: z.string().email(),
-  fromName: z.string().optional(),
-  to: z.union([z.string().email(), z.array(z.string().email()).max(50)]),
-  replyTo: z.string().email().optional(),
-  subject: z.string().min(1).optional(),
-  html: z.string().optional(),
-  text: z.string().optional(),
-  templateId: z.string().optional(),
-  templateSlug: z.string().optional(),
-  variables: z.record(z.string()).optional(),
-  themeId: z.string().optional(),
-}).refine(d => d.templateId || d.templateSlug || d.html || d.text, {
-  message: 'Provide templateId, templateSlug, or at least one of html/text',
-});
-
-function applyVariables(template: string, vars: Record<string, string>): string {
-  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`);
-}
 
 // POST /v1/send
 app.post('/', zValidator('json', sendSchema), async (c) => {
@@ -126,7 +104,7 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
       );
 
       await emailLogs.insert({
-        id: nanoid(),
+        id: generateId(),
         to_address: recipient,
         from_address: body.from,
         subject,
@@ -147,7 +125,7 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
       const message = err instanceof Error ? err.message : 'Unknown error';
 
       await emailLogs.insert({
-        id: nanoid(),
+        id: generateId(),
         to_address: recipient,
         from_address: body.from,
         subject,

@@ -1,5 +1,5 @@
 project:
-  name: emailflair
+  name: emailflare
   edgePort: 8090
 
 services:

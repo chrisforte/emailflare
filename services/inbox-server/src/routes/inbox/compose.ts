@@ -2,13 +2,12 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
+import { generateId } from '@emailflare/email-core';
 import { sendEmail, type CFSendEmailParams } from '../../services/cloudflare.js';
 import { rawDb } from '../../db.js';
 import { env } from '../../env.js';
 import type { HonoEnv } from '../../env.js';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 const app = new Hono<HonoEnv>();
 
 const sendSchema = z.object({
@@ -27,7 +26,7 @@ async function upsertPerson(email: string): Promise<string> {
     'SELECT id FROM people WHERE email = ? LIMIT 1', [email],
   );
   if (existing) return existing.id;
-  const id = nanoid();
+  const id = generateId();
   await rawDb.run(
     'INSERT INTO people (id, email, name, created_at) VALUES (?, ?, NULL, ?)',
     [id, email, new Date().toISOString()],
@@ -50,7 +49,7 @@ app.post('/compose', zValidator('json', sendSchema), async (c) => {
     env.CF_ACCOUNT_ID,
   );
 
-  const id = nanoid();
+  const id = generateId();
   await rawDb.run(
     `INSERT INTO sent_inbox_emails
        (id, person_id, in_reply_to, from_address, to_address, subject, status, cf_message_id, sent_at)

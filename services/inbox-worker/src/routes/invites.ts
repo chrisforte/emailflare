@@ -6,12 +6,11 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
+import { generateId } from '@emailflare/email-core';
 import { requireSession, requireAdmin, saveSession } from '../middleware/auth.ts';
 import { hashPassword } from '../lib/password.ts';
 import type { HonoEnv } from '../env.ts';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 const app = new Hono<HonoEnv>();
 
 // Hash the raw token for storage (only hash is stored; raw token goes in URL)
@@ -34,9 +33,9 @@ app.post('/admin/invites', requireSession, requireAdmin, zValidator('json', z.ob
   const existing = await c.env.DB.prepare('SELECT id FROM users WHERE email = ? LIMIT 1').bind(email).first();
   if (existing) return c.json({ error: 'already_exists' }, 409);
 
-  const rawToken = nanoid() + nanoid();
+  const rawToken = generateId() + generateId();
   const tokenHash = await sha256Hex(rawToken);
-  const id = nanoid();
+  const id = generateId();
   const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
   const createdBy = c.get('userId');
 
@@ -84,7 +83,7 @@ app.post('/invites/:token/accept', zValidator('json', acceptSchema), async (c) =
 
   const { name, password } = c.req.valid('json');
   const passwordHash = await hashPassword(password);
-  const userId = nanoid();
+  const userId = generateId();
   const now = new Date().toISOString();
   const role = (invite.role as 'admin' | 'member') ?? 'member';
 

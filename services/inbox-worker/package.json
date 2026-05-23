@@ -9,10 +9,13 @@
     "types": "wrangler types",
     "migrations:apply:local": "wrangler d1 migrations apply emailflare --local",
     "migrations:apply": "wrangler d1 migrations apply emailflare --remote",
+    "build:packages": "pnpm install --frozen-lockfile --dir ../../packages/email-core && pnpm --dir ../../packages/email-core run build && pnpm install --frozen-lockfile --dir ../../packages/inbox-core && pnpm --dir ../../packages/inbox-core run build",
     "build:ui": "cd ../inbox-ui && pnpm install --frozen-lockfile && pnpm build",
-    "deploy:full": "pnpm run build:ui && wrangler d1 migrations apply emailflare --remote && wrangler deploy"
+    "deploy:full": "pnpm run build:packages && pnpm run build:ui && wrangler d1 migrations apply emailflare --remote && wrangler deploy"
   },
   "dependencies": {
+    "@emailflare/email-core": "file:../../packages/email-core",
+    "@emailflare/inbox-core": "file:../../packages/inbox-core",
     "@emailflare/emails": "file:../emails",
     "@hono/zod-validator": "^0.4.3",
     "hono": "^4.7.5",

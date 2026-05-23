@@ -6,11 +6,10 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
+import { generateId } from '@emailflare/email-core';
 import { D1Db } from '../db.ts';
 import type { HonoEnv } from '../env.ts';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 
 const app = new Hono<HonoEnv>();
 
@@ -72,7 +71,7 @@ app.post('/', zValidator('json', addSchema), async (c) => {
     await db.run(
       `INSERT INTO suppressions (id, email, reason, domain_id, email_log_id, created_at)
        VALUES (?, ?, ?, ?, NULL, ?)`,
-      [nanoid(), body.email.toLowerCase(), body.reason, body.domain_id ?? null, now],
+      [generateId(), body.email.toLowerCase(), body.reason, body.domain_id ?? null, now],
     );
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error';

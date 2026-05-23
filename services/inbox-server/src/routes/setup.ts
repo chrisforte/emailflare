@@ -4,13 +4,12 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { customAlphabet } from 'nanoid';
+import { generateId } from '@emailflare/email-core';
 import { hashPassword } from '../lib/password.js';
 import { saveSession } from '../middleware/auth.js';
 import { rawDb } from '../db.js';
 import type { HonoEnv } from '../env.js';
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 const app = new Hono<HonoEnv>();
 
 app.get('/status', async (c) => {
@@ -35,7 +34,7 @@ app.post('/', zValidator('json', setupSchema), async (c) => {
 
   const { name, email, password } = c.req.valid('json');
   const passwordHash = await hashPassword(password);
-  const id  = nanoid();
+  const id  = generateId();
   const now = new Date().toISOString();
 
   await rawDb.run(

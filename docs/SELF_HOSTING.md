@@ -47,7 +47,7 @@ Notes:
 ## 2. Start the production-style stack
 
 ```bash
-docker compose --env-file .env.local -f compose.yaml up --build -d
+docker compose --env-file .env.local -f compose.email-api.yaml up --build -d
 ```
 
 Or with `just`:
@@ -80,7 +80,7 @@ If you are running from source:
 
 ```bash
 git pull
-docker compose --env-file .env.local -f compose.yaml up --build -d
+docker compose --env-file .env.local -f compose.email-api.yaml up --build -d
 ```
 
 If you are running from the published image, pull the new tag and redeploy the container with the same mounted `/data` volume.
@@ -95,10 +95,10 @@ The minimum-infra recommendation remains the embedded local setup until you have
 
 ## Local development
 
-For local development, use `compose.dev.yaml` instead of `compose.yaml`. It runs the same stack but adds a [Mailpit](https://mailpit.axllent.org) container as the SMTP backend so emails are never delivered to real inboxes.
+For local development, use `compose.email-api.dev.yaml` instead of `compose.email-api.yaml`. It runs the same stack but adds a [Mailpit](https://mailpit.axllent.org) container as the SMTP backend so emails are never delivered to real inboxes.
 
 ```bash
-docker compose --env-file .env.local -f compose.dev.yaml up
+docker compose --env-file .env.local -f compose.email-api.dev.yaml up
 # or:
 just dev
 ```
