@@ -217,6 +217,7 @@ export default function PlaygroundPage() {
       ...templateRef,
       themeId,
       variables: Object.keys(variables).length > 0 ? variables : detectedVars.reduce((acc, v) => ({ ...acc, [v]: `<${v}>` }), {}),
+      attachments: '[{"filename":"file","content":"content","contentType?":"mimeType"}]',
     };
     if (Object.keys(obj.variables as object).length === 0) delete obj.variables;
     return JSON.stringify(obj, null, 2);

@@ -12,6 +12,12 @@ import type { ApiKeyContext } from '../middleware/apiKey.js';
 
 const app = new Hono();
 
+const attachmentDef = z.object({
+  filename: z.string(),
+  content: z.string(),
+  contentType: z.string().optional()
+});
+
 const sendSchema = z.object({
   from: z.string().email(),
   fromName: z.string().optional(),
@@ -24,6 +30,7 @@ const sendSchema = z.object({
   templateSlug: z.string().optional(),
   variables: z.record(z.string()).optional(),
   themeId: z.string().optional(),
+  attachments: z.array(attachmentDef).optional(),
 }).refine(d => d.templateId || d.templateSlug || d.html || d.text, {
   message: 'Provide templateId, templateSlug, or at least one of html/text',
 });
@@ -106,6 +113,7 @@ app.post('/', zValidator('json', sendSchema), async (c) => {
         html,
         text,
         replyTo: body.replyTo,
+        attachments: body.attachments
       });
 
       await emailLogs.insert({

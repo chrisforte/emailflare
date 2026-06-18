@@ -29,6 +29,7 @@ export async function sendEmailViaSmtp(params: CFSendEmailParams): Promise<CFSen
     subject: params.subject,
     html: params.html,
     text: params.text,
+    attachments: params.attachments,
     ...(params.replyTo ? { replyTo: params.replyTo } : {}),
   });
 

@@ -12,6 +12,7 @@ scripts/config.toml
 services/worker/.wrangler
 services/worker/.localflare
 *.tsbuildinfo
+package-lock.json
 
 # Compiled output from services/emails (safety net if tsc writes into src/)
 services/emails/src/**/*.js
