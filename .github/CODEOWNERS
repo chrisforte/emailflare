@@ -1,5 +1,0 @@
-# Any changes to GitHub Actions workflows require owner approval.
-.github/workflows/ @0xdps
-
-# CODEOWNERS itself requires owner approval.
-.github/CODEOWNERS @0xdps
