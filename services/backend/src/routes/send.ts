@@ -15,7 +15,8 @@ const app = new Hono();
 const attachmentDef = z.object({
   filename: z.string(),
   content: z.string(),
-  contentType: z.string().optional()
+  contentType: z.string().optional(),
+  encoding: z.string().optional(),
 });
 
 const sendSchema = z.object({

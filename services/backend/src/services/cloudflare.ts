@@ -159,7 +159,7 @@ export interface CFSendEmailParams {
   html?: string;
   text?: string;
   replyTo?: string;
-  attachments?: { filename: string; content: string; contentType?: string }[]
+  attachments?: { filename: string; content: string; contentType?: string; encoding?: string }[]
 }
 
 export interface CFSendEmailResult {
