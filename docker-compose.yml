@@ -1,26 +1,17 @@
-name: emailflare
-
 services:
-  app:
+
+  emailflare:
+    container_name: emailflare
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "${PORT:-8090}:80"
+    restart: unless-stopped
     env_file:
-      - .env.local
+      - .env
     environment:
       - NODE_ENV=production
     volumes:
-      - app-data:/data
-    restart: unless-stopped
+      - /docker/config/emailflare:/data
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-volumes:
-  app-data:
-
+      test: [ "CMD", "curl", "-sf", "http://localhost/health" ]
+      start_period: 15s
