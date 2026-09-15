@@ -10,8 +10,15 @@ services:
       - .env
     environment:
       - NODE_ENV=production
+      - NODE_USE_ENV_PROXY=1
     volumes:
       - /docker/config/emailflare:/data
+    networks:
+      - proxy
     healthcheck:
       test: [ "CMD", "curl", "-sf", "http://localhost/health" ]
       start_period: 15s
+
+networks:
+  proxy:
+    external: true

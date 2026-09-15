@@ -12,9 +12,12 @@ WORKDIR /mesahub-core/server
 RUN CGO_ENABLED=1 GOOS=linux go build -o /go/bin/mesahub-server ./cmd/server
 
 # ── Stage: build-backend ──────────────────────────────────────────────────────
-FROM node:22-alpine AS build-backend
+FROM node:24-alpine AS build-backend
 WORKDIR /app
 
+ARG COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
+ARG NODE_USE_ENV_PROXY=1
+RUN npm install -g npm@latest && npm install -g corepack@latest
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Build the shared emails package first (backend depends on it via file:../emails)
@@ -34,9 +37,12 @@ COPY services/backend/ ./backend/
 RUN cd backend && pnpm run build
 
 # ── Stage: build-admin ────────────────────────────────────────────────────────
-FROM node:22-alpine AS build-admin
+FROM node:24-alpine AS build-admin
 WORKDIR /app/admin
 
+ARG COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
+ARG NODE_USE_ENV_PROXY=1
+RUN npm install -g npm@latest && npm install -g corepack@latest
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 COPY services/admin/package.json services/admin/pnpm-lock.yaml services/admin/pnpm-workspace.yaml ./
@@ -49,7 +55,7 @@ RUN pnpm exec vite build
 # ── Stage: prod (Caddy + Node + Mailpit) ─────────────────────────────────────
 FROM caddy:2-alpine AS caddy-bin
 
-FROM node:22-alpine AS prod
+FROM node:24-alpine AS prod
 COPY --from=caddy-bin /usr/bin/caddy /usr/bin/caddy
 RUN apk add --no-cache curl openssl
 WORKDIR /app
